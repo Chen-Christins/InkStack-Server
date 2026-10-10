@@ -97,7 +97,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             // 给每个用户创建普通通知（is_broadcast=0）并 WS 推送
             chen::IOManager::GetThis()->schedule(
-                [&ntf, msg, user_ids]() {
+                [ntf, msg, user_ids]() mutable {
                     for (auto target_uid : user_ids) {
                         ntf.user_id = target_uid;
                         NotificationMgr::GetInstance()->addNotification(ntf);
