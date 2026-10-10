@@ -10,16 +10,17 @@
 #include <chen/log/log.h>
 #include <chen/util/util.h>
 #include <chen/ds/event_bus.h>
+#include <chen/db/redis.h>
 
 #include <memory>
 #include <ranges>
 
 #include "./chunk_upload.h"
+#include "./event/events.h"
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./include/tables.h"
 #include "./index.h"
-#include "./event/events.h"
 #include "./logic/BlogMsgFromBot.h"
 
 namespace blog {
@@ -32,15 +33,21 @@ static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>
 static chen::ConfigVar<std::string>::ptr g_work_path =
     chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
 
-BlogModule::BlogModule() : Module("Blog", "1.0.0", "blog_module") {}
+BlogModule::BlogModule() : Module("Blog", "1.0.7", "blog_module") {}
 
 bool BlogModule::onLoad() {
-    INFO(logger) << "onLoad";
+    INFO(logger) << "onLoad version=" << getVersion();
 
     if (g_work_path->getValue().empty()) {
         ERROR(logger) << "work path is empty";
         return false;
     }
+
+    chen::FoxThreadMgr::GetInstance()->init();
+
+    chen::FoxThreadMgr::GetInstance()->start();
+
+    chen::RedisMgr::GetInstance()->init();
 
     return true;
 }
@@ -51,6 +58,8 @@ bool BlogModule::onUnload() {
     chen::EventBusMgr::GetInstance()->clearAll();
 
     ArticleMgr::GetInstance()->stop();
+
+    chen::FoxThreadMgr::GetInstance()->stop();
 
     return true;
 }
@@ -64,6 +73,10 @@ bool BlogModule::onDeactivate() {
     INFO(logger) << "onDeactivate";
 
     ArticleMgr::GetInstance()->stop();
+
+    NotificationMgr::GetInstance()->closeAllConnections();
+
+    MessageMgr::GetInstance()->closeAllChatConnections();
 
     return true;
 }

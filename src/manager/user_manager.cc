@@ -153,12 +153,12 @@ void UserManager::ensureSuperAdmin() {
     auto info = data::UserInfoDao::QueryByEmail(email, db);
     if (!info) {
         info.reset(new data::UserInfo);
+        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+        info->setName(account);
+        info->setAccount(account);
+        info->setEmail(email);
     }
 
-    info->setName(account);
-    info->setAccount(account);
-    info->setEmail(email);
-    info->setPasswd(chen::EncryptorUtil::MD5(passwd));
     info->setRole(Role::ADMIN);
     info->setState(Status::ACTIVE);
     info->setIsDeleted(0);
