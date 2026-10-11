@@ -33,7 +33,7 @@ static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>
 static chen::ConfigVar<std::string>::ptr g_work_path =
     chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
 
-BlogModule::BlogModule() : Module("Blog", "1.0.7", "blog_module") {}
+BlogModule::BlogModule() : Module("Blog", "1.0.8", "blog_module") {}
 
 bool BlogModule::onLoad() {
     INFO(logger) << "onLoad version=" << getVersion();
@@ -208,6 +208,7 @@ bool BlogModule::initMySQL() {
         XX(UserFeedbackInfoDao, "user_feedback")
         XX(UserAiConfigInfoDao, "user_ai_config")
         XX(UserLoginDeviceInfoDao, "user_login_device")
+        XX(UserOauthInfoDao, "user_oauth")
         XX(UserRecoveryCodeInfoDao, "user_recovery_code")
 #undef XX
 
@@ -251,6 +252,7 @@ bool BlogModule::initMySQL() {
         XX(UserFeedbackInfoDao)
         XX(UserAiConfigInfoDao)
         XX(UserLoginDeviceInfoDao)
+        XX(UserOauthInfoDao)
         XX(UserRecoveryCodeInfoDao)
 #undef XX
         INFO(logger) << "migrate database end";
@@ -318,6 +320,9 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/user/2fa/verify", XX(User2faVerifyServlet));
         dp->addServlet("/api/v1/user/2fa/reset", XX(User2faResetServlet));
         dp->addServlet("/api/v1/user/2fa/recovery", XX(User2faRecoveryServlet));
+        // 第三方登录相关
+        dp->addServlet("/api/v1/user/oauth/github", XX(UserOauthGithubServlet));
+        dp->addServlet("/api/v1/user/oauth/github/callback", XX(UserOauthGithubCallbackServlet));
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));

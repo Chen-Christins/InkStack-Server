@@ -1,0 +1,16 @@
+<table name="user_oauth" namespace="blog.data" desc="第三方登录绑定表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键"/>
+        <column name="user_id" type="int64" desc="关联的本地用户ID"/>
+        <column name="provider" type="string" length="32" desc="第三方平台标识，如 github"/>
+        <column name="open_id" type="string" length="64" desc="第三方平台用户唯一标识"/>
+        <column name="login_name" type="string" length="128" desc="第三方平台登录名"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="绑定时间"/>
+        <column name="update_time" type="datetime" default="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="uniq_provider_openid" cols="provider,open_id" type="uniq"/>
+        <index name="idx_user" cols="user_id" type="index"/>
+    </indexs>
+</table>

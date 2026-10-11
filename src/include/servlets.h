@@ -155,6 +155,8 @@
 #include "../servlets/user/user_login_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/user/user_logout_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_mutual_following_list_servlet.h"            // IWYU pragma: keep
+#include "../servlets/user/user_oauth_github_callback_servlet.h"             // IWYU pragma: keep
+#include "../servlets/user/user_oauth_github_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_2fa_enable_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/user/user_2fa_confirm_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_2fa_disable_servlet.h"                      // IWYU pragma: keep

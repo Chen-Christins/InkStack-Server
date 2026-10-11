@@ -16,3 +16,13 @@ admin:
 search:
   jieba_dict_path: ${WORK_PATH}/dict
   index_path: ${WORK_PATH}/search_index.dat
+
+# 第三方登录配置
+oauth:
+  github:
+    client_id: ${GITHUB_CLIENT_ID}
+    client_secret: ${GITHUB_CLIENT_SECRET}
+    # 必须与 GitHub OAuth App 的 Authorization callback URL 完全一致（经前端同源代理）
+    callback_url: ${GITHUB_CALLBACK_URL}
+    # 授权成功后回跳的前端站点根地址
+    frontend_base: ${FRONTEND_BASE}
