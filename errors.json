@@ -38,6 +38,8 @@
     { "errno": 2024,  "key": "TOTP_CONFIRM_FAILED",        "zh": "确认双因素认证失败",          "en": "Failed to confirm two-factor authentication" },
     { "errno": 2025,  "key": "RECOVERY_CODE_INVALID",      "zh": "恢复码无效或已使用",          "en": "Recovery code invalid or already used" },
     { "errno": 2026,  "key": "TEMP_TOKEN_INVALID",         "zh": "临时凭证无效或已过期",        "en": "Temporary token invalid or expired" },
+    { "errno": 2027,  "key": "GITHUB_OAUTH_FAILED",        "zh": "GitHub 授权登录失败",        "en": "GitHub OAuth login failed" },
+    { "errno": 2028,  "key": "GITHUB_STATE_INVALID",       "zh": "登录状态校验失败，请重试",    "en": "OAuth state invalid or expired" },
 
     { "errno": 3001,  "key": "ARTICLE_NOT_FOUND",           "zh": "文章不存在",               "en": "Article not found" },
     { "errno": 3002,  "key": "ARTICLE_INVALID_TYPE",        "zh": "文章类型错误",              "en": "Invalid article type" },

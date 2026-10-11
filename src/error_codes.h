@@ -60,6 +60,8 @@ constexpr int32_t TOTP_ENABLE_FAILED = 2023;       // 2FA启用失败
 constexpr int32_t TOTP_CONFIRM_FAILED = 2024;      // 2FA确认失败
 constexpr int32_t RECOVERY_CODE_INVALID = 2025;    // 恢复码无效或已使用
 constexpr int32_t TEMP_TOKEN_INVALID = 2026;       // 临时凭证无效或已过期
+constexpr int32_t GITHUB_OAUTH_FAILED = 2027;      // GitHub 授权登录失败
+constexpr int32_t GITHUB_STATE_INVALID = 2028;     // OAuth state 无效或已过期
 
 // ==================== 模块03: 文章模块 (03001-03999) ====================
 constexpr int32_t ARTICLE_NOT_FOUND = 3001;      // 文章不存在
