@@ -53,4 +53,33 @@ clean:
 
 orm:
 	@$(_JOB_CMD) && \
-	$(call time_wrapper, bin/orm dbproxy/xml dbproxy/data)
+	CHEN_SDK_LIB="$$(for d in chen-sdk-*/lib; do [ -d "$$d" ] && printf '%s' "$$d" && break; done)"; \
+	$(call time_wrapper, LD_LIBRARY_PATH="$$CHEN_SDK_LIB:$$LD_LIBRARY_PATH" bin/orm dbproxy/xml dbproxy/data)
+
+# ---- 依赖同步 / 一键出产物 ----
+#   make deps                 → 下载 chen-sdk + 三方依赖（deps.py sync，架构按本机自动识别）
+#   make apply                → 用 SDK 的 apply.sh 同步 bin/tools/protocol/resources
+#   make collect [ENV=prod]   → 打包部署产物（collect.sh）
+#   make dist [ENV=prod]      → deps + apply + orm + build + collect 一条龙
+
+.PHONY: deps apply collect dist
+deps:
+	@python3 deps.py sync
+
+apply:
+	@set -e; found=0; \
+	for d in chen-sdk-*/; do \
+		[ -f "$${d}apply.sh" ] || continue; \
+		sh "$${d}apply.sh"; found=1; \
+	done; \
+	[ "$$found" = "1" ] || { echo "错误: 未找到 chen-sdk-*/apply.sh，请先执行 make deps" >&2; exit 1; }
+
+collect:
+	@./collect.sh $(if $(ENV),$(ENV),prod)
+
+dist:
+	@$(MAKE) deps
+	@$(MAKE) apply
+	@$(MAKE) orm
+	@$(MAKE) build
+	@$(MAKE) collect ENV=$(if $(ENV),$(ENV),prod)

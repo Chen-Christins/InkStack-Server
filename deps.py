@@ -559,6 +559,8 @@ def sync_sdk(args, ui):
     cfg = resolve_config()
     version = require(cfg, "version")
     arch = require(cfg, "arch")
+    if arch == "auto":
+        arch = host_arch()
     repo = cfg.get("repo", DEFAULT_REPO)
     dest = sdk_dir(version)
     keep_asset = asset_name(version, arch)

@@ -2,7 +2,7 @@
   "chen-sdk": {
     "repo": "Chen-Christins/chen",
     "version": "1.5.5",
-    "arch": "arm64"
+    "arch": "auto"
   },
   "thirdparty": {
     "repo": "Chen-Christins/chen",

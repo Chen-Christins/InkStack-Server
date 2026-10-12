@@ -1,0 +1,149 @@
+name: Build & Package
+
+# 触发：
+#   - 手动 workflow_dispatch（可选 dev/prod，出 Actions artifact）
+#   - 打 tag v* → 额外发布到 GitHub Release
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 打包环境
+        type: choice
+        default: prod
+        options: [prod, dev]
+  push:
+    branches:
+    - build/*
+
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  PKG_ENV: ${{ github.event.inputs.env || 'prod' }}
+
+jobs:
+  build:
+    name: build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-24.04,     arch: amd64 }
+          - { runner: ubuntu-24.04-arm, arch: arm64 }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            ninja-build \ 
+            rsync \
+            python3 \
+            libboost-context-dev \
+            libtool \
+            gcc \
+            g++ \
+            autoconf \
+            automake \
+            cmake \
+            libboost-all-dev \
+            libsqlite3-dev \
+            libssl-dev \
+            libevent-dev \
+            libmysqlclient-dev \
+            redis \
+            libnghttp2-dev \
+            git \
+            wget \
+            unzip \
+            zip
+
+      - name: Fetch chen-sdk + thirdparty deps
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 deps.py sync
+
+      - name: Apply SDK (bin / tools / protocol / resources)
+        run: make apply
+
+      - name: Generate ORM data
+        run: make orm
+
+      - name: Build module
+        run: make -j"$(nproc)"
+
+      - name: Prepare prod.env (from GitHub Secrets)
+        if: env.PKG_ENV == 'prod'
+        env:
+          WORK_PATH: ${{ vars.WORK_PATH }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWD: ${{ secrets.MYSQL_PASSWD }}
+          MYSQL_DBNAME: ${{ secrets.MYSQL_DBNAME }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_DBNAME: ${{ secrets.REDIS_DBNAME }}
+          GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
+          GITHUB_CALLBACK_URL: ${{ secrets.OAUTH_GITHUB_CALLBACK_URL }}
+          FRONTEND_BASE: ${{ vars.FRONTEND_BASE }}
+        run: |
+          {
+            echo "WORK_PATH=${WORK_PATH:-/home/path/to/apps}"
+            echo "LOG_LEVEL=${LOG_LEVEL:-info}"
+            echo "MYSQL_HOST=${MYSQL_HOST:-change.me}"
+            echo "MYSQL_PORT=${MYSQL_PORT:-3306}"
+            echo "MYSQL_USER=${MYSQL_USER:-change.me}"
+            echo "MYSQL_PASSWD=${MYSQL_PASSWD:-change.me}"
+            echo "MYSQL_DBNAME=${MYSQL_DBNAME:-techhaven}"
+            echo "REDIS_HOST=${REDIS_HOST:-127.0.0.1:6379}"
+            echo "REDIS_DBNAME=${REDIS_DBNAME:-blog}"
+            echo "GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}"
+            echo "GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}"
+            echo "GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}"
+            echo "FRONTEND_BASE=${FRONTEND_BASE}"
+          } > bin/conf/prod.env
+
+      - name: Package
+        run: ./collect.sh "${PKG_ENV}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: techhaven-server-${{ matrix.arch }}
+          path: techhaven-server-*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1 \
+            || gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
+                 --title "${GITHUB_REF_NAME}" --notes "release ${GITHUB_REF_NAME}"
+          gh release upload "${GITHUB_REF_NAME}" artifacts/*.tar.gz \
+            --repo "${GITHUB_REPOSITORY}" --clobber

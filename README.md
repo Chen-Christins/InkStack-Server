@@ -100,6 +100,32 @@ cp bin/conf/prod.env.example bin/conf/prod.env
 LD_LIBRARY_PATH=./lib ./server -d
 ```
 
+## 一键出产物（本地 / CI）
+
+`make dist` 把「同步依赖 → 应用 SDK → 生成 ORM → 构建模块 → 打包」串成一条命令：
+
+```sh
+make dist ENV=prod      # 架构按当前机器自动识别（dependencies.json 的 arch=auto）
+```
+
+等价于：`make deps`（`deps.py sync`）→ `make apply`（SDK `apply.sh`）→ `make orm` → `make build` → `make collect`。
+
+**CI**：`.github/workflows/build.yml` 在 `ubuntu-24.04`(amd64) 与 `ubuntu-24.04-arm`(arm64) 矩阵上执行同样的流程，产出 `techhaven-server-*.tar.gz`：
+
+- 手动 `workflow_dispatch`（可选 `prod`/`dev`）→ 上传为 Actions artifact；
+- 推送 `v*` tag → 额外发布到 GitHub Release。
+
+CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepare prod.env`），未配置时使用占位值，可在部署机再改。涉及的 Secrets/Variables：
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWD` / `MYSQL_DBNAME` | Secret | MySQL 连接 |
+| `REDIS_HOST` / `REDIS_DBNAME` | Secret | Redis 连接 |
+| `OAUTH_GITHUB_CLIENT_ID` / `OAUTH_GITHUB_CLIENT_SECRET` / `OAUTH_GITHUB_CALLBACK_URL` | Secret | GitHub OAuth |
+| `WORK_PATH` / `LOG_LEVEL` / `FRONTEND_BASE` | Variable | 部署路径 / 日志级别 / 前端地址 |
+
+> 升级 SDK/依赖：改 `dependencies.json` 的 `chen-sdk.version`（或 `arch`）后推代码即可触发流水线。
+
 ## 依赖管理
 
 通过 `dependencies.json` 声明依赖，`deps.py` 负责下载：
@@ -129,7 +155,7 @@ LD_LIBRARY_PATH=./lib ./server -d
 
 - 资产缓存在 `.deps-cache/`，用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）。
 - 三方依赖只用于**编译**（`deps/include`）。模块**不**静态链接三方库，运行时符号由预编译 `bin/server` 提供，避免与 server 内的静态副本重复；部署机也无需安装这些库。
-- macOS 开发 / Linux 编译：把 `arch` 改成 `amd64`（或 `./deps.py use <version> --arch amd64`）后再同步整目录到 Linux 即可，无需软链。
+- 架构按主机自动识别（`dependencies.json` 的 `arch=auto`）：mac(arm64) / Linux(amd64) 各自 `./deps.py sync` 即可，无需软链；如需固定，用 `./deps.py use <version> --arch <arch>` 改配置。
 
 ## 相关文档
 - [API_DOCS.md](API_DOCS.md) 详细接口说明
