@@ -1,0 +1,75 @@
+name: Deploy
+
+# 手动触发，三种模式：
+#   cold : 停服 → 清空运行目录 → 解压产物 → 用 CONFIG_DIR 覆盖 conf/ → ./server -d 冷启动
+#   hot  : 解压产物 → 拷贝 module/*.so 到运行目录 → ./server -s reload 热启动
+#   stop : 进入运行目录执行 ./server -s stop 停服
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 部署模式
+        type: choice
+        required: true
+        default: cold
+        options: [cold, hot, stop]
+      tag:
+        description: Release tag（如 v1.2.3），cold/hot 从该 release 取 amd64 产物
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+
+    steps:
+      - name: Checkout (tag)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Download amd64 package from release
+        if: inputs.mode != 'stop'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p pkg
+          gh release download "${{ inputs.tag }}" --repo "${GITHUB_REPOSITORY}" \
+            --pattern '*amd64*.tar.gz' --dir pkg --clobber
+          ls -l pkg
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${SSH_PORT}" -H "${SSH_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Upload deploy script (+ package) to server
+        run: |
+          SCP_OPTS=(-P "${SSH_PORT}" -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new)
+          scp "${SCP_OPTS[@]}" scripts/deploy.sh "${SSH_USER}@${SSH_HOST}:/tmp/techhaven-deploy.sh"
+          if [ "${{ inputs.mode }}" != "stop" ]; then
+            pkg="$(ls pkg/*amd64*.tar.gz | head -1)"
+            test -n "${pkg}"
+            scp "${SCP_OPTS[@]}" "${pkg}" "${SSH_USER}@${SSH_HOST}:/tmp/techhaven-pkg.tar.gz"
+          fi
+
+      - name: Run deploy on server
+        env:
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          CONFIG_DIR: ${{ vars.CONFIG_DIR }}
+        run: |
+          SSH_OPTS=(-p "${SSH_PORT}" -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new)
+          ssh "${SSH_OPTS[@]}" "${SSH_USER}@${SSH_HOST}" \
+            "DEPLOY_PATH='${DEPLOY_PATH}' CONFIG_DIR='${CONFIG_DIR}' bash /tmp/techhaven-deploy.sh --mode '${{ inputs.mode }}' --artifact /tmp/techhaven-pkg.tar.gz"
+          ssh "${SSH_OPTS[@]}" "${SSH_USER}@${SSH_HOST}" \
+            "rm -f /tmp/techhaven-deploy.sh /tmp/techhaven-pkg.tar.gz" || true

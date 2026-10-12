@@ -126,6 +126,23 @@ CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepa
 
 > 升级 SDK/依赖：改 `dependencies.json` 的 `chen-sdk.version`（或 `arch`）后推代码即可触发流水线。
 
+## 部署（cold / hot / stop）
+
+部署服务器为 **amd64**；全部**手动触发** `.github/workflows/deploy.yml`，选择 `mode` 与 release `tag`：
+
+| 模式 | 行为 |
+|------|------|
+| `cold`（冷启动） | 停服 → 清空运行目录 → 解压产物 → 用 `CONFIG_DIR` 覆盖 `conf/` → `LD_LIBRARY_PATH=./lib ./server -d` |
+| `hot`（热启动） | 解压产物到临时目录 → 拷贝 `module/*.so` 到运行目录 → `./server -s reload`（热重载模块） |
+| `stop`（停服） | 进入运行目录执行 `./server -s stop`（SIGTERM 优雅关闭） |
+
+服务器端逻辑在 `scripts/deploy.sh`（随每次部署 scp 到服务器执行）。
+
+**Secrets**：`SSH_HOST`、`SSH_USER`、`SSH_PORT`、`SSH_PRIVATE_KEY`（免密私钥）
+**Variables**：`DEPLOY_PATH`（运行目录）、`CONFIG_DIR`（冷启动覆盖用的配置目录）
+
+> 注意：`CONFIG_DIR` 内 `system.yml` 的 `server.work_path`（及日志/字典路径）必须指向 `DEPLOY_PATH`。cold 会清空运行目录（含日志）；hot 仅替换模块，若同时改了 `server`/`libchen.so` 需走 cold。
+
 ## 依赖管理
 
 通过 `dependencies.json` 声明依赖，`deps.py` 负责下载：
