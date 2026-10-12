@@ -312,7 +312,7 @@ def install_zip(zip_path, version, ui):
     try:
         ui.step("📂", f"解压到 {ui.path(dest.name + '/')}")
         with zipfile.ZipFile(zip_path) as zf:
-            zf.extractall(tmp)
+            extract_zip_restore(zf, tmp)
         sdk_root = locate_sdk_root(tmp)
         if sdk_root is None:
             raise DepsError(f"{Path(zip_path).name} 内未找到 lib/libchen.so")
@@ -321,6 +321,7 @@ def install_zip(zip_path, version, ui):
         shutil.rmtree(tmp, ignore_errors=True)
     if not valid_sdk(dest):
         raise DepsError(f"安装后校验失败：{dest.name} 缺少 lib/libchen.so 或 include/chen")
+    ensure_bin_executable(dest)
 
 
 def install_dir(src, version, ui):
@@ -337,6 +338,7 @@ def install_dir(src, version, ui):
         shutil.rmtree(tmp, ignore_errors=True)
     if not valid_sdk(dest):
         raise DepsError(f"安装后校验失败：{dest.name} 缺少依赖文件")
+    ensure_bin_executable(dest)
 
 
 def gc(keep, keep_asset, ui, keep_old=False):
@@ -459,13 +461,15 @@ def extract_zip_restore(zf, dest):
 
 
 def ensure_bin_executable(prefix):
-    bin_dir = Path(prefix) / "bin"
-    if not bin_dir.is_dir():
-        return
-    for path in bin_dir.rglob("*"):
-        if path.is_file():
-            mode = path.stat().st_mode & 0o777
-            path.chmod(mode | 0o755)
+    root = Path(prefix)
+    for sub in ("bin", "tools/bin"):
+        bin_dir = root / sub
+        if not bin_dir.is_dir():
+            continue
+        for path in bin_dir.rglob("*"):
+            if path.is_file():
+                mode = path.stat().st_mode & 0o777
+                path.chmod(mode | 0o755)
 
 
 def valid_deps_dir(path):
@@ -566,6 +570,7 @@ def sync_sdk(args, ui):
     keep_asset = asset_name(version, arch)
 
     if dest.exists() and valid_sdk(dest) and not args.force:
+        ensure_bin_executable(dest)
         ui.ok(f"✅ 当前已安装 {ui.path(dest.name)} (arch={arch})")
         report_gc(gc(dest, keep_asset, ui, args.keep_old), ui)
         return 0
