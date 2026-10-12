@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 import re
 import shutil
 import sys
@@ -26,8 +27,10 @@ LOCAL_OVERRIDE = ROOT / "dependencies.local.json"
 CACHE_DIR = ROOT / ".deps-cache"
 
 SDK_KEY = "chen-sdk"
+THIRDPARTY_KEY = "thirdparty"
 DEFAULT_REPO = "Chen-Christins/chen"
 SDK_DIR_PREFIX = "chen-sdk-"
+DEPS_DIR = ROOT / "deps"
 
 VERSION_RE = re.compile(r"^chen-sdk-(\d[\w.\-]*?)(?:-(arm64|amd64))?$")
 ASSET_RE = re.compile(r"^chen-sdk-(\d[\w.\-]*?)-(arm64|amd64)\.zip$")
@@ -98,6 +101,15 @@ def human(n):
         if value < 1024 or unit == "GB":
             return f"{value:.1f}{unit}"
         value /= 1024
+
+
+def host_arch():
+    machine = platform.machine().lower()
+    if machine in ("arm64", "aarch64"):
+        return "arm64"
+    if machine in ("x86_64", "amd64"):
+        return "amd64"
+    raise DepsError(f"无法识别的架构: {machine}")
 
 
 def load_json(path):
@@ -360,7 +372,190 @@ def report_gc(removed, ui):
     ui.step("🧹", f"清理旧版本 {', '.join(removed)}")
 
 
+def thirdparty_config(manifest=None):
+    data = manifest if manifest is not None else load_json(MANIFEST)
+    tp = data.get(THIRDPARTY_KEY)
+    if not tp:
+        return None
+    override = load_json(LOCAL_OVERRIDE).get(THIRDPARTY_KEY, {})
+    tp = dict(tp)
+    tp.update(override)
+    tp.setdefault("repo", DEFAULT_REPO)
+    tp.setdefault("asset", "deps-{arch}.zip")
+    return tp
+
+
+def resolve_tp_arch(tp, sdk_cfg=None):
+    arch = tp.get("arch")
+    if (not arch or arch == "auto") and sdk_cfg:
+        sdk_arch = sdk_cfg.get("arch")
+        if sdk_arch and sdk_arch != "auto":
+            arch = sdk_arch
+    if not arch or arch == "auto":
+        arch = host_arch()
+    return arch
+
+
+def ensure_asset(repo, tag, asset, ui):
+    cache = CACHE_DIR / asset
+    if cache.is_file() and cache.stat().st_size > 0:
+        ui.ok(f"📦 命中缓存 {ui.path(cache.name)}")
+        return cache
+    url = f"https://github.com/{repo}/releases/download/{tag}/{asset}"
+    ui.step("📦", f"下载 {asset}")
+    ui.info(url)
+    download(url, cache, ui)
+    return cache
+
+
+def fetch_digest_tag(repo, tag, asset, ui):
+    url = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "techhaven-deps"}
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.load(resp)
+    except urllib.error.HTTPError as exc:
+        ui.warn(f"GitHub API 请求失败 ({exc.code})，跳过 sha256 校验")
+        return None
+    except Exception as exc:
+        ui.warn(f"GitHub API 不可用（{exc.__class__.__name__}），跳过 sha256 校验")
+        return None
+    for item in data.get("assets", []):
+        if item.get("name") == asset:
+            digest = item.get("digest") or ""
+            if digest.startswith("sha256:"):
+                return digest.split(":", 1)[1]
+    ui.warn(f"release {tag} 未提供 {asset} 的 sha256，跳过校验")
+    return None
+
+
+def verify_asset(zip_path, repo, tag, asset, ui, local=False):
+    if local:
+        ui.warn("🪄 使用本地包，跳过 sha256 校验")
+        return
+    ui.step("🔐", f"校验 sha256 {asset}")
+    expected = fetch_digest_tag(repo, tag, asset, ui)
+    if not expected:
+        return
+    actual = sha256_file(zip_path)
+    if actual != expected:
+        raise DepsError(f"sha256 校验失败\n  期望: {expected}\n  实际: {actual}")
+    ui.ok("sha256 校验通过")
+
+
+def extract_zip_restore(zf, dest):
+    for info in zf.infolist():
+        target = zf.extract(info, dest)
+        mode = (info.external_attr >> 16) & 0o777
+        if mode:
+            try:
+                os.chmod(target, mode)
+            except OSError:
+                pass
+
+
+def ensure_bin_executable(prefix):
+    bin_dir = Path(prefix) / "bin"
+    if not bin_dir.is_dir():
+        return
+    for path in bin_dir.rglob("*"):
+        if path.is_file():
+            mode = path.stat().st_mode & 0o777
+            path.chmod(mode | 0o755)
+
+
+def valid_deps_dir(path):
+    path = Path(path)
+    return (path / "include").is_dir() and (path / "lib").is_dir()
+
+
+def install_thirdparty(zip_path, ui):
+    tmp = Path(tempfile.mkdtemp(prefix=".deps-tmp-", dir=ROOT))
+    try:
+        with zipfile.ZipFile(zip_path) as zf:
+            extract_zip_restore(zf, tmp)
+        src = tmp / "deps"
+        if not src.is_dir():
+            raise DepsError(f"{Path(zip_path).name} 内未找到顶层 deps/ 目录")
+        if DEPS_DIR.exists():
+            shutil.rmtree(DEPS_DIR)
+        shutil.move(str(src), str(DEPS_DIR))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    if not valid_deps_dir(DEPS_DIR):
+        raise DepsError("解压后校验失败：deps/ 缺少 include 或 lib")
+    ensure_bin_executable(DEPS_DIR)
+
+
+def sync_thirdparty(args, ui, sdk_cfg=None):
+    tp = thirdparty_config()
+    if not tp:
+        return 0
+    arch = resolve_tp_arch(tp, sdk_cfg)
+    asset = tp["asset"].format(arch=arch)
+    repo = tp["repo"]
+    tag = tp.get("tag")
+    if not tag:
+        raise DepsError("dependencies.json 中 thirdparty 缺少 tag")
+
+    if tp.get("path"):
+        src = Path(tp["path"]).expanduser()
+        if not valid_deps_dir(src):
+            raise DepsError(f"thirdparty.path 不是有效的 deps 目录: {src}")
+        ui.step("🪄", f"使用本地目录 {src}")
+        if DEPS_DIR.exists():
+            shutil.rmtree(DEPS_DIR)
+        shutil.copytree(src, DEPS_DIR)
+        ensure_bin_executable(DEPS_DIR)
+    elif tp.get("archive"):
+        zip_path = Path(tp["archive"]).expanduser()
+        if not zip_path.is_file():
+            raise DepsError(f"本地压缩包不存在: {zip_path}")
+        ui.step("🪄", f"使用本地压缩包 {zip_path.name}")
+        verify_asset(zip_path, repo, tag, asset, ui, local=True)
+        install_thirdparty(zip_path, ui)
+    else:
+        zip_path = ensure_asset(repo, tag, asset, ui)
+        verify_asset(zip_path, repo, tag, asset, ui)
+        install_thirdparty(zip_path, ui)
+
+    ui.ok(f"✅ 已同步三方依赖到 {ui.path('deps/')} (arch={arch})")
+    return 0
+
+
+def cmd_thirdparty(args, ui):
+    sdk_cfg = None
+    if MANIFEST.exists():
+        try:
+            sdk_cfg = resolve_config()
+        except DepsError:
+            sdk_cfg = None
+    return sync_thirdparty(args, ui, sdk_cfg)
+
+
 def cmd_sync(args, ui):
+    if not getattr(args, "thirdparty_only", False):
+        rc = sync_sdk(args, ui)
+        if rc:
+            return rc
+    if not getattr(args, "sdk_only", False):
+        sdk_cfg = None
+        if MANIFEST.exists():
+            try:
+                sdk_cfg = resolve_config()
+            except DepsError:
+                sdk_cfg = None
+        rc = sync_thirdparty(args, ui, sdk_cfg)
+        if rc:
+            return rc
+    return 0
+
+
+def sync_sdk(args, ui):
     cfg = resolve_config()
     version = require(cfg, "version")
     arch = require(cfg, "arch")
@@ -459,19 +654,24 @@ def cmd_current(args, ui):
     cfg = {}
     if MANIFEST.exists():
         cfg = resolve_config()
-    dirs = installed_dirs()
-    if not dirs:
-        ui.warn("未发现已安装的 chen-sdk（运行 ./deps.py sync 下载）")
-        return 1
     source = "local override" if LOCAL_OVERRIDE.exists() else "dependencies.json"
+    dirs = installed_dirs()
     for entry in dirs:
         version = parse_version_dir(entry) or "?"
         arch = parse_arch_dir(entry) or "?"
         marker = "✅" if valid_sdk(entry) else "⚠️"
         print(f"{marker} {ui.path(entry.name)}  version={version} arch={arch}")
+    if not dirs:
+        ui.warn("未发现已安装的 chen-sdk（运行 ./deps.py sync 下载）")
     if cfg:
         ui.info(f"配置: {SDK_KEY} {cfg.get('version')} / {cfg.get('arch')} (来源: {source})")
-    return 0
+    if valid_deps_dir(DEPS_DIR):
+        libs = sorted(p.name for p in (DEPS_DIR / "lib").glob("*.a"))
+        tp = thirdparty_config() or {}
+        ui.info(f"三方依赖 deps/ 就绪（{len(libs)} 个静态库, include 齐全）tag={tp.get('tag')}")
+    else:
+        ui.warn("三方依赖 deps/ 未就绪（运行 ./deps.py sync 或 ./deps.py thirdparty）")
+    return 0 if (dirs or valid_deps_dir(DEPS_DIR)) else 1
 
 
 def cmd_list(args, ui):
@@ -497,7 +697,8 @@ def cmd_list(args, ui):
         assets = [
             a.get("name")
             for a in release.get("assets", [])
-            if isinstance(a.get("name"), str) and a["name"].startswith(SDK_DIR_PREFIX)
+            if isinstance(a.get("name"), str)
+            and (a["name"].startswith(SDK_DIR_PREFIX) or a["name"].startswith("deps-"))
         ]
         print(f"🏷️  {ui.path(tag)}")
         for name in assets:
@@ -515,6 +716,9 @@ def cmd_clean(args, ui):
         else:
             shutil.rmtree(entry)
         removed.append(entry.name)
+    if DEPS_DIR.exists():
+        shutil.rmtree(DEPS_DIR)
+        removed.append("deps/")
     for zip_file in sorted(ROOT.glob(f"{SDK_DIR_PREFIX}*.zip")):
         zip_file.unlink()
         removed.append(zip_file.name)
@@ -540,9 +744,14 @@ def build_parser():
     parser.add_argument("--keep-old", action="store_true", help="切换后保留旧版本，不清理")
     sub = parser.add_subparsers(dest="command")
 
-    p_sync = sub.add_parser("sync", aliases=["fetch", "install"], help="下载并切换到配置的 SDK")
+    p_sync = sub.add_parser("sync", aliases=["fetch", "install"], help="下载 chen-sdk 与三方依赖（thirdparty）")
     p_sync.add_argument("--force", action="store_true", help="即使已安装也重新下载")
+    p_sync.add_argument("--sdk-only", action="store_true", help="只同步 chen-sdk")
+    p_sync.add_argument("--thirdparty-only", action="store_true", help="只同步三方依赖")
     p_sync.set_defaults(func=cmd_sync)
+
+    p_tp = sub.add_parser("thirdparty", aliases=["deps"], help="只下载三方依赖到 deps/（头文件+静态库）")
+    p_tp.set_defaults(func=cmd_thirdparty)
 
     p_use = sub.add_parser("use", help="切换版本，或用本地包安装")
     p_use.add_argument("version", nargs="?", help="目标版本号，如 1.5.3")
