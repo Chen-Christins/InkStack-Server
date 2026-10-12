@@ -14,6 +14,9 @@ bin/conf/*.yml
 /uploads
 *3rdparty*
 *sdk*
+/.deps-cache
+/dependencies.local.json
+/.sdk-tmp-*
 /.idea
 *.iml
 .DS_Store
@@ -26,6 +29,7 @@ bin/conf/*.yml
 dataset
 models
 protocol/include
+resources
 orm
 tools
 *.dat

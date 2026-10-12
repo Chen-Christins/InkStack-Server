@@ -100,6 +100,36 @@ cp bin/conf/prod.env.example bin/conf/prod.env
 LD_LIBRARY_PATH=./lib ./server -d
 ```
 
+## SDK 依赖管理
+
+`chen-sdk` 来自 [Chen-Christins/chen](https://github.com/Chen-Christins/chen) 的 Release，通过 `dependencies.json` 声明版本与架构，`deps.py` 负责下载/切换：
+
+```json
+{
+  "chen-sdk": {
+    "repo": "Chen-Christins/chen",
+    "version": "1.5.3",
+    "arch": "arm64"
+  }
+}
+```
+
+| 命令 | 说明 |
+|------|------|
+| `./deps.py sync` | 按配置下载并解压为仓库根目录 `chen-sdk-<version>/`，成功后删除旧版本 |
+| `./deps.py use 1.5.4 --arch amd64` | 修改配置并切换版本/架构 |
+| `./deps.py use --archive /tmp/chen-sdk.zip` | 使用本地临时 SDK 包（不改主配置） |
+| `./deps.py current` | 查看当前已安装的 SDK |
+| `./deps.py list` | 列出远端可用版本与架构 |
+| `./deps.py clean` | 删除所有已安装 SDK 与缓存 |
+
+说明：
+
+- 下载资产命名 `chen-sdk-<version>-<arch>.zip`，缓存在 `.deps-cache/`，并用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）。
+- 新版本下载、解压、校验成功后才清理旧的 `chen-sdk-*/`、旧 zip 与缓存；加 `--keep-old` 可保留。
+- macOS 开发 / Linux 编译：把 `arch` 改成 `amd64`（或 `./deps.py use <version> --arch amd64`）后再同步整目录到 Linux 即可，无需软链。
+- CMake 的 `chen-sdk-*` glob 与 `collect.sh` 均无需改动；`deps.py` 不使用软链。
+
 ## 相关文档
 - [API_DOCS.md](API_DOCS.md) 详细接口说明
 - `orm_config/` 下 XML 文件定义所有表结构
