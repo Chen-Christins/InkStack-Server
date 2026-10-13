@@ -100,6 +100,80 @@ cp bin/conf/prod.env.example bin/conf/prod.env
 LD_LIBRARY_PATH=./lib ./server -d
 ```
 
+## 一键出产物（本地 / CI）
+
+`make dist` 把「同步依赖 → 应用 SDK → 生成 ORM → 构建模块 → 打包」串成一条命令：
+
+```sh
+make dist ENV=prod      # 架构按当前机器自动识别（dependencies.json 的 arch=auto）
+```
+
+等价于：`make deps`（`deps.py sync`）→ `make apply`（SDK `apply.sh`）→ `make orm` → `make build` → `make collect`。
+
+**CI**：`.github/workflows/build.yml` 在 `ubuntu-24.04`(amd64) 与 `ubuntu-24.04-arm`(arm64) 矩阵上执行同样的流程，产出 `techhaven-server-*.tar.gz`：
+
+- 手动 `workflow_dispatch`（可选 `prod`/`dev`）→ 上传为 Actions artifact；
+- 推送 `v*` tag → 额外发布到 GitHub Release。
+
+CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepare prod.env`），未配置时使用占位值，可在部署机再改。涉及的 Secrets/Variables：
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWD` / `MYSQL_DBNAME` | Secret | MySQL 连接 |
+| `REDIS_HOST` / `REDIS_DBNAME` | Secret | Redis 连接 |
+| `OAUTH_GITHUB_CLIENT_ID` / `OAUTH_GITHUB_CLIENT_SECRET` / `OAUTH_GITHUB_CALLBACK_URL` | Secret | GitHub OAuth |
+| `WORK_PATH` / `LOG_LEVEL` / `FRONTEND_BASE` | Variable | 部署路径 / 日志级别 / 前端地址 |
+
+> 升级 SDK/依赖：改 `dependencies.json` 的 `chen-sdk.version`（或 `arch`）后推代码即可触发流水线。
+
+## 部署（cold / hot / stop）
+
+部署服务器为 **amd64**；全部**手动触发** `.github/workflows/deploy.yml`，选择 `mode` 与 release `tag`：
+
+| 模式 | 行为 |
+|------|------|
+| `cold`（冷启动） | 停服 → 清空运行目录 → 解压产物 → 用 `CONFIG_DIR` 覆盖 `conf/` → `LD_LIBRARY_PATH=./lib ./server -d` |
+| `hot`（热启动） | 解压产物到临时目录 → 拷贝 `module/*.so` 到运行目录 → `./server -s reload`（热重载模块） |
+| `stop`（停服） | 进入运行目录执行 `./server -s stop`（SIGTERM 优雅关闭） |
+
+服务器端逻辑在 `scripts/deploy.sh`（随每次部署 scp 到服务器执行）。
+
+**Secrets**：`SSH_HOST`、`SSH_USER`、`SSH_PORT`、`SSH_PRIVATE_KEY`（免密私钥）
+**Variables**：`DEPLOY_PATH`（运行目录）、`CONFIG_DIR`（冷启动覆盖用的配置目录）
+
+> 注意：`CONFIG_DIR` 内 `system.yml` 的 `server.work_path`（及日志/字典路径）必须指向 `DEPLOY_PATH`。cold 会清空运行目录（含日志）；hot 仅替换模块，若同时改了 `server`/`libchen.so` 需走 cold。
+
+## 依赖管理
+
+通过 `dependencies.json` 声明依赖，`deps.py` 负责下载：
+
+```json
+{
+  "chen-sdk": { "repo": "Chen-Christins/chen", "version": "1.5.4", "arch": "arm64" },
+  "thirdparty": { "repo": "Chen-Christins/chen", "tag": "v1.0.0", "asset": "deps-{arch}.zip" }
+}
+```
+
+- `chen-sdk`：框架 SDK（`chen-sdk-<version>-<arch>.zip`），解压为根目录 `chen-sdk-<version>/`。
+- `thirdparty`：三方依赖包（protobuf / yaml-cpp / tinyxml2 / jsoncpp / hiredis-vip 的头文件 + 静态库），解压到 `deps/`。
+
+| 命令 | 说明 |
+|------|------|
+| `./deps.py sync` | 下载 chen-sdk + thirdparty（默认全部） |
+| `./deps.py sync --sdk-only` | 只下载 chen-sdk |
+| `./deps.py thirdparty` | 只下载三方依赖到 `deps/` |
+| `./deps.py use 1.5.4 --arch amd64` | 切换 SDK 版本/架构 |
+| `./deps.py use --archive /tmp/chen-sdk.zip` | 使用本地临时 SDK 包 |
+| `./deps.py current` | 查看已安装 SDK 与 `deps/` 状态 |
+| `./deps.py list` | 列出远端可用资产 |
+| `./deps.py clean` | 删除 SDK、`deps/` 与缓存 |
+
+说明：
+
+- 资产缓存在 `.deps-cache/`，用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）。
+- 三方依赖只用于**编译**（`deps/include`）。模块**不**静态链接三方库，运行时符号由预编译 `bin/server` 提供，避免与 server 内的静态副本重复；部署机也无需安装这些库。
+- 架构按主机自动识别（`dependencies.json` 的 `arch=auto`）：mac(arm64) / Linux(amd64) 各自 `./deps.py sync` 即可，无需软链；如需固定，用 `./deps.py use <version> --arch <arch>` 改配置。
+
 ## 相关文档
 - [API_DOCS.md](API_DOCS.md) 详细接口说明
 - `orm_config/` 下 XML 文件定义所有表结构
