@@ -128,13 +128,17 @@ CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepa
 
 ## 部署（cold / hot / stop）
 
-部署服务器为 **amd64**；全部**手动触发** `.github/workflows/deploy.yml`，选择 `mode` 与 release `tag`：
+部署服务器为 **amd64**；**手动触发** `.github/workflows/deploy.yml`（可选择**分支或 tag** 运行），只需选 `mode`：
 
 | 模式 | 行为 |
 |------|------|
 | `cold`（冷启动） | 停服 → 清空运行目录 → 解压产物 → 用 `CONFIG_DIR` 覆盖 `conf/` → `LD_LIBRARY_PATH=./lib ./server -d` |
 | `hot`（热启动） | 解压产物到临时目录 → 拷贝 `module/*.so` 到运行目录 → `./server -s reload`（热重载模块） |
 | `stop`（停服） | 进入运行目录执行 `./server -s stop`（SIGTERM 优雅关闭） |
+
+产物来源按所选 ref 自动判定：
+- **tag** → 取该 tag 的 GitHub Release 资产 `techhaven-server-<tag>-amd64.tar.gz`；
+- **分支** → 取该分支**最近一次成功的 `Build & Package`** 的 Actions artifact `techhaven-server-amd64`（所以分支须先跑过构建）。
 
 服务器端逻辑在 `scripts/deploy.sh`（随每次部署 scp 到服务器执行）。
 
