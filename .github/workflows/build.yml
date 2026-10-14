@@ -13,12 +13,10 @@ on:
         options: [prod, dev]
   push:
     branches:
+    - master
     - ci/*
     tags:
       - 'v*'
-  pull_request:
-    branches:
-    - master
 
 permissions:
   contents: write

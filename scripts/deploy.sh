@@ -7,7 +7,7 @@
 #     ./deploy.sh --mode cold|hot|stop --artifact /tmp/techhaven-server-v1.2.3-amd64.tar.gz
 #
 #   cold : 停服 → 清空运行目录 → 解压产物 → 用 CONFIG_DIR 覆盖 conf/ → ./server -d 启动
-#   hot  : 解压产物到临时目录 → 拷贝 module/*.so 到运行目录 → ./server -s reload
+#   hot  : 同步 CONFIG_DIR → conf/ → 拷贝 module/*.so → 向 worker 发 SIGHUP → 存活检测
 #   stop : 仅执行 ./server -s stop
 #
 set -euo pipefail
@@ -15,9 +15,11 @@ set -euo pipefail
 MODE=""
 ARTIFACT=""
 
-# 可按需覆盖：服务器二进制名 / pid 文件名（实际以上面的 conf/system.yml 为准）
+# 可按需覆盖：服务器二进制名（实际以上面的 conf/system.yml 为准）
 SERVER_BIN="${SERVER_BIN:-server}"
-PID_NAME="${PID_NAME:-server.pid}"
+# 存活检测窗口（秒）：daemon 在 worker 崩溃后会间隔 restart_interval 重启，故需留出窗口
+RELOAD_GRACE_SECS="${RELOAD_GRACE_SECS:-10}"
+START_GRACE_SECS="${START_GRACE_SECS:-30}"
 
 usage() { sed -n '2,13p' "$0"; }
 
@@ -38,22 +40,6 @@ export LD_LIBRARY_PATH="$DEPLOY_PATH/lib:${LD_LIBRARY_PATH:-}"
 log() { echo "[deploy] $*"; }
 die() { echo "[deploy][ERROR] $*" >&2; exit 1; }
 
-# 运行时真实 pid 文件：读 conf/system.yml 的 server.work_path + server.pid_file
-pid_file_path() {
-    local cfg="$DEPLOY_PATH/conf/system.yml" wp="" pf=""
-    if [ -f "$cfg" ]; then
-        wp="$(awk '/^[[:space:]]*work_path:/{print $2; exit}' "$cfg")"
-        pf="$(awk '/^[[:space:]]*pid_file:/{print $2; exit}' "$cfg")"
-        wp="${wp%\"}"; wp="${wp#\"}"; wp="${wp%\'}"; wp="${wp#\'}"
-        pf="${pf%\"}"; pf="${pf#\"}"; pf="${pf%\'}"; pf="${pf#\'}"
-    fi
-    if [ -n "$wp" ] && [ -n "$pf" ]; then
-        printf '%s/%s' "${wp%/}" "$pf"
-    else
-        printf '%s/%s' "$DEPLOY_PATH" "$PID_NAME"
-    fi
-}
-
 # 用于 -s 命令的 server 二进制（优先 SERVER_BIN，其次同目录下的 server）
 server_bin() {
     if   [ -x "$DEPLOY_PATH/$SERVER_BIN" ]; then printf '%s' "$DEPLOY_PATH/$SERVER_BIN"
@@ -61,18 +47,54 @@ server_bin() {
     else printf '%s' "$DEPLOY_PATH/$SERVER_BIN"; fi
 }
 
-is_running() {
-    local pf pid
-    pf="$(pid_file_path)"
-    [ -f "$pf" ] || return 1
-    pid="$(cat "$pf" 2>/dev/null || true)"
-    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+# 本部署 server 二进制的真实路径（兼容 ./server 与绝对路径）
+server_exe() {
+    local b; b="$(server_bin)"
+    readlink -f "$b" 2>/dev/null || printf '%s' "$b"
+}
+
+# 本部署正在运行的 server 进程 pid（supervisor + worker），不依赖 conf/system.yml。
+# 依据 /proc/<pid>/exe 指向 $DEPLOY_PATH/server 判定，规避 work_path 与配置不一致的问题。
+server_pids() {
+    [ -d /proc ] || return 0
+    local exe p real
+    exe="$(server_exe)"
+    for p in /proc/[0-9]*; do
+        [ -e "$p/exe" ] || continue
+        real="$(readlink -f "$p/exe" 2>/dev/null || true)"
+        [ "$real" = "$exe" ] || continue
+        printf '%s\n' "${p#/proc/}"
+    done
+    return 0
+}
+
+server_running() { [ -n "$(server_pids)" ]; }
+
+# 真正处理 SIGHUP 的 worker：其父进程也是本部署的 server 进程
+# （supervisor 未注册信号处理器，向其发 SIGHUP 会因默认动作而退出）
+server_worker_pid() {
+    local pids p ppid
+    pids="$(server_pids | tr '\n' ' ')"
+    for p in $pids; do
+        ppid="$(awk '/^PPid:/{print $2}' "/proc/$p/status" 2>/dev/null || true)"
+        case " $pids " in *" $ppid "*) printf '%s' "$p"; return 0 ;; esac
+    done
+    return 1
+}
+
+wait_server_running() {
+    local secs="$1" i
+    for i in $(seq 1 "$secs"); do
+        server_running && return 0
+        sleep 1
+    done
+    return 1
 }
 
 wait_stopped() {
     local i
     for i in $(seq 1 30); do
-        is_running || return 0
+        server_running || return 0
         sleep 1
     done
     return 1
@@ -80,34 +102,58 @@ wait_stopped() {
 
 stop_service() {
     local server; server="$(server_bin)"
-    if is_running; then
-        log "停止服务: $server -s stop"
-        ( cd "$DEPLOY_PATH" && "$server" -s stop ) || true
-        wait_stopped || die "服务未能在超时内停止（pid 文件: $(pid_file_path)）"
-        log "服务已停止"
-    else
-        log "服务未在运行（pid 文件: $(pid_file_path)）"
+    if ! server_running; then
+        log "服务未在运行（运行目录: $DEPLOY_PATH）"
+        return 0
     fi
+    log "停止服务: $server -s stop"
+    ( cd "$DEPLOY_PATH" && "$server" -s stop ) || true
+    if ! wait_stopped; then
+        # -s stop 依赖 pid 文件，配置不一致时可能无效，兜底按进程终止
+        log "优雅停止超时，改为向进程发送 SIGTERM"
+        local p
+        for p in $(server_pids); do kill -TERM "$p" 2>/dev/null || true; done
+        if ! wait_stopped; then
+            log "SIGTERM 超时，强制终止"
+            for p in $(server_pids); do kill -KILL "$p" 2>/dev/null || true; done
+            wait_stopped || die "服务未能在超时内停止（进程: $(server_pids | tr '\n' ' ')）"
+        fi
+    fi
+    log "服务已停止"
 }
 
 start_service() {
     local server; server="$(server_bin)"
     log "启动服务: $server -d"
     ( cd "$DEPLOY_PATH" && "$server" -d ) || die "启动命令执行失败"
-    local i
-    for i in $(seq 1 30); do
-        if is_running; then
-            log "服务已启动 pid=$(cat "$(pid_file_path)")"
-            return 0
-        fi
-        sleep 1
-    done
-    die "服务启动后未检测到 pid（pid 文件: $(pid_file_path)）"
+    wait_server_running "$START_GRACE_SECS" \
+        || die "服务启动后 ${START_GRACE_SECS}s 内未检测到 server 进程存活（运行目录: $DEPLOY_PATH）"
+    log "服务已启动 pids=$(server_pids | tr '\n' ' ')"
 }
 
 require_artifact() {
     [ -n "$ARTIFACT" ] || die "--mode ${MODE} 需要 --artifact <tar.gz>"
     [ -f "$ARTIFACT" ] || die "产物不存在: $ARTIFACT"
+}
+
+# 将 CONFIG_DIR 同步到 $DEPLOY_PATH/conf
+# 优先 rsync（原地更新，保留 conf 目录 inode，进程内 inotify 监听不失效）；
+# 无 rsync 时回退为整体替换。
+sync_config() {
+    [ -n "${CONFIG_DIR:-}" ] || die "需要设置环境变量 CONFIG_DIR（指定配置目录）"
+    [ -d "$CONFIG_DIR" ] || die "配置目录不存在: $CONFIG_DIR"
+    if [ "$(cd "$CONFIG_DIR" 2>/dev/null && pwd -P)" = "$(cd "$DEPLOY_PATH/conf" 2>/dev/null && pwd -P)" ]; then
+        die "CONFIG_DIR 不能是 $DEPLOY_PATH/conf 自身"
+    fi
+    log "同步配置: $CONFIG_DIR -> $DEPLOY_PATH/conf"
+    mkdir -p "$DEPLOY_PATH/conf"
+    if command -v rsync >/dev/null 2>&1; then
+        rsync -a --delete "$CONFIG_DIR"/ "$DEPLOY_PATH/conf"/
+    else
+        log "未找到 rsync，回退为整体替换 conf/"
+        rm -rf "$DEPLOY_PATH/conf"
+        cp -a "$CONFIG_DIR" "$DEPLOY_PATH/conf"
+    fi
 }
 
 case "$MODE" in
@@ -127,15 +173,20 @@ case "$MODE" in
         mkdir -p "$DEPLOY_PATH"
         log "解压产物: $ARTIFACT -> $DEPLOY_PATH"
         tar xzf "$ARTIFACT" -C "$DEPLOY_PATH"
-        log "覆盖配置: $CONFIG_DIR -> $DEPLOY_PATH/conf"
-        rm -rf "$DEPLOY_PATH/conf"
-        cp -a "$CONFIG_DIR" "$DEPLOY_PATH/conf"
+        sync_config
         chmod +x "$DEPLOY_PATH/$SERVER_BIN" 2>/dev/null || true
         start_service
         ;;
     hot)
         require_artifact
-        is_running || die "服务未运行，无法热启动（请改用 cold）。pid 文件: $(pid_file_path)"
+        server_running || die "服务未运行，无法热启动（请改用 cold）。运行目录: $DEPLOY_PATH"
+        if [ -n "${CONFIG_DIR:-}" ]; then
+            sync_config
+            # 等待进程内 inotify 监听应用新配置，再触发热重载
+            sleep 1
+        else
+            log "CONFIG_DIR 未设置，跳过配置同步（沿用现有 conf/）"
+        fi
         tmp="$(mktemp -d)"
         trap 'rm -rf "$tmp"' EXIT
         log "解压产物到临时目录: $tmp"
@@ -144,12 +195,21 @@ case "$MODE" in
         log "热更新模块: $tmp/module/*.so -> $DEPLOY_PATH/module/"
         mkdir -p "$DEPLOY_PATH/module"
         cp -a "$tmp"/module/*.so "$DEPLOY_PATH/module/"
-        server="$(server_bin)"
-        log "热重载: $server -s reload"
-        ( cd "$DEPLOY_PATH" && "$server" -s reload )
-        sleep 1
-        is_running || die "热重载后服务未存活"
-        log "热启动完成"
+
+        # 优先向真实 worker 发 SIGHUP（等价于 server -s reload，但不依赖 pid 文件/work_path）
+        worker="$(server_worker_pid || true)"
+        if [ -n "$worker" ]; then
+            log "热重载: kill -HUP $worker"
+            kill -HUP "$worker" || die "向 worker($worker) 发送 SIGHUP 失败"
+        else
+            server="$(server_bin)"
+            log "热重载: $server -s reload"
+            ( cd "$DEPLOY_PATH" && "$server" -s reload ) || die "执行 server -s reload 失败"
+        fi
+
+        wait_server_running "$RELOAD_GRACE_SECS" \
+            || die "热重载后 ${RELOAD_GRACE_SECS}s 内未检测到 server 进程存活（运行目录: $DEPLOY_PATH）"
+        log "热启动完成 pids=$(server_pids | tr '\n' ' ')"
         ;;
     stop)
         stop_service
