@@ -14,9 +14,11 @@ on:
   push:
     branches:
     - ci/*
-
     tags:
       - 'v*'
+  pull_request:
+    branches:
+    - master
 
 permissions:
   contents: write
