@@ -26,3 +26,9 @@ oauth:
     callback_url: ${GITHUB_CALLBACK_URL}
     # 授权成功后回跳的前端站点根地址
     frontend_base: ${FRONTEND_BASE}
+
+# Server configuration, including work path, PID file, and email service settings for sending notifications or alerts.
+server:
+  work_path: ${WORK_PATH}
+  data_path: ${DATA_PATH}
+  pid_file: server.pid

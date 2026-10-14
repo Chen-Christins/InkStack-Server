@@ -45,11 +45,6 @@ workers:
   accept:
     thread_num: 1
 
-# Server configuration, including work path, PID file, and email service settings for sending notifications or alerts.
-server:
-  work_path: ${WORK_PATH}
-  pid_file: server.pid
-
 # Logging configuration, defining different loggers for root, system, and access logs with their respective levels, formatters, and appenders.
 logs:
   - name: root

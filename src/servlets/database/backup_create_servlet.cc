@@ -17,7 +17,10 @@ namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
+
+static chen::ConfigVar<std::string>::ptr g_data_path =
+    chen::Config::Lookup<std::string>("server.data_path", std::string(""), "server data storage path");
+
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
@@ -63,8 +66,14 @@ int32_t BackupCreateServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
+        std::string storage_path = g_data_path->getValue();
+        if (storage_path.empty()) {
+            ERROR(logger) << "storage_path is empty";
+            result->setErrno(errcode::INTERNAL_ERROR);
+            break;
+        }
+
         int64_t backup_id = info->getId();
-        std::string work_path = server_work_path->getValue();
         auto mysql_dbs = g_mysql_dbs->getValue();
 
         // Trigger async backup via event bus
@@ -74,7 +83,7 @@ int32_t BackupCreateServlet::handle(chen::http::HttpRequest::ptr request,
             data.type = type;
             data.name = name;
             data.mysql_dbs = mysql_dbs;
-            data.work_path = work_path;
+            data.work_path = storage_path;
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_DATABASE_BACKUP, std::move(data));
         }
 
