@@ -64,11 +64,6 @@ bool BlogModule::onUnload() {
     return true;
 }
 
-bool BlogModule::onActivate() {
-    INFO(logger) << "onActivate";
-    return true;
-}
-
 bool BlogModule::onDeactivate() {
     INFO(logger) << "onDeactivate";
 
