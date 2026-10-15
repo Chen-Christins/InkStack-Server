@@ -119,6 +119,12 @@ constexpr int32_t ORG_APPLY_UPDATE_FAILED = 5016;    // 更新申请失败
 constexpr int32_t ORG_USER_REL_FAILED = 5017;        // 组织成员操作失败
 constexpr int32_t ORG_REPO_NOT_FOUND = 5018;         // 仓库不存在
 constexpr int32_t ORG_REPO_NAME_EXISTS = 5019;       // 同组织下仓库名已存在
+constexpr int32_t ORG_PR_NOT_FOUND = 5020;           // PR 记录不存在
+constexpr int32_t ORG_REPO_TOKEN_MISSING = 5021;     // 仓库未配置 GitHub Token
+constexpr int32_t GITHUB_PR_NOT_FOUND = 5022;        // GitHub 上未找到该 PR
+constexpr int32_t GITHUB_RATE_LIMITED = 5023;        // GitHub API 触发限流
+constexpr int32_t GITHUB_API_FAILED = 5024;          // GitHub API 请求失败
+constexpr int32_t ORG_PR_SYNC_IN_PROGRESS = 5025;    // 该 PR 正在同步中
 
 // ==================== 模块06: 作业模块 (06001-06999) ====================
 constexpr int32_t ASSIGNMENT_NOT_FOUND = 6001;       // 作业不存在

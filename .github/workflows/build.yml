@@ -13,8 +13,7 @@ on:
         options: [prod, dev]
   push:
     branches:
-    - master
-    - ci/*
+      - *
     tags:
       - 'v*'
 

@@ -13,11 +13,18 @@
 #include <json/reader.h>
 #include <json/writer.h>
 
+#include <mutex>
+#include <set>
+
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 1000;
+
+/// 单条 PR 同步互斥锁与进行中集合，避免同一 PR 并发重复请求 GitHub
+static std::mutex s_sync_pr_mutex;
+static std::set<int64_t> s_syncing_pr_ids;
 
 OrganizationRepoPrManager::OrganizationRepoPrManager()
     :m_cache(8, kCacheMaxSize, 0) {
@@ -244,6 +251,72 @@ struct SyncPrItem {
     std::string reviewers;
 };
 
+/// 解析 GitHub reviews 数组，计算整体审查状态与 reviewers JSON
+static void parseReviews(const Json::Value& arr, std::string& review_status, std::string& reviewers_json) {
+    bool has_approved = false;
+    bool has_changes = false;
+    Json::Value reviewerArr(Json::arrayValue);
+    for (auto& rv : arr) {
+        std::string state = rv["state"].asString();
+        if (state == "APPROVED") {
+            has_approved = true;
+        } else if (state == "CHANGES_REQUESTED") {
+            has_changes = true;
+        }
+        Json::Value reviewer;
+        reviewer["reviewer"] = rv["user"]["login"].asString();
+        reviewer["status"] = state;
+        reviewerArr.append(reviewer);
+    }
+    if (has_approved) {
+        review_status = "approved";
+    } else if (has_changes) {
+        review_status = "changes_requested";
+    } else {
+        review_status = "pending";
+    }
+    reviewers_json = chen::JsonUtil::ToString(reviewerArr);
+}
+
+/// 发起 GitHub GET 请求，仅对连接失败/超时重试，返回原始响应（含非 2xx 状态码）
+static chen::http::HttpResult::ptr githubGetRaw(const std::string& url
+        , const std::map<std::string, std::string>& headers, int max_retries) {
+    chen::http::HttpResult::ptr result;
+    for (int retry = 0; retry <= max_retries; ++retry) {
+        result = chen::http::HttpConnection::DoGet(url, 30000, headers);
+        bool transient = (!result
+                || result->result == (int)chen::http::HttpResult::Error::CONNECT_FAIL
+                || result->result == (int)chen::http::HttpResult::Error::TIMEOUT);
+        if (!transient) {
+            return result;
+        }
+        if (retry < max_retries) {
+            WARN(logger) << "githubGetRaw: retry " << (retry + 1) << "/" << max_retries << " for " << url;
+        }
+    }
+    return result;
+}
+
+/// 判断 GitHub 响应是否因限流被拒绝
+static bool isGithubRateLimited(const chen::http::HttpResponse::ptr& response) {
+    if (!response) {
+        return false;
+    }
+    auto status = response->getStatus();
+    if (status == chen::http::HttpStatus::TOO_MANY_REQUESTS) {
+        return true;
+    }
+    if (status == chen::http::HttpStatus::FORBIDDEN) {
+        if (response->getHeader("x-ratelimit-remaining") == "0") {
+            return true;
+        }
+        if (!response->getHeader("retry-after").empty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& repo_path
         , const std::map<std::string, std::string>& headers, chen::IDB::ptr db) {
     // 先解析列表数据
@@ -329,29 +402,11 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
                         Json::Value arr;
                         Json::Reader reader;
                         if (reader.parse(reviews->response->getBody(), arr) && arr.isArray()) {
-                            bool has_approved = false;
-                            bool has_changes = false;
-                            Json::Value reviewerArr(Json::arrayValue);
-                            for (auto& rv : arr) {
-                                std::string state = rv["state"].asString();
-                                if (state == "APPROVED") {
-                                    has_approved = true;
-                                } else if (state == "CHANGES_REQUESTED") {
-                                    has_changes = true;
-                                }
-                                Json::Value reviewer;
-                                reviewer["reviewer"] = rv["user"]["login"].asString();
-                                reviewer["status"] = state;
-                                reviewerArr.append(reviewer);
-                            }
-                            if (has_approved) {
-                                review_statuses[num] = "approved";
-                            } else if (has_changes) {
-                                review_statuses[num] = "changes_requested";
-                            } else {
-                                review_statuses[num] = "pending";
-                            }
-                            reviewers_json[num] = chen::JsonUtil::ToString(reviewerArr);
+                            std::string status;
+                            std::string reviewers;
+                            parseReviews(arr, status, reviewers);
+                            review_statuses[num] = status;
+                            reviewers_json[num] = reviewers;
                         }
                     }
                 }
@@ -532,6 +587,166 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
 
     INFO(logger) << "SyncPrFromGitHub: synced " << total_synced << " PRs across "
         << page_no << " pages for repo " << repo_id;
+}
+
+OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGitHub(int64_t pr_id
+        , data::OrganizationRepoPrsInfo::ptr& out) {
+    auto pr = OrganizationRepoPrMgr::GetInstance()->get(pr_id);
+    if (!pr) {
+        return SyncPrStatus::PR_NOT_FOUND;
+    }
+
+    auto repo = OrganizationRepoMgr::GetInstance()->get(pr->getRepoId());
+    if (!repo) {
+        return SyncPrStatus::REPO_NOT_FOUND;
+    }
+
+    std::string token = repo->getToken();
+    if (token.empty()) {
+        return SyncPrStatus::NO_TOKEN;
+    }
+
+    std::string repo_path = extractGithubRepo(repo->getUrl());
+    if (repo_path.empty()) {
+        ERROR(logger) << "SyncPrFromGitHub: invalid repo url=" << repo->getUrl();
+        return SyncPrStatus::HTTP_ERROR;
+    }
+
+    int32_t number = pr->getGithubPrId();
+    if (number <= 0) {
+        ERROR(logger) << "SyncPrFromGitHub: invalid github_pr_id for pr_id=" << pr_id;
+        return SyncPrStatus::HTTP_ERROR;
+    }
+
+    // 同一 PR 加锁，重复触发直接返回 BUSY
+    {
+        std::lock_guard<std::mutex> lock(s_sync_pr_mutex);
+        if (s_syncing_pr_ids.count(pr_id)) {
+            return SyncPrStatus::BUSY;
+        }
+        s_syncing_pr_ids.insert(pr_id);
+    }
+
+    // RAII 保证任一出口都移除进行中标记
+    struct SyncGuard {
+        int64_t id;
+        explicit SyncGuard(int64_t v)
+            :id(v) {
+        }
+        ~SyncGuard() {
+            std::lock_guard<std::mutex> lock(s_sync_pr_mutex);
+            s_syncing_pr_ids.erase(id);
+        }
+    } guard(pr_id);
+
+    std::map<std::string, std::string> headers;
+    headers["Accept"] = "application/vnd.github.v3+json";
+    headers["Accept-Encoding"] = "identity";
+    headers["User-Agent"] = "Blog-Server/1.0";
+    headers["Authorization"] = "Bearer " + token;
+
+    // 1. 拉取 PR 详情
+    std::string detail_url = "https://api.github.com/repos/" + repo_path + "/pulls/" + std::to_string(number);
+    auto detail = githubGetRaw(detail_url, headers, 3);
+    if (!detail || detail->result != 0 || !detail->response) {
+        ERROR(logger) << "SyncPrFromGitHub: detail request failed pr_id=" << pr_id << " url=" << detail_url;
+        return SyncPrStatus::HTTP_ERROR;
+    }
+    auto detail_status = detail->response->getStatus();
+    if (detail_status == chen::http::HttpStatus::NOT_FOUND) {
+        return SyncPrStatus::GITHUB_NOT_FOUND;
+    }
+    if (isGithubRateLimited(detail->response)) {
+        return SyncPrStatus::RATE_LIMITED;
+    }
+    if (detail_status != chen::http::HttpStatus::OK) {
+        ERROR(logger) << "SyncPrFromGitHub: detail unexpected status=" << (int)detail_status
+            << " pr_id=" << pr_id;
+        return SyncPrStatus::HTTP_ERROR;
+    }
+
+    Json::Value detail_json;
+    Json::Reader detail_reader;
+    if (!detail_reader.parse(detail->response->getBody(), detail_json) || !detail_json.isObject()) {
+        ERROR(logger) << "SyncPrFromGitHub: parse detail failed pr_id=" << pr_id;
+        return SyncPrStatus::HTTP_ERROR;
+    }
+
+    // 2. 回写主字段
+    int64_t created_at = 0;
+    if (detail_json.isMember("created_at") && !detail_json["created_at"].isNull()) {
+        created_at = chen::Str2Time(detail_json["created_at"].asCString());
+    }
+    if (created_at) {
+        pr->setCreateTime(created_at);
+    }
+    pr->setGithubPrId(detail_json["number"].asInt());
+    pr->setTitle(detail_json["title"].asString());
+    pr->setDescription(detail_json["body"].asString());
+    pr->setAuthor(detail_json["user"]["login"].asString());
+    pr->setHeadBranch(detail_json["head"]["ref"].asString());
+    pr->setBaseBranch(detail_json["base"]["ref"].asString());
+    pr->setCommitSha(detail_json["head"]["sha"].asString());
+    pr->setChangedFiles(detail_json["changed_files"].asInt());
+    pr->setAdditions(detail_json["additions"].asInt());
+    pr->setDeletions(detail_json["deletions"].asInt());
+
+    bool merged = detail_json["merged"].asBool();
+    int64_t merged_at = 0;
+    int64_t closed_at = 0;
+    if (detail_json.isMember("merged_at") && !detail_json["merged_at"].isNull()) {
+        merged_at = chen::Str2Time(detail_json["merged_at"].asCString());
+    }
+    if (detail_json.isMember("closed_at") && !detail_json["closed_at"].isNull()) {
+        closed_at = chen::Str2Time(detail_json["closed_at"].asCString());
+    }
+    if (merged || merged_at > 0) {
+        pr->setState("merged");
+    } else {
+        pr->setState(detail_json["state"].asString());
+    }
+    pr->setClosedAt(closed_at > 0 ? closed_at : emptyTimestamp());
+    pr->setMergedAt(merged_at > 0 ? merged_at : emptyTimestamp());
+
+    // 3. 拉取 reviews；失败时保留原有评审字段，整体仍视为成功
+    std::string reviews_url = detail_url + "/reviews";
+    auto reviews = githubGetRaw(reviews_url, headers, 3);
+    if (reviews && reviews->result == 0 && reviews->response) {
+        auto reviews_status = reviews->response->getStatus();
+        if (reviews_status == chen::http::HttpStatus::OK) {
+            Json::Value arr;
+            Json::Reader reviews_reader;
+            if (reviews_reader.parse(reviews->response->getBody(), arr) && arr.isArray()) {
+                std::string review_status;
+                std::string reviewers_json;
+                parseReviews(arr, review_status, reviewers_json);
+                pr->setReviewStatus(review_status);
+                pr->setReviewers(reviewers_json);
+            }
+        } else if (isGithubRateLimited(reviews->response)) {
+            WARN(logger) << "SyncPrFromGitHub: reviews rate limited pr_id=" << pr_id;
+        }
+    }
+
+    pr->setUpdateTime(time(0));
+
+    // 4. 写回 DB
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "SyncPrFromGitHub: GetDB failed pr_id=" << pr_id;
+        return SyncPrStatus::DB_ERROR;
+    }
+    if (data::OrganizationRepoPrsInfoDao::Update(pr, db)) {
+        ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << pr->getGithubPrId()
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+        return SyncPrStatus::DB_ERROR;
+    }
+    OrganizationRepoPrMgr::GetInstance()->add(pr);
+    out = pr;
+
+    INFO(logger) << "SyncPrFromGitHub: synced pr_id=" << pr_id << " PR #" << pr->getGithubPrId()
+        << " state=" << pr->getState();
+    return SyncPrStatus::OK;
 }
 
 data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndName(const std::string& owner, const std::string& name) {

@@ -94,6 +94,12 @@
     { "errno": 5017,  "key": "ORG_USER_REL_FAILED",         "zh": "组织成员操作失败",           "en": "Organization member operation failed" },
     { "errno": 5018,  "key": "ORG_REPO_NOT_FOUND",          "zh": "仓库不存在",               "en": "Repository not found" },
     { "errno": 5019,  "key": "ORG_REPO_NAME_EXISTS",        "zh": "该组织下已存在同名仓库",      "en": "Repository name already exists in this organization" },
+    { "errno": 5020,  "key": "ORG_PR_NOT_FOUND",            "zh": "PR 记录不存在",            "en": "PR record not found" },
+    { "errno": 5021,  "key": "ORG_REPO_TOKEN_MISSING",      "zh": "仓库未配置 GitHub Token",  "en": "Repository GitHub token not configured" },
+    { "errno": 5022,  "key": "GITHUB_PR_NOT_FOUND",         "zh": "GitHub 上未找到该 PR",      "en": "PR not found on GitHub" },
+    { "errno": 5023,  "key": "GITHUB_RATE_LIMITED",         "zh": "GitHub API 触发限流，请稍后再试", "en": "GitHub API rate limit exceeded, please try again later" },
+    { "errno": 5024,  "key": "GITHUB_API_FAILED",           "zh": "GitHub API 请求失败",       "en": "GitHub API request failed" },
+    { "errno": 5025,  "key": "ORG_PR_SYNC_IN_PROGRESS",     "zh": "该 PR 正在同步中，请稍后",   "en": "PR sync already in progress, please wait" },
 
     { "errno": 6001,  "key": "ASSIGNMENT_NOT_FOUND",        "zh": "作业不存在",               "en": "Assignment not found" },
     { "errno": 6002,  "key": "ASSIGNMENT_INVALID_ID",       "zh": "作业ID无效",              "en": "Invalid assignment ID" },

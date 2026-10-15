@@ -26,6 +26,9 @@
 
 手动全量同步接口 `/api/v1/organization/repos/prs/sync` 保持全量行为不变。
 
+传 `id`（本地 PR 记录 id）时走单条同步：拉取该 PR 详情与 reviews 后回写，
+GitHub 404 / 限流等错误直接返回非零 errno；传 `repo_id` 时仍为异步全量同步。
+
 ## 问题二：PR insert 失败
 
 ### 现象
