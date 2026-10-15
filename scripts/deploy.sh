@@ -194,7 +194,7 @@ case "$MODE" in
         [ -d "$tmp/module" ] || die "产物内没有 module/ 目录"
         log "热更新模块: $tmp/module/*.so -> $DEPLOY_PATH/module/"
         mkdir -p "$DEPLOY_PATH/module"
-        cp -a "$tmp"/module/*.so "$DEPLOY_PATH/module/"
+        mv "$tmp"/module/*.so "$DEPLOY_PATH/module/"
 
         # 优先向真实 worker 发 SIGHUP（等价于 server -s reload，但不依赖 pid 文件/work_path）
         worker="$(server_worker_pid || true)"
