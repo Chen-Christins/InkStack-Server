@@ -7,7 +7,7 @@
 #     ./deploy.sh --mode cold|hot|stop --artifact /tmp/techhaven-server-v1.2.3-amd64.tar.gz
 #
 #   cold : 停服 → 清空运行目录 → 解压产物 → 用 CONFIG_DIR 覆盖 conf/ → ./server -d 启动
-#   hot  : 同步 CONFIG_DIR → conf/ → 拷贝 module/*.so → 向 worker 发 SIGHUP → 存活检测
+#   hot  : 同步 CONFIG_DIR → conf/ → 拷贝 module/*.so → 向 master 发 SIGHUP → 存活检测
 #   stop : 仅执行 ./server -s stop
 #
 set -euo pipefail
@@ -70,14 +70,16 @@ server_pids() {
 
 server_running() { [ -n "$(server_pids)" ]; }
 
-# 真正处理 SIGHUP 的 worker：其父进程也是本部署的 server 进程
-# （supervisor 未注册信号处理器，向其发 SIGHUP 会因默认动作而退出）
-server_worker_pid() {
+# 真正处理 SIGHUP 的是 master：新模型下 master fork worker，
+# worker 会 signal(SIGHUP, SIG_IGN)，向其发 HUP 不会触发热重载。
+# master = 父进程不在本部署 server 进程集合中的那个进程
+# （daemon 化后 PPid=1，前台运行时为 shell，均不在集合内）。
+server_master_pid() {
     local pids p ppid
     pids="$(server_pids | tr '\n' ' ')"
     for p in $pids; do
         ppid="$(awk '/^PPid:/{print $2}' "/proc/$p/status" 2>/dev/null || true)"
-        case " $pids " in *" $ppid "*) printf '%s' "$p"; return 0 ;; esac
+        case " $pids " in *" $ppid "*) ;; *) printf '%s' "$p"; return 0 ;; esac
     done
     return 1
 }
@@ -196,11 +198,11 @@ case "$MODE" in
         mkdir -p "$DEPLOY_PATH/module"
         mv "$tmp"/module/*.so "$DEPLOY_PATH/module/"
 
-        # 优先向真实 worker 发 SIGHUP（等价于 server -s reload，但不依赖 pid 文件/work_path）
-        worker="$(server_worker_pid || true)"
-        if [ -n "$worker" ]; then
-            log "热重载: kill -HUP $worker"
-            kill -HUP "$worker" || die "向 worker($worker) 发送 SIGHUP 失败"
+        # 优先向 master 发 SIGHUP（触发 master fork 新 worker，不依赖 pid 文件/work_path）
+        master="$(server_master_pid || true)"
+        if [ -n "$master" ]; then
+            log "热重载: kill -HUP $master"
+            kill -HUP "$master" || die "向 master($master) 发送 SIGHUP 失败"
         else
             server="$(server_bin)"
             log "热重载: $server -s reload"
