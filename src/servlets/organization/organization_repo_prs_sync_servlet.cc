@@ -1,6 +1,6 @@
 /**
  * @file organization_repo_prs_sync_servlet.cc
- * @brief 组织仓库 PR 全量同步接口实现
+ * @brief 组织仓库 PR 同步接口实现（repo_id 全量 / id 单条）
  * @author Christins
  * @date 2026-06-24
  * @copyright Apache 2.0
@@ -22,6 +22,39 @@ namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+/// 将单条同步状态映射为业务错误码（OK 不处理）
+static void MapSyncPrError(OrganizationRepoPrManager::SyncPrStatus st, Result::ptr result) {
+    switch (st) {
+    case OrganizationRepoPrManager::SyncPrStatus::PR_NOT_FOUND:
+        result->setErrno(errcode::ORG_PR_NOT_FOUND);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::REPO_NOT_FOUND:
+        result->setErrno(errcode::ORG_REPO_NOT_FOUND);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::NO_TOKEN:
+        result->setErrno(errcode::ORG_REPO_TOKEN_MISSING);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::GITHUB_NOT_FOUND:
+        result->setErrno(errcode::GITHUB_PR_NOT_FOUND);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::RATE_LIMITED:
+        result->setErrno(errcode::GITHUB_RATE_LIMITED);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::BUSY:
+        result->setErrno(errcode::ORG_PR_SYNC_IN_PROGRESS);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::HTTP_ERROR:
+        result->setErrno(errcode::GITHUB_API_FAILED);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::DB_ERROR:
+        result->setErrno(errcode::DB_OPERATION_FAILED);
+        break;
+    case OrganizationRepoPrManager::SyncPrStatus::OK:
+    default:
+        break;
+    }
+}
+
 OrganizationRepoPrsSyncServlet::OrganizationRepoPrsSyncServlet()
     : BlogLoginedServlet("OrganizationRepoPrsSyncServlet") {
 }
@@ -29,12 +62,27 @@ OrganizationRepoPrsSyncServlet::OrganizationRepoPrsSyncServlet()
 int32_t OrganizationRepoPrsSyncServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        DEFINE_AND_CHECK_TYPE(result, int64_t, repo_id, "repo_id");
+        int64_t id = request->getParamAs<int64_t>("id", 0);
+        int64_t repo_id = request->getParamAs<int64_t>("repo_id", 0);
+        if (!id && !repo_id) {
+            result->setErrno(errcode::PARAM_MISSING, "param id or repo_id is required");
+            break;
+        }
 
         int64_t uid = getUserId(request);
         if (!uid) {
             result->setErrno(errcode::NOT_LOGIN);
             break;
+        }
+
+        // 传 id 时定位到其所属仓库
+        if (id) {
+            auto pr = OrganizationRepoPrMgr::GetInstance()->get(id);
+            if (!pr) {
+                result->setErrno(errcode::ORG_PR_NOT_FOUND);
+                break;
+            }
+            repo_id = pr->getRepoId();
         }
 
         // 检查仓库是否存在
@@ -66,6 +114,45 @@ int32_t OrganizationRepoPrsSyncServlet::handle(chen::http::HttpRequest::ptr requ
                 result->setErrno(errcode::ACCESS_DENIED, "仅研发主管及以上角色可同步 PR");
                 break;
             }
+        }
+
+        if (id) {
+            // 单条 PR 同步：同步执行，便于直接返回 GitHub 错误
+            if (token.empty()) {
+                result->setErrno(errcode::ORG_REPO_TOKEN_MISSING);
+                break;
+            }
+
+            data::OrganizationRepoPrsInfo::ptr updated;
+            auto st = OrganizationRepoPrManager::SyncPrFromGitHub(id, updated);
+            if (st != OrganizationRepoPrManager::SyncPrStatus::OK) {
+                MapSyncPrError(st, result);
+                break;
+            }
+
+            Json::Value item;
+            item["id"] = (Json::Int64)updated->getId();
+            item["repo_id"] = (Json::Int64)updated->getRepoId();
+            item["github_pr_id"] = updated->getGithubPrId();
+            item["title"] = updated->getTitle();
+            item["description"] = updated->getDescription();
+            item["state"] = updated->getState();
+            item["priority"] = updated->getPriority();
+            item["author"] = updated->getAuthor();
+            item["head_branch"] = updated->getHeadBranch();
+            item["base_branch"] = updated->getBaseBranch();
+            item["commit_sha"] = updated->getCommitSha().substr(0, 7);
+            item["changed_files"] = updated->getChangedFiles();
+            item["additions"] = updated->getAdditions();
+            item["deletions"] = updated->getDeletions();
+            item["reviewers"] = updated->getReviewers();
+            item["review_status"] = updated->getReviewStatus();
+            item["closed_at"] = (Json::Int64)updated->getClosedAt();
+            item["merged_at"] = (Json::Int64)updated->getMergedAt();
+            item["created_at"] = (Json::Int64)updated->getCreateTime();
+            item["updated_at"] = (Json::Int64)updated->getUpdateTime();
+            result->jsondata = item;
+            break;
         }
 
         // 异步调度全量同步

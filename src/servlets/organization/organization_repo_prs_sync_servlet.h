@@ -1,6 +1,6 @@
 /**
  * @file organization_repo_prs_sync_servlet.h
- * @brief 组织仓库 PR 全量同步接口
+ * @brief 组织仓库 PR 同步接口（repo_id 全量 / id 单条）
  * @author Christins
  * @date 2026-06-24
  * @copyright Apache 2.0

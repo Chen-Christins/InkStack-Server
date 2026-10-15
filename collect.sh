@@ -70,7 +70,7 @@ echo "==> 打包环境 [$ENV_NAME]"
 
 # 清理并创建部署目录骨架
 rm -rf "$STAGE_DIR"
-mkdir -p "$STAGE_DIR/conf" "$STAGE_DIR/module" "$STAGE_DIR/lib" "$STAGE_DIR/logs"
+mkdir -p "$STAGE_DIR/conf" "$STAGE_DIR/module" "$STAGE_DIR/lib"
 
 # 1. 渲染配置到 dist/conf（WORK_PATH 等取自 <ENV>.env）
 OUT_CONF_DIR="$STAGE_DIR/conf" "$ROOT_DIR/switch-env.sh" "$ENV_NAME"
@@ -93,7 +93,7 @@ done
 cp "$CHEN_SDK_LIB" "$STAGE_DIR/lib/"
 
 # 4. 拷贝字典与错误码
-cp -R "$ROOT_DIR/dict" "$STAGE_DIR/dict"
+#cp -R "$ROOT_DIR/dict" "$STAGE_DIR/dict"
 cp "$ROOT_DIR/errors.json" "$STAGE_DIR/errors.json"
 
 # 5. 打包
