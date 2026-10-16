@@ -62,6 +62,7 @@ jobs:
             libssl-dev \
             libevent-dev \
             libmysqlclient-dev \
+            ccache \
             redis \
             libnghttp2-dev \
             git \
@@ -80,8 +81,18 @@ jobs:
       - name: Generate ORM data
         run: make orm
 
-      - name: Build module
-        run: make -j"$(nproc)"
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ matrix.arch }}-${{ hashFiles('src/**') }}
+          restore-keys: ccache-${{ matrix.arch }}-
+
+      - name: Configure (Release, Ninja)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
 
       - name: Prepare prod.env (from GitHub Secrets)
         if: env.PKG_ENV == 'prod'
