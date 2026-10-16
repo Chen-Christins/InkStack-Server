@@ -453,8 +453,8 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
             chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:total_visits");
             auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:today_visits");
             if (rpy && rpy->integer == 1) {
-                int64_t now = time(0);
-                int64_t tomorrow_midnight = now - (now % 86400) + 86400;
+                int64_t now = chen::GetCurrentSec();
+                int64_t tomorrow_midnight = chen::GetDayStart(now + 86400);
                 chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "expireat blog:today_visits %lld", tomorrow_midnight);
             }
             chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "pfadd blog:visitors %lld", user_id);
