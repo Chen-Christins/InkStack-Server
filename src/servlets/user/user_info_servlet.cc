@@ -45,6 +45,7 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         result->set("website", info->getWebsite());
         result->set("location", info->getLocation());
         result->set("status", info->getIsDeleted());
+        result->set("github", info->getGithub());
         result->set("login_time", info->getLoginTime());
         result->set("create_time", info->getCreateTime());
         result->set("following_count", UserFollowRelMgr::GetInstance()->countFollowing(uid));
