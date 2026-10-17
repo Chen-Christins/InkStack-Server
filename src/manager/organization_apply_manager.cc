@@ -11,23 +11,27 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 OrganizationApplyManager::OrganizationApplyManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::OrganizationApplyInfo::ptr OrganizationApplyManager::parseRow(chen::ISQLData::ptr rt) {
+data::OrganizationApplyInfo::ptr OrganizationApplyManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::OrganizationApplyInfoDao::ParseRow(rt);
 }
 
-
-void OrganizationApplyManager::add(data::OrganizationApplyInfo::ptr info) {
+void OrganizationApplyManager::add(data::OrganizationApplyInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-void OrganizationApplyManager::update(data::OrganizationApplyInfo::ptr info) {
+void OrganizationApplyManager::update(data::OrganizationApplyInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::OrganizationApplyInfo::ptr OrganizationApplyManager::get(int64_t id) {
+data::OrganizationApplyInfo::ptr OrganizationApplyManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -44,8 +48,13 @@ data::OrganizationApplyInfo::ptr OrganizationApplyManager::get(int64_t id) {
     return v;
 }
 
-int64_t OrganizationApplyManager::listByPages(std::vector<data::OrganizationApplyInfo::ptr>& results
-        , uint64_t offset, uint64_t limit, int32_t status, bool isValid) {
+int64_t OrganizationApplyManager::listByPages(
+    std::vector<data::OrganizationApplyInfo::ptr>& results,
+    uint64_t offset,
+    uint64_t limit,
+    int32_t status,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -68,8 +77,13 @@ int64_t OrganizationApplyManager::listByPages(std::vector<data::OrganizationAppl
     return total;
 }
 
-int64_t OrganizationApplyManager::listByUserId(std::vector<data::OrganizationApplyInfo::ptr>& results
-        , int64_t user_id, uint64_t offset, uint64_t limit, bool isValid) {
+int64_t OrganizationApplyManager::listByUserId(
+    std::vector<data::OrganizationApplyInfo::ptr>& results,
+    int64_t user_id,
+    uint64_t offset,
+    uint64_t limit,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -92,4 +106,4 @@ int64_t OrganizationApplyManager::listByUserId(std::vector<data::OrganizationApp
     return total;
 }
 
-}
+} // namespace blog

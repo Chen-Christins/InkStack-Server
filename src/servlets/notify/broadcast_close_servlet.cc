@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 BroadcastCloseServlet::BroadcastCloseServlet()
-    :BlogLoginedServlet("BroadcastCloseServlet") {
+    : BlogLoginedServlet("BroadcastCloseServlet")
+{
 }
 
-int32_t BroadcastCloseServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t BroadcastCloseServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         auto uinfo = UserMgr::GetInstance()->get(uid);
@@ -53,5 +58,5 @@ int32_t BroadcastCloseServlet::handle(chen::http::HttpRequest::ptr request, chen
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

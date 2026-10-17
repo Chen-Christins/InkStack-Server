@@ -71,9 +71,10 @@ public:
 
     int32_t search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params, uint32_t max_size);
 
-    int32_t property(std::map<uint64_t, std::map<uint64_t, uint64_t>>& props,
-                     const std::map<uint64_t, std::set<uint64_t>>& params,
-                     std::map<uint64_t, std::set<uint64_t>>& querys);
+    int32_t property(
+        std::map<uint64_t, std::map<uint64_t, uint64_t>>& props,
+        const std::map<uint64_t, std::set<uint64_t>>& params,
+        std::map<uint64_t, std::set<uint64_t>>& querys);
 
     static uint64_t StrHash(const std::string& str);
 

@@ -1,13 +1,13 @@
 #include "article_manager.h"
 
-#include "cache_util.h"
 #include "../index.h"
 #include "../util.h"
+#include "cache_util.h"
 
-#include <chen/log/log.h>
-#include <chen/iomanager/iomanager.h>
-#include <chen/db/redis.h>
 #include <chen/config/config.h>
+#include <chen/db/redis.h>
+#include <chen/iomanager/iomanager.h>
+#include <chen/log/log.h>
 
 #include <ctime>
 #include <set>
@@ -18,22 +18,25 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 1000;
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 ArticleManager::ArticleManager()
-    :m_cache(32, kCacheMaxSize, 0) {
+    : m_cache(32, kCacheMaxSize, 0)
+{
 }
 
-data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt) {
+data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::ArticleInfoDao::ParseRow(rt);
 }
 
-void ArticleManager::add(blog::data::ArticleInfo::ptr info) {
+void ArticleManager::add(blog::data::ArticleInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id) {
+blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -50,7 +53,8 @@ blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id) {
     return v;
 }
 
-bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, bool valid) {
+bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -75,8 +79,8 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
     return true;
 }
 
-int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t id
-        , int32_t offset, int32_t size, bool valid, int state) {
+int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, int32_t offset, int32_t size, bool valid, int state)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -103,15 +107,17 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
     return total;
 }
 
-int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t label_id
-        ,int32_t offset, int32_t size, bool valid) {
+int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t label_id, int32_t offset, int32_t size, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
     auto qb = data::ArticleInfoDao::newQuery("a");
-    qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
+    qb->select(
+        "a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, "
+        "a.create_time, a.update_time");
     qb->join("article_label_rel alr", "a.id = alr.article_id");
     qb->where("alr.label_id", "=", label_id);
     qb->where("alr.is_deleted", "=", (int64_t)0);
@@ -120,8 +126,8 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
     qb->orderBy("a.id", "DESC");
 
     // 结果缓存：仅对首页做缓存
-    std::string listKey = "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0")
-                        + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::string listKey =
+        "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0") + ":" + std::to_string(offset) + ":" + std::to_string(size);
     std::vector<int64_t> cachedIds;
     if (getCachedListResult(listKey, cachedIds)) {
         for (auto id : cachedIds) {
@@ -145,15 +151,17 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
     return total;
 }
 
-int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t category_id
-        ,int32_t offset, int32_t size, bool valid) {
+int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t category_id, int32_t offset, int32_t size, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
     auto qb = data::ArticleInfoDao::newQuery("a");
-    qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
+    qb->select(
+        "a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, "
+        "a.create_time, a.update_time");
     qb->join("article_category_rel acr", "a.id = acr.article_id");
     qb->where("acr.category_id", "=", category_id);
     qb->where("acr.is_deleted", "=", (int64_t)0);
@@ -162,8 +170,8 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
     qb->orderBy("a.id", "DESC");
 
     // 结果缓存：仅对首页做缓存
-    std::string listKey = "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0")
-                        + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::string listKey =
+        "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0") + ":" + std::to_string(offset) + ":" + std::to_string(size);
     std::vector<int64_t> cachedIds;
     if (getCachedListResult(listKey, cachedIds)) {
         for (auto id : cachedIds) {
@@ -187,8 +195,16 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
     return total;
 }
 
-int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
-        , int category, int32_t role, int32_t days, int32_t size, bool valid) {
+int64_t ArticleManager::listByPages(
+    std::vector<data::ArticleInfo::ptr>& infos,
+    int32_t offset,
+    int state,
+    int category,
+    int32_t role,
+    int32_t days,
+    int32_t size,
+    bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -196,7 +212,9 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
     }
 
     auto qb = data::ArticleInfoDao::newQuery("a");
-    qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
+    qb->select(
+        "a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, "
+        "a.create_time, a.update_time");
 
     if (category > 0) {
         qb->join("article_category_rel acr", "a.id = acr.article_id");
@@ -235,15 +253,18 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
     }
 }
 
-void ArticleManager::delVerify(int64_t id) {
+void ArticleManager::delVerify(int64_t id)
+{
     m_cache.del(id);
 }
 
-void ArticleManager::addVerify(data::ArticleInfo::ptr info) {
+void ArticleManager::addVerify(data::ArticleInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int32_t size) {
+int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int32_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -266,7 +287,8 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
     return total;
 }
 
-std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby(int64_t id) {
+std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby(int64_t id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -318,7 +340,8 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
     return std::pair(prev, next);
 }
 
-ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword) {
+ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword)
+{
     ArticleStats stats;
 
     // 无过滤条件时走缓存
@@ -376,9 +399,15 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
     for (auto& [st, cnt] : rows) {
         stats.total += cnt;
         switch (st) {
-        case CHECKING:  stats.pending += cnt;   break;
-        case PUBLISHED: stats.published += cnt; break;
-        case REJECTED:  stats.rejected += cnt;  break;
+        case CHECKING:
+            stats.pending += cnt;
+            break;
+        case PUBLISHED:
+            stats.published += cnt;
+            break;
+        case REJECTED:
+            stats.rejected += cnt;
+            break;
         }
     }
 
@@ -392,22 +421,26 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
     return stats;
 }
 
-std::string ArticleManager::statusString() {
+std::string ArticleManager::statusString()
+{
     std::stringstream ss;
     ss << "ArticleManager cache=" << m_cache.toStatusString();
     return ss.str();
 }
 
-void ArticleManager::start() {
+void ArticleManager::start()
+{
     syncStatsFromDB();
 }
 
-void ArticleManager::stop() {
+void ArticleManager::stop()
+{
     // 停止前将脏数据（浏览/点赞/收藏数）刷新到 DB，避免 reload/stop 时丢失
     flushDirty();
 }
 
-void ArticleManager::flushDirty() {
+void ArticleManager::flushDirty()
+{
     std::set<int64_t> updates;
     {
         std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
@@ -440,7 +473,8 @@ void ArticleManager::flushDirty() {
     INFO(logger) << "flushDirty: flushed " << updates.size() << " articles";
 }
 
-bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id)
+{
     auto info = get(id);
     if (!info) {
         return false;
@@ -453,8 +487,8 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
             chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:total_visits");
             auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:today_visits");
             if (rpy && rpy->integer == 1) {
-                int64_t now = chen::GetCurrentSec();
-                int64_t tomorrow_midnight = chen::GetDayStart(now + 86400);
+                int64_t now = chen::TimeUtil::GetCurrentSec();
+                int64_t tomorrow_midnight = chen::TimeUtil::GetDayStart(now + 86400);
                 chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "expireat blog:today_visits %lld", tomorrow_midnight);
             }
             chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "pfadd blog:visitors %lld", user_id);
@@ -463,7 +497,8 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
     return true;
 }
 
-bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id)
+{
     auto info = get(id);
     if (!info) {
         return false;
@@ -490,7 +525,8 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
     return true;
 }
 
-bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id)
+{
     auto info = get(id);
     if (!info) {
         return false;
@@ -517,7 +553,8 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
     return true;
 }
 
-bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id)
+{
     auto info = get(id);
     if (!info) {
         return false;
@@ -547,7 +584,8 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
     return true;
 }
 
-bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id)
+{
     auto info = get(id);
     if (!info) {
         return false;
@@ -577,7 +615,8 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
     return true;
 }
 
-bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles) {
+bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles)
+{
 #define PROC(id, mask, articles)                                                                               \
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), mask, id);                                  \
     if (!rpy) {                                                                                                \
@@ -592,36 +631,43 @@ bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& article
     PROC(id, "hgetall fav_u2a:%lld", articles);
 }
 
-bool ArticleManager::listUserPra(int64_t id, std::map<int64_t, int64_t>& articles) {
+bool ArticleManager::listUserPra(int64_t id, std::map<int64_t, int64_t>& articles)
+{
     PROC(id, "hgetall pra_u2a:%lld", articles);
 }
 
-bool ArticleManager::listArticleFav(int64_t id, std::map<int64_t, int64_t>& users) {
+bool ArticleManager::listArticleFav(int64_t id, std::map<int64_t, int64_t>& users)
+{
     PROC(id, "hgetall fav_a2u:%lld", users);
 }
 
-bool ArticleManager::listArticlePra(int64_t id, std::map<int64_t, int64_t>& users) {
+bool ArticleManager::listArticlePra(int64_t id, std::map<int64_t, int64_t>& users)
+{
     PROC(id, "hgetall pra_a2u:%lld", users);
 }
 #undef PROC
 
 static const char* kScheduleKey = "article:schedule";
 
-void ArticleManager::scheduleArticle(int64_t article_id, int64_t publish_time) {
+void ArticleManager::scheduleArticle(int64_t article_id, int64_t publish_time)
+{
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zadd %s %lld %lld", kScheduleKey, (long long)publish_time, (long long)article_id);
 }
 
-void ArticleManager::unscheduleArticle(int64_t article_id) {
+void ArticleManager::unscheduleArticle(int64_t article_id)
+{
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrem %s %lld", kScheduleKey, (long long)article_id);
 }
 
-void ArticleManager::onTick() {
+void ArticleManager::onTick()
+{
     doArticlePublishSchedule();
 
     flushDirty();
 }
 
-bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
+bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id)
+{
     time_t now = time(0);
     std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
     auto it = m_viewsCache.find(id);
@@ -635,12 +681,14 @@ bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
     return true;
 }
 
-void ArticleManager::addUpdate(int64_t id) {
+void ArticleManager::addUpdate(int64_t id)
+{
     std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
     m_updates.insert(id);
 }
 
-void ArticleManager::incPraiseCount(int64_t id) {
+void ArticleManager::incPraiseCount(int64_t id)
+{
     auto info = get(id);
     if (!info) {
         return;
@@ -649,7 +697,8 @@ void ArticleManager::incPraiseCount(int64_t id) {
     addUpdate(id);
 }
 
-void ArticleManager::decPraiseCount(int64_t id) {
+void ArticleManager::decPraiseCount(int64_t id)
+{
     auto info = get(id);
     if (!info) {
         return;
@@ -660,7 +709,8 @@ void ArticleManager::decPraiseCount(int64_t id) {
     }
 }
 
-int64_t ArticleManager::getTodayViews() {
+int64_t ArticleManager::getTodayViews()
+{
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get blog:today_visits");
     if (rpy && rpy->str) {
         return chen::TypeUtil::Atoi(rpy->str);
@@ -668,7 +718,8 @@ int64_t ArticleManager::getTodayViews() {
     return 0;
 }
 
-int64_t ArticleManager::getTotalViews() {
+int64_t ArticleManager::getTotalViews()
+{
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get blog:total_visits");
     if (rpy && rpy->str) {
         return chen::TypeUtil::Atoi(rpy->str);
@@ -688,7 +739,8 @@ int64_t ArticleManager::getTotalViews() {
     return total;
 }
 
-int64_t ArticleManager::getTotalVisitors() {
+int64_t ArticleManager::getTotalVisitors()
+{
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "pfcount blog:visitors");
     if (rpy) {
         return rpy->integer;
@@ -696,13 +748,15 @@ int64_t ArticleManager::getTotalVisitors() {
     return 0;
 }
 
-void ArticleManager::syncStatsFromDB() {
+void ArticleManager::syncStatsFromDB()
+{
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del blog:total_visits");
     int64_t total = getTotalViews();
     INFO(logger) << "syncStatsFromDB: blog:total_visits recalculated from DB = " << total;
 }
 
-void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t month, std::vector<int32_t>& days) {
+void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t month, std::vector<int32_t>& days)
+{
     // 先查 Redis 缓存
     {
         auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "GET calendar:%lld:%d:%d", user_id, year, month);
@@ -759,7 +813,8 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     }
 }
 
-void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime) {
+void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime)
+{
     time_t pt = static_cast<time_t>(publishTime);
     struct tm tm_pt = {};
     localtime_r(&pt, &tm_pt);
@@ -768,8 +823,9 @@ void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime) {
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "DEL calendar:%lld:%d:%d", user_id, year, month);
 }
 
-void ArticleManager::doArticlePublishSchedule() {
-    time_t now = chen::GetCurrentSec();
+void ArticleManager::doArticlePublishSchedule()
+{
+    time_t now = chen::TimeUtil::GetCurrentSec();
 
     // 从 Redis sorted set 获取已到期的文章 ID
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrangebyscore %s 0 %lld", kScheduleKey, now);
@@ -822,8 +878,7 @@ void ArticleManager::doArticlePublishSchedule() {
         info->setUpdateTime(now);
 
         if (data::ArticleInfoDao::Update(info, db)) {
-            ERROR(logger) << "Update error errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr() << " data=" << info->toJsonString();
+            ERROR(logger) << "Update error errno=" << db->getErrno() << " errstr=" << db->getErrStr() << " data=" << info->toJsonString();
             continue;
         }
         m_cache.set(id, info);

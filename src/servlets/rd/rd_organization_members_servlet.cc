@@ -8,11 +8,16 @@ namespace blog {
 namespace servlet {
 
 RdOrganizationMembersServlet::RdOrganizationMembersServlet()
-    : BlogLoginedServlet("RdOrganizationMembersServlet") {
+    : BlogLoginedServlet("RdOrganizationMembersServlet")
+{
 }
 
-int32_t RdOrganizationMembersServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdOrganizationMembersServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
 
@@ -45,5 +50,5 @@ int32_t RdOrganizationMembersServlet::handle(chen::http::HttpRequest::ptr reques
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

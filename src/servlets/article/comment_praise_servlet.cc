@@ -1,10 +1,10 @@
 #include "comment_praise_servlet.h"
 
-#include "../../manager/comment_praise_rel_manager.h"
+#include "../../event/event_define.h"
 #include "../../manager/comment_manager.h"
+#include "../../manager/comment_praise_rel_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -12,11 +12,16 @@ namespace blog {
 namespace servlet {
 
 CommentPraiseServlet::CommentPraiseServlet()
-    : BlogLoginedServlet("CommentPraiseServlet") {
+    : BlogLoginedServlet("CommentPraiseServlet")
+{
 }
 
-int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CommentPraiseServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -54,7 +59,7 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
             // Notify comment author (not self-praise)
             if (comment->getUserId() != uid) {
                 auto liker_info = UserMgr::GetInstance()->get(uid);
-                
+
                 EventCommentPraiseData data = {};
                 data.comment_author_id = comment->getUserId();
                 data.liker_id = uid;
@@ -75,5 +80,5 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

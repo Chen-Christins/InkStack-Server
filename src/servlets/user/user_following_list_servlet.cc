@@ -7,12 +7,16 @@ namespace blog {
 namespace servlet {
 
 UserFollowingListServlet::UserFollowingListServlet()
-    : BlogLoginedServlet("UserFollowingListServlet") {
+    : BlogLoginedServlet("UserFollowingListServlet")
+{
 }
 
-int32_t UserFollowingListServlet::handle(chen::http::HttpRequest::ptr request,
+int32_t UserFollowingListServlet::handle(
+    chen::http::HttpRequest::ptr request,
     chen::http::HttpResponse::ptr response,
-    chen::http::HttpSession::ptr session, Result::ptr result) {
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -58,5 +62,5 @@ int32_t UserFollowingListServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

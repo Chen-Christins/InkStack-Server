@@ -7,9 +7,9 @@
  */
 #pragma once
 
-#include <string>
 #include <map>
 #include <memory>
+#include <string>
 
 #include <chen/util/singleton.h>
 
@@ -75,8 +75,8 @@ public:
 private:
     std::string m_configPath;
     std::string m_version;
-    std::map<int32_t, std::string> m_zhMessages;  // errno → 中文消息
-    std::map<int32_t, std::string> m_enMessages;  // errno → 英文消息
+    std::map<int32_t, std::string> m_zhMessages; // errno → 中文消息
+    std::map<int32_t, std::string> m_enMessages; // errno → 英文消息
 };
 
 typedef chen::Singleton<ErrorCodeManager> ErrorCodeMgr;

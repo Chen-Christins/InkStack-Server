@@ -1,7 +1,7 @@
 #include "article_label_rel_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,19 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 ArticleLabelRelManager::ArticleLabelRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::ArticleLabelRelInfoDao::ParseRow(rt);
 }
 
-
-void ArticleLabelRelManager::add(data::ArticleLabelRelInfo::ptr info) {
+void ArticleLabelRelManager::add(data::ArticleLabelRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id) {
+data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -41,8 +44,8 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id) {
     return v;
 }
 
-bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
-        , int64_t id, bool valid) {
+bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelInfo::ptr>& infos, int64_t id, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -64,8 +67,8 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
     return true;
 }
 
-bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
-        , int64_t label_id, bool valid) {
+bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo::ptr>& infos, int64_t label_id, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -87,7 +90,8 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
     return true;
 }
 
-data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int64_t article_id, int64_t label_id) {
+data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int64_t article_id, int64_t label_id)
+{
     std::string ck = "alr:" + std::to_string(article_id) + ":" + std::to_string(label_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -106,4 +110,4 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int
     return info;
 }
 
-}
+} // namespace blog

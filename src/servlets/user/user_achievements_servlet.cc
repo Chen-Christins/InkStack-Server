@@ -20,13 +20,15 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAchievementsServlet::UserAchievementsServlet()
-    :BlogLoginedServlet("UserAchievementsServlet") {
+    : BlogLoginedServlet("UserAchievementsServlet")
+{
 }
 
 namespace {
 
 // 日期计数映射为热力等级 0-4
-int32_t countToLevel(int32_t count) {
+int32_t countToLevel(int32_t count)
+{
     if (count <= 0) {
         return 0;
     }
@@ -44,8 +46,12 @@ int32_t countToLevel(int32_t count) {
 
 } // anonymous namespace
 
-int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAchievementsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -74,7 +80,7 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
 
                 // 使用 publish_time 计算贡献日期
                 time_t pt = a->getCreateTime();
-                std::string dateKey = chen::Time2Str(pt, "%Y-%m-%d");
+                std::string dateKey = chen::TimeUtil::Time2Str(pt, "%Y-%m-%d");
                 dateContributions[dateKey]++;
             }
         }
@@ -85,7 +91,7 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
             if (db) {
                 time_t now = time(0);
                 time_t cutoff = now - 371 * 86400;
-                std::string cutoffStr = chen::Time2Str(cutoff, "%Y-%m-%d");
+                std::string cutoffStr = chen::TimeUtil::Time2Str(cutoff, "%Y-%m-%d");
 
                 auto qb = data::CommentInfoDao::newQuery();
                 qb->where("user_id", "=", uid);
@@ -95,7 +101,7 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
                 std::vector<int64_t> timestamps;
                 if (qb->queryColumn<int64_t>(timestamps, db, "create_time") == 0) {
                     for (auto ts : timestamps) {
-                        std::string dateKey = chen::Time2Str((time_t)ts, "%Y-%m-%d");
+                        std::string dateKey = chen::TimeUtil::Time2Str((time_t)ts, "%Y-%m-%d");
                         dateContributions[dateKey]++;
                     }
                 }
@@ -104,10 +110,10 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         // ========== 3. 计算热度图 (53 周 × 7 天) ==========
         time_t now = time(0);
-        time_t today = chen::GetDayStart(now);
+        time_t today = chen::TimeUtil::GetDayStart(now);
 
         // 起始日期：53 周前的周日
-        int32_t todayDow = chen::GetDayOfWeek(today);
+        int32_t todayDow = chen::TimeUtil::GetDayOfWeek(today);
         time_t startDate = today - (371 + todayDow) * 86400;
 
         int64_t total_contributions = 0;
@@ -118,7 +124,7 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
             for (int32_t d = 0; d < 7; d++) {
                 int32_t offset = w * 7 + d;
                 time_t day = startDate + offset * 86400;
-                std::string key = chen::Time2Str(day, "%Y-%m-%d");
+                std::string key = chen::TimeUtil::Time2Str(day, "%Y-%m-%d");
                 int32_t count = dateContributions[key];
                 int32_t level = countToLevel(count);
                 total_contributions += level;
@@ -196,5 +202,5 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

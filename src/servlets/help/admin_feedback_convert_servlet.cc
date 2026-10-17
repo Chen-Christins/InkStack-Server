@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 AdminFeedbackConvertServlet::AdminFeedbackConvertServlet()
-    :BlogLoginedServlet("AdminFeedbackConvertServlet") {
+    : BlogLoginedServlet("AdminFeedbackConvertServlet")
+{
 }
 
-int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AdminFeedbackConvertServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -89,8 +94,7 @@ int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request
 
             if (data::HelpFaqsInfoDao::Insert(faq, db)) {
                 result->setErrno(errcode::DB_OPERATION_FAILED, "insert faq failed");
-                ERROR(logger) << "insert faq failed, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "insert faq failed, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -112,8 +116,8 @@ int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request
             req->setOrgId(org_id);
             req->setTitle(title);
             req->setDescription(content);
-            req->setPriority(1);  // 默认低优先级
-            req->setStatus(0);    // 草稿
+            req->setPriority(1); // 默认低优先级
+            req->setStatus(0);   // 草稿
             req->setCreatorId(uid);
             req->setAssigneeId(0);
             req->setIsDeleted(0);
@@ -122,8 +126,7 @@ int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request
 
             if (data::RequirementInfoDao::Insert(req, db)) {
                 result->setErrno(errcode::DB_OPERATION_FAILED, "insert requirement failed");
-                ERROR(logger) << "insert requirement failed, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "insert requirement failed, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -145,9 +148,9 @@ int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request
             bug->setOrgId(org_id);
             bug->setTitle(title);
             bug->setDescription(content);
-            bug->setSeverity(1);     // 默认轻微
-            bug->setPriority(1);     // 默认低优先级
-            bug->setStatus(0);       // 待处理
+            bug->setSeverity(1); // 默认轻微
+            bug->setPriority(1); // 默认低优先级
+            bug->setStatus(0);   // 待处理
             bug->setCreatorId(uid);
             bug->setAssigneeId(0);
             bug->setIsDeleted(0);
@@ -156,8 +159,7 @@ int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request
 
             if (data::BugInfoDao::Insert(bug, db)) {
                 result->setErrno(errcode::DB_OPERATION_FAILED, "insert bug failed");
-                ERROR(logger) << "insert bug failed, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "insert bug failed, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -180,5 +182,5 @@ int32_t AdminFeedbackConvertServlet::handle(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -1,7 +1,7 @@
 #include "user_follow_rel_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -15,19 +15,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 UserFollowRelManager::UserFollowRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::UserFollowRelInfoDao::ParseRow(rt);
 }
 
-
-void UserFollowRelManager::add(data::UserFollowRelInfo::ptr info) {
+void UserFollowRelManager::add(data::UserFollowRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id) {
+data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -44,7 +47,8 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id) {
     return v;
 }
 
-data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(int64_t follower_id, int64_t following_id) {
+data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(int64_t follower_id, int64_t following_id)
+{
     std::string ck = "flw:" + std::to_string(follower_id) + ":" + std::to_string(following_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -63,7 +67,8 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(int
     return info;
 }
 
-data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, int64_t following_id) {
+data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, int64_t following_id)
+{
     auto existing = getByFollowerAndFollowing(follower_id, following_id);
     if (existing) {
         if (!existing->getIsDeleted()) {
@@ -106,7 +111,8 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, i
     return info;
 }
 
-bool UserFollowRelManager::unfollow(int64_t follower_id, int64_t following_id) {
+bool UserFollowRelManager::unfollow(int64_t follower_id, int64_t following_id)
+{
     auto info = getByFollowerAndFollowing(follower_id, following_id);
     if (!info || info->getIsDeleted()) {
         return false;
@@ -128,13 +134,14 @@ bool UserFollowRelManager::unfollow(int64_t follower_id, int64_t following_id) {
     return true;
 }
 
-bool UserFollowRelManager::isFollowing(int64_t follower_id, int64_t following_id) {
+bool UserFollowRelManager::isFollowing(int64_t follower_id, int64_t following_id)
+{
     auto info = getByFollowerAndFollowing(follower_id, following_id);
     return info && !info->getIsDeleted();
 }
 
-void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::ptr>& results
-        , int64_t follower_id, uint64_t offset, uint64_t size) {
+void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::ptr>& results, int64_t follower_id, uint64_t offset, uint64_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -157,8 +164,8 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
     }
 }
 
-void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results, int64_t following_id
-        , uint64_t offset, uint64_t size) {
+void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results, int64_t following_id, uint64_t offset, uint64_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -181,7 +188,8 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
     }
 }
 
-int64_t UserFollowRelManager::countFollowing(int64_t follower_id) {
+int64_t UserFollowRelManager::countFollowing(int64_t follower_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -198,7 +206,8 @@ int64_t UserFollowRelManager::countFollowing(int64_t follower_id) {
     return total;
 }
 
-int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
+int64_t UserFollowRelManager::countFollowers(int64_t following_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -215,7 +224,8 @@ int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
     return total;
 }
 
-void UserFollowRelManager::listMutualFollowing(std::vector<int64_t>& user_ids, int64_t uid) {
+void UserFollowRelManager::listMutualFollowing(std::vector<int64_t>& user_ids, int64_t uid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

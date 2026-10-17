@@ -4,13 +4,13 @@
 #include <chen/config/config.h>
 #include <chen/db/mysql.h>
 #include <chen/db/query_builder.h>
+#include <chen/db/redis.h>
+#include <chen/ds/event_bus.h>
 #include <chen/http/http_server.h>
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
 #include <chen/log/log.h>
 #include <chen/util/util.h>
-#include <chen/ds/event_bus.h>
-#include <chen/db/redis.h>
 
 #include <memory>
 #include <ranges>
@@ -30,12 +30,15 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
-static chen::ConfigVar<std::string>::ptr g_work_path =
-    chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
+static chen::ConfigVar<std::string>::ptr g_work_path = chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
 
-BlogModule::BlogModule() : Module("Blog", "1.0.8", "blog_module") {}
+BlogModule::BlogModule()
+    : Module("Blog", "1.0.8", "blog_module")
+{
+}
 
-bool BlogModule::onLoad() {
+bool BlogModule::onLoad()
+{
     INFO(logger) << "onLoad version=" << getVersion();
 
     if (g_work_path->getValue().empty()) {
@@ -52,7 +55,8 @@ bool BlogModule::onLoad() {
     return true;
 }
 
-bool BlogModule::onUnload() {
+bool BlogModule::onUnload()
+{
     INFO(logger) << "onUnload";
 
     chen::EventBusMgr::GetInstance()->clearAll();
@@ -64,7 +68,8 @@ bool BlogModule::onUnload() {
     return true;
 }
 
-bool BlogModule::onDeactivate() {
+bool BlogModule::onDeactivate()
+{
     INFO(logger) << "onDeactivate";
 
     ArticleMgr::GetInstance()->stop();
@@ -76,7 +81,8 @@ bool BlogModule::onDeactivate() {
     return true;
 }
 
-void BlogModule::onTick() {
+void BlogModule::onTick()
+{
     static int s_pr_sync_tick = 0;
 
     if (chen::TimeUtil::IsZeroOfDay()) {
@@ -100,12 +106,14 @@ void BlogModule::onTick() {
     s_pr_sync_tick++;
 }
 
-uint64_t BlogModule::getTickIntervalMs() {
+uint64_t BlogModule::getTickIntervalMs()
+{
     // 设置定时器间隔为1分钟
     return 60 * 1000;
 }
 
-bool BlogModule::onServerReady() {
+bool BlogModule::onServerReady()
+{
     INFO(logger) << "onServerReady";
 
     chen::EventBusMgr::GetInstance()->clearAll();
@@ -142,7 +150,8 @@ bool BlogModule::onServerReady() {
     return true;
 }
 
-bool BlogModule::onServerUp() {
+bool BlogModule::onServerUp()
+{
     INFO(logger) << "onServerUp";
 
     UserMgr::GetInstance()->ensureSuperAdmin();
@@ -152,7 +161,8 @@ bool BlogModule::onServerUp() {
     return true;
 }
 
-bool BlogModule::initMySQL() {
+bool BlogModule::initMySQL()
+{
     INFO(logger) << "initMySQL";
 
     const auto& mysql_dbs = g_mysql_dbs->getValue();
@@ -256,7 +266,8 @@ bool BlogModule::initMySQL() {
     return true;
 }
 
-void BlogModule::registerServlets() {
+void BlogModule::registerServlets()
+{
     INFO(logger) << "registerServlets";
 
     std::vector<chen::http::HttpServer::ptr> http_servers;
@@ -474,11 +485,11 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
         dp->addServlet("/api/v1/rd/organizations/members", XX(RdOrganizationMembersServlet));
 #undef XX
-
     }
 }
 
-void BlogModule::registerWSServlets() {
+void BlogModule::registerWSServlets()
+{
     INFO(logger) << "registerWSServlets";
 
     std::vector<chen::http::WSServer::ptr> ws_servers;
@@ -501,11 +512,11 @@ void BlogModule::registerWSServlets() {
         dp->addServlet("/ws/v1/presence", XX(PresenceServlet));
         dp->addServlet("/ws/v1/messages", XX(MessageWSServlet));
 #undef XX
-
     }
 }
 
-void BlogModule::registerRPCMethods() {
+void BlogModule::registerRPCMethods()
+{
     INFO(logger) << "registerRPCMethods";
 
     std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
@@ -528,13 +539,15 @@ void BlogModule::registerRPCMethods() {
 
 extern "C" {
 
-chen::Module* CreateModule() {
+chen::Module* CreateModule()
+{
     chen::Module* module = new blog::BlogModule;
     INFO(blog::logger) << "BlogModule::CreateModule";
     return module;
 }
 
-void DestroyModule(const chen::Module* module) {
+void DestroyModule(const chen::Module* module)
+{
     INFO(blog::logger) << "BlogModule::DestroyModule";
     delete module;
 }

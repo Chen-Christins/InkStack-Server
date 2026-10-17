@@ -1,10 +1,10 @@
 #include "article_switch_state_servlet.h"
 
-#include "../../index.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/article_manager.h"
-#include "../../util.h"
 #include "../../event/event_define.h"
+#include "../../index.h"
+#include "../../manager/article_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 #include <chen/log/log.h>
 
@@ -14,11 +14,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleSwitchStateServlet::ArticleSwitchStateServlet()
-    : BlogLoginedServlet("ArticleSwitchStateServlet") {
+    : BlogLoginedServlet("ArticleSwitchStateServlet")
+{
 }
 
-int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleSwitchStateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, uint64_t, id, "id");
         DEFINE_AND_CHECK_TYPE(result, int, new_state, "new_state");
@@ -89,7 +94,7 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
             data.article_id = article->getId();
             data.article_title = article->getTitle();
             data.new_state = new_state;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_STATE_CHANGED, std::move(data));
         }
     } while (0);
@@ -97,5 +102,5 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

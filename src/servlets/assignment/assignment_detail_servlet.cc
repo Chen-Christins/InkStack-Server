@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
 #include "../../manager/assignment_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 AssignmentDetailServlet::AssignmentDetailServlet()
-    : BlogLoginedServlet("AssignmentDetailServlet") {
+    : BlogLoginedServlet("AssignmentDetailServlet")
+{
 }
 
-int32_t AssignmentDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AssignmentDetailServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         auto assignment = AssignmentMgr::GetInstance()->get(id);
@@ -39,5 +44,5 @@ int32_t AssignmentDetailServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

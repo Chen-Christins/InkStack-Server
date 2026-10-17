@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "../../manager/user_manager.h"
 #include "../../manager/user_follow_rel_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserInfoServlet::UserInfoServlet()
-    :BlogServlet("UserInfoServlet") {
+    : BlogServlet("UserInfoServlet")
+{
 }
 
-int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserInfoServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         auto sdata = getSessionData(request, response);
         int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
@@ -55,5 +60,5 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

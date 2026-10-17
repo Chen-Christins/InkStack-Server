@@ -1,7 +1,7 @@
 #include "article_praise_rel_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,18 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 ArticlePraiseRelManager::ArticlePraiseRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::ArticlePraiseRelInfoDao::ParseRow(rt);
 }
 
-void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info) {
+void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id) {
+data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -40,7 +44,8 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id) {
     return v;
 }
 
-data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(int64_t user_id, int64_t article_id) {
+data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(int64_t user_id, int64_t article_id)
+{
     std::string ck = "pra:" + std::to_string(user_id) + ":" + std::to_string(article_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -59,7 +64,8 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(int
     return info;
 }
 
-data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id, int64_t article_id) {
+data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id, int64_t article_id)
+{
     auto existing = getByUserAndArticle(user_id, article_id);
     if (existing) {
         if (!existing->getIsDeleted()) {
@@ -102,7 +108,8 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id,
     return info;
 }
 
-bool ArticlePraiseRelManager::unpraise(int64_t user_id, int64_t article_id) {
+bool ArticlePraiseRelManager::unpraise(int64_t user_id, int64_t article_id)
+{
     auto info = getByUserAndArticle(user_id, article_id);
     if (!info || info->getIsDeleted()) {
         return false;
@@ -124,13 +131,14 @@ bool ArticlePraiseRelManager::unpraise(int64_t user_id, int64_t article_id) {
     return true;
 }
 
-bool ArticlePraiseRelManager::isPraising(int64_t user_id, int64_t article_id) {
+bool ArticlePraiseRelManager::isPraising(int64_t user_id, int64_t article_id)
+{
     auto info = getByUserAndArticle(user_id, article_id);
     return info && !info->getIsDeleted();
 }
 
-void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t article_id
-        , uint64_t offset, uint64_t size) {
+void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t article_id, uint64_t offset, uint64_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -153,8 +161,8 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
     }
 }
 
-void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t user_id
-        , uint64_t offset, uint64_t size) {
+void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t user_id, uint64_t offset, uint64_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -177,7 +185,8 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
     }
 }
 
-int64_t ArticlePraiseRelManager::countByArticle(int64_t article_id) {
+int64_t ArticlePraiseRelManager::countByArticle(int64_t article_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -194,7 +203,8 @@ int64_t ArticlePraiseRelManager::countByArticle(int64_t article_id) {
     return total;
 }
 
-int64_t ArticlePraiseRelManager::countByUser(int64_t user_id) {
+int64_t ArticlePraiseRelManager::countByUser(int64_t user_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

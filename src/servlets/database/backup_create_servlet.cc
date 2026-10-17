@@ -1,14 +1,14 @@
 #include "backup_create_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
-#include <chen/util/util.h>
 #include <chen/iomanager/worker.h>
+#include <chen/log/log.h>
+#include <chen/util/util.h>
 
-#include "../../manager/user_manager.h"
-#include "../../manager/backup_record_manager.h"
-#include "../../util.h"
 #include "../../event/event_define.h"
+#include "../../manager/backup_record_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 #include <sys/stat.h>
 
@@ -17,7 +17,6 @@ namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-
 static chen::ConfigVar<std::string>::ptr g_data_path =
     chen::Config::Lookup<std::string>("server.data_path", std::string(""), "server data storage path");
 
@@ -25,12 +24,16 @@ static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
 BackupCreateServlet::BackupCreateServlet()
-    : BlogLoginedServlet("BackupCreateServlet") {
+    : BlogLoginedServlet("BackupCreateServlet")
+{
 }
 
-int32_t BackupCreateServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t BackupCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -108,5 +111,5 @@ int32_t BackupCreateServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

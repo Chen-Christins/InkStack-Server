@@ -38,7 +38,7 @@ public:
 
     /**
      * @brief 设置定时器间隔
-     * @return uint64_t 
+     * @return uint64_t
      */
     uint64_t getTickIntervalMs() override;
 
@@ -61,8 +61,8 @@ public:
      * @return bool
      */
     bool onDeactivate() override;
-private:
 
+private:
     /**
      * @brief 初始化数据库
      */
@@ -84,4 +84,4 @@ private:
     void registerRPCMethods();
 };
 
-}
+} // namespace blog

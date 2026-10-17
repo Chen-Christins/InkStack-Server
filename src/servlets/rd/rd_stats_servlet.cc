@@ -1,20 +1,25 @@
 #include "rd_stats_servlet.h"
 
-#include "../../manager/user_manager.h"
+#include "../../manager/bug_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
-#include "../../manager/bug_manager.h"
 #include "../../manager/task_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 RdStatsServlet::RdStatsServlet()
-    : BlogLoginedServlet("RdStatsServlet") {
+    : BlogLoginedServlet("RdStatsServlet")
+{
 }
 
-int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdStatsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
         int64_t uid = getUserId(request);
@@ -86,8 +91,7 @@ int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         for (auto& info : tasks) {
             total_tasks++;
             int st = info->getStatus();
-            if (st != TaskManager::STATUS_DONE && st != TaskManager::STATUS_CLOSED
-                    && info->getDeadline() > 0 && info->getDeadline() < now) {
+            if (st != TaskManager::STATUS_DONE && st != TaskManager::STATUS_CLOSED && info->getDeadline() > 0 && info->getDeadline() < now) {
                 overdue_tasks++;
             }
         }
@@ -104,5 +108,5 @@ int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

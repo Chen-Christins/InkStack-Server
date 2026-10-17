@@ -1,10 +1,10 @@
 #include "comment_create_servlet.h"
 
-#include "../../manager/comment_manager.h"
+#include "../../event/event_define.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <chen/util/util.h>
 #include <json/json.h>
@@ -13,11 +13,16 @@ namespace blog {
 namespace servlet {
 
 CommentCreateServlet::CommentCreateServlet()
-    : BlogLoginedServlet("CommentCreateServlet") {
+    : BlogLoginedServlet("CommentCreateServlet")
+{
 }
 
-int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CommentCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -61,7 +66,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         item["id"] = info->getId();
         item["content"] = info->getContent();
         item["user_id"] = info->getUserId();
-        item["time"] = chen::Time2Str(info->getCreateTime());
+        item["time"] = chen::TimeUtil::Time2Str(info->getCreateTime());
 
         auto user = UserMgr::GetInstance()->get(uid);
         if (user) {
@@ -83,7 +88,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // Notify article author and parent comment author asynchronously
         {
             auto commenter_info = UserMgr::GetInstance()->get(uid);
-            
+
             EventCommentCreatedData data = {};
             data.commenter_id = uid;
             data.commenter_name = commenter_info ? commenter_info->getName() : "someone";
@@ -106,5 +111,5 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -8,10 +8,12 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-FaqManager::FaqManager() {
+FaqManager::FaqManager()
+{
 }
 
-bool FaqManager::listAll(std::vector<data::HelpFaqsInfo::ptr>& infos) {
+bool FaqManager::listAll(std::vector<data::HelpFaqsInfo::ptr>& infos)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -28,7 +30,8 @@ bool FaqManager::listAll(std::vector<data::HelpFaqsInfo::ptr>& infos) {
     return true;
 }
 
-bool FaqManager::searchByKeyword(const std::string& keyword, std::vector<data::HelpFaqsInfo::ptr>& infos) {
+bool FaqManager::searchByKeyword(const std::string& keyword, std::vector<data::HelpFaqsInfo::ptr>& infos)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -44,15 +47,15 @@ bool FaqManager::searchByKeyword(const std::string& keyword, std::vector<data::H
         return false;
     }
     for (auto& info : all) {
-        if (info->getQ().find(keyword) != std::string::npos ||
-            info->getA().find(keyword) != std::string::npos) {
+        if (info->getQ().find(keyword) != std::string::npos || info->getA().find(keyword) != std::string::npos) {
             infos.push_back(info);
         }
     }
     return true;
 }
 
-bool FaqManager::remove(int64_t id) {
+bool FaqManager::remove(int64_t id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -69,15 +72,15 @@ bool FaqManager::remove(int64_t id) {
     info->setUpdateTime(time(0));
 
     if (data::HelpFaqsInfoDao::Update(info, db)) {
-        ERROR(logger) << "soft delete faq failed, errno=" << db->getErrno()
-            << " errstr=" << db->getErrStr();
+        ERROR(logger) << "soft delete faq failed, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
 
     return true;
 }
 
-bool FaqManager::update(int64_t id, const std::string& q, const std::string& a, const std::string& cat) {
+bool FaqManager::update(int64_t id, const std::string& q, const std::string& a, const std::string& cat)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -102,12 +105,11 @@ bool FaqManager::update(int64_t id, const std::string& q, const std::string& a, 
     info->setUpdateTime(time(0));
 
     if (data::HelpFaqsInfoDao::Update(info, db)) {
-        ERROR(logger) << "update faq failed, errno=" << db->getErrno()
-            << " errstr=" << db->getErrStr();
+        ERROR(logger) << "update faq failed, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
 
     return true;
 }
 
-}
+} // namespace blog

@@ -2,11 +2,11 @@
 
 #include <chen/log/log.h>
 
+#include "../../manager/article_category_rel_manager.h"
+#include "../../manager/article_label_rel_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/category_manager.h"
 #include "../../manager/label_manager.h"
-#include "../../manager/article_category_rel_manager.h"
-#include "../../manager/article_label_rel_manager.h"
 #include "../../util.h"
 
 namespace blog {
@@ -15,11 +15,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleCreateServlet::ArticleCreateServlet()
-    : BlogLoginedServlet("ArticleCreateServlet") {
+    : BlogLoginedServlet("ArticleCreateServlet")
+{
 }
 
-int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, title, "title");
         DEFINE_AND_CHECK_STRING(result, content, "content");
@@ -27,8 +32,7 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         std::string category = request->getParam("category");
         std::string label = request->getParam("label");
 
-        if (type != ArticleManager::Type::ORIGINAL
-                && type != ArticleManager::Type::REPRINT) {
+        if (type != ArticleManager::Type::ORIGINAL && type != ArticleManager::Type::REPRINT) {
             result->setErrno(errcode::ARTICLE_INVALID_TYPE);
             break;
         }
@@ -61,8 +65,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
 
         if (data::ArticleInfoDao::Insert(info, db)) {
-            ERROR(logger) << "insert article fail title=" << title
-                << " user_id=" << uid << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            ERROR(logger) << "insert article fail title=" << title << " user_id=" << uid << " errno=" << db->getErrno()
+                          << " errstr=" << db->getErrStr();
             result->setErrno(errcode::ARTICLE_INSERT_FAILED);
             break;
         }
@@ -85,9 +89,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 rel->setCategoryId(cid);
                 rel->setUpdateTime(now);
                 if (data::ArticleCategoryRelInfoDao::Insert(rel, db)) {
-                    ERROR(logger) << "insert article_category_rel fail article_id="
-                        << info->getId() << " category_id=" << cid
-                        << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "insert article_category_rel fail article_id=" << info->getId() << " category_id=" << cid
+                                  << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 new_cat_rels.push_back(rel);
             }
@@ -107,9 +110,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 rel->setLabelId(lid);
                 rel->setUpdateTime(now);
                 if (data::ArticleLabelRelInfoDao::Insert(rel, db)) {
-                    ERROR(logger) << "insert article_label_rel fail article_id="
-                        << info->getId() << " label_id=" << lid
-                        << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "insert article_label_rel fail article_id=" << info->getId() << " label_id=" << lid
+                                  << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 new_label_rels.push_back(rel);
             }
@@ -132,5 +134,5 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

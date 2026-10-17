@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminCreateServlet::UserAdminCreateServlet()
-    : BlogLoginedServlet("UserAdminCreateServlet") {
+    : BlogLoginedServlet("UserAdminCreateServlet")
+{
 }
 
-int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAdminCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, account, "account");
         DEFINE_AND_CHECK_STRING(result, email, "email");
@@ -107,5 +112,5 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

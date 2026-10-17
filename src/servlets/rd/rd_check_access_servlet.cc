@@ -8,11 +8,16 @@ namespace blog {
 namespace servlet {
 
 RdCheckAccessServlet::RdCheckAccessServlet()
-    : BlogLoginedServlet("RdCheckAccessServlet") {
+    : BlogLoginedServlet("RdCheckAccessServlet")
+{
 }
 
-int32_t RdCheckAccessServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdCheckAccessServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t current_uid = getUserId(request);
         data::UserInfo::ptr currentUser = UserMgr::GetInstance()->get(current_uid);
@@ -42,8 +47,7 @@ int32_t RdCheckAccessServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         int32_t system_role = targetUser->getRole();
         std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
-        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(
-            user_orgs, target_uid, OrganizationUserRelManager::APPROVED, true);
+        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, target_uid, OrganizationUserRelManager::APPROVED, true);
 
         int32_t highest_org_role = 0;
         for (auto& rel : user_orgs) {
@@ -64,5 +68,5 @@ int32_t RdCheckAccessServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

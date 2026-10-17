@@ -2,8 +2,8 @@
 
 #include "blog/data/organization_repos_info.h"
 
-#include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
+#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -17,14 +17,13 @@ public:
     void del(int64_t id);
 
     void onTick();
-    
+
     data::OrganizationReposInfo::ptr get(int64_t id);
-    
+
     data::OrganizationReposInfo::ptr getByOrgAndName(int64_t org_id, const std::string& name);
-    
-    int64_t listByOrgPages(std::vector<data::OrganizationReposInfo::ptr>& repos
-        , int64_t org_id, uint64_t offset, uint64_t limit);
-    
+
+    int64_t listByOrgPages(std::vector<data::OrganizationReposInfo::ptr>& repos, int64_t org_id, uint64_t offset, uint64_t limit);
+
     int64_t getCountByOrg(int64_t org_id);
 
     /// 获取所有含有 token 的仓库信息
@@ -35,13 +34,13 @@ public:
 
 private:
     static data::OrganizationReposInfo::ptr parseRow(chen::ISQLData::ptr rt);
-    
+
     void invalidateCountCache(int64_t org_id);
-    
+
 private:
     chen::ds::HashLruCache<int64_t, data::OrganizationReposInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationRepoManager> OrganizationRepoMgr;
 
-}
+} // namespace blog

@@ -5,9 +5,16 @@
 
 static chen::Logger::ptr g_logger = LOG_ROOT();
 
-ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upload_id
-        , const std::string& file_name, size_t total_size, size_t chunk_size, size_t total_chunks
-        , const std::string& biz_type, int64_t biz_id, const std::string& dir_name) {
+ChunkUploadSession::ptr ChunkUploadManager::createSession(
+    const std::string& upload_id,
+    const std::string& file_name,
+    size_t total_size,
+    size_t chunk_size,
+    size_t total_chunks,
+    const std::string& biz_type,
+    int64_t biz_id,
+    const std::string& dir_name)
+{
     std::lock_guard lock(m_mtx);
 
     auto session = std::make_shared<ChunkUploadSession>();
@@ -28,7 +35,8 @@ ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upl
     return session;
 }
 
-ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload_id) {
+ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload_id)
+{
     std::shared_lock lock(m_mtx);
     auto it = m_sessions.find(upload_id);
     if (it != m_sessions.end()) {
@@ -37,12 +45,14 @@ ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload
     return nullptr;
 }
 
-void ChunkUploadManager::removeSession(const std::string& upload_id) {
+void ChunkUploadManager::removeSession(const std::string& upload_id)
+{
     std::lock_guard lock(m_mtx);
     m_sessions.erase(upload_id);
 }
 
-void ChunkUploadManager::cleanupExpiredSessions() {
+void ChunkUploadManager::cleanupExpiredSessions()
+{
     time_t now = time(0);
     std::vector<std::string> expired_ids;
     std::vector<std::string> temp_files_to_remove;

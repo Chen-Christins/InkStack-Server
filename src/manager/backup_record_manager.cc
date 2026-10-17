@@ -10,18 +10,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 BackupRecordManager::BackupRecordManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::BackupRecordInfo::ptr BackupRecordManager::parseRow(chen::ISQLData::ptr rt) {
+data::BackupRecordInfo::ptr BackupRecordManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::BackupRecordInfoDao::ParseRow(rt);
 }
 
-void BackupRecordManager::add(data::BackupRecordInfo::ptr info) {
+void BackupRecordManager::add(data::BackupRecordInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::BackupRecordInfo::ptr BackupRecordManager::get(int64_t id) {
+data::BackupRecordInfo::ptr BackupRecordManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -38,9 +42,15 @@ data::BackupRecordInfo::ptr BackupRecordManager::get(int64_t id) {
     return v;
 }
 
-bool BackupRecordManager::list(std::vector<data::BackupRecordInfo::ptr>& results,
-        int64_t& total, const std::string& search, const std::string& type,
-        const std::string& status, int32_t offset, int32_t limit) {
+bool BackupRecordManager::list(
+    std::vector<data::BackupRecordInfo::ptr>& results,
+    int64_t& total,
+    const std::string& search,
+    const std::string& type,
+    const std::string& status,
+    int32_t offset,
+    int32_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -65,9 +75,8 @@ bool BackupRecordManager::list(std::vector<data::BackupRecordInfo::ptr>& results
     return true;
 }
 
-data::BackupRecordInfo::ptr BackupRecordManager::create(int64_t uid,
-        const std::string& type, const std::string& name,
-        const std::string& description) {
+data::BackupRecordInfo::ptr BackupRecordManager::create(int64_t uid, const std::string& type, const std::string& name, const std::string& description)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -91,7 +100,8 @@ data::BackupRecordInfo::ptr BackupRecordManager::create(int64_t uid,
     return info;
 }
 
-bool BackupRecordManager::remove(int64_t id) {
+bool BackupRecordManager::remove(int64_t id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

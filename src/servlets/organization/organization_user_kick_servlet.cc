@@ -3,12 +3,12 @@
 #include <chen/log/log.h>
 #include <json/json.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/organization_manager.h"
-#include "../../permission.h"
 #include "../../event/event_define.h"
+#include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../permission.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -16,14 +16,19 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationUserKickServlet::OrganizationUserKickServlet()
-    : BlogLoginedServlet("OrganizationUserKickServlet") {
+    : BlogLoginedServlet("OrganizationUserKickServlet")
+{
 }
 
-int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationUserKickServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
-        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id"); // organization_user_rel id
-        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id"); // organization id
+        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");           // organization_user_rel id
+        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");   // organization id
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id"); // user_id
 
         // 操作者权限检查
@@ -90,7 +95,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
             data.operator_name = oper_name;
             data.kicked_user_id = user_id;
             data.applicant_name = kicked_name;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
@@ -100,5 +105,5 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

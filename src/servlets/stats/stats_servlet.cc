@@ -11,14 +11,17 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 StatsServlet::StatsServlet()
-    :BlogServlet("StatsServlet") {
+    : BlogServlet("StatsServlet")
+{
 }
 
-int32_t StatsServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response,
-        chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t StatsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
-        // online_users: active WebSocket connections
         int64_t online_users = NotificationMgr::GetInstance()->getOnlineCount();
 
         int64_t today_visits = ArticleMgr::GetInstance()->getTodayViews();
@@ -35,5 +38,5 @@ int32_t StatsServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

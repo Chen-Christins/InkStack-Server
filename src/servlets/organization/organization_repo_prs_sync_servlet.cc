@@ -7,15 +7,15 @@
  */
 #include "organization_repo_prs_sync_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/iomanager/worker.h>
+#include <chen/log/log.h>
 
-#include "../../util.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_repo_manager.h"
 #include "../../manager/organization_repo_pr_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -23,7 +23,8 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 /// 将单条同步状态映射为业务错误码（OK 不处理）
-static void MapSyncPrError(OrganizationRepoPrManager::SyncPrStatus st, Result::ptr result) {
+static void MapSyncPrError(OrganizationRepoPrManager::SyncPrStatus st, Result::ptr result)
+{
     switch (st) {
     case OrganizationRepoPrManager::SyncPrStatus::PR_NOT_FOUND:
         result->setErrno(errcode::ORG_PR_NOT_FOUND);
@@ -56,11 +57,16 @@ static void MapSyncPrError(OrganizationRepoPrManager::SyncPrStatus st, Result::p
 }
 
 OrganizationRepoPrsSyncServlet::OrganizationRepoPrsSyncServlet()
-    : BlogLoginedServlet("OrganizationRepoPrsSyncServlet") {
+    : BlogLoginedServlet("OrganizationRepoPrsSyncServlet")
+{
 }
 
-int32_t OrganizationRepoPrsSyncServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationRepoPrsSyncServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         int64_t repo_id = request->getParamAs<int64_t>("repo_id", 0);
@@ -109,8 +115,7 @@ int32_t OrganizationRepoPrsSyncServlet::handle(chen::http::HttpRequest::ptr requ
                 break;
             }
             int32_t org_role = rel->getRole();
-            if (org_role != OrganizationManager::Role::ORG_ADMIN
-                    && org_role != OrganizationManager::Role::DEV_LEAD) {
+            if (org_role != OrganizationManager::Role::ORG_ADMIN && org_role != OrganizationManager::Role::DEV_LEAD) {
                 result->setErrno(errcode::ACCESS_DENIED, "仅研发主管及以上角色可同步 PR");
                 break;
             }
@@ -164,5 +169,5 @@ int32_t OrganizationRepoPrsSyncServlet::handle(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

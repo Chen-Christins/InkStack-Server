@@ -1,44 +1,48 @@
 #include "chunk_upload_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
-#include <chen/util/util.h>
+#include <chen/log/log.h>
 #include <chen/util/encryptor_util.h>
+#include <chen/util/util.h>
 
 #include <fstream>
 #include <vector>
 
 #include "../../chunk_upload.h"
+#include "../../event/event_define.h"
+#include "../../manager/assignment_manager.h"
+#include "../../manager/assignment_organization_rel_manager.h"
+#include "../../manager/assignment_user_rel_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/resource_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/assignment_manager.h"
-#include "../../manager/assignment_user_rel_manager.h"
-#include "../../manager/assignment_organization_rel_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
-#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static chen::ConfigVar<std::string>::ptr server_work_path =
-    chen::Config::Lookup<std::string>("server.work_path");
+static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
 ChunkUploadServlet::ChunkUploadServlet()
-    : BlogLoginedServlet("ChunkUploadServlet") {
+    : BlogLoginedServlet("ChunkUploadServlet")
+{
 }
 
-int32_t ChunkUploadServlet::handle(chen::http::HttpRequest::ptr request
-        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ChunkUploadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         auto path = request->getPath();
-        if(path == "/upload/init") {
+        if (path == "/upload/init") {
             return handleInit(request, response, session, result);
-        } else if(path == "/upload/complete") {
+        } else if (path == "/upload/complete") {
             return handleComplete(request, response, session, result);
-        } else if(path == "/upload/cancel") {
+        } else if (path == "/upload/cancel") {
             return handleCancel(request, response, session, result);
-        } else if(path == "/upload/chunk") {
+        } else if (path == "/upload/chunk") {
             return handleUpload(request, response, session, result);
         } else if (path == "/upload/status") {
             return handleStatus(request, response, session, result);
@@ -51,8 +55,8 @@ int32_t ChunkUploadServlet::handle(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-void ChunkUploadServlet::parseBizInfo(const std::string& biz_info
-        , std::string& biz_type,  std::string& biz_id) {
+void ChunkUploadServlet::parseBizInfo(const std::string& biz_info, std::string& biz_type, std::string& biz_id)
+{
     biz_type = "";
     biz_id = "";
     do {
@@ -65,8 +69,12 @@ void ChunkUploadServlet::parseBizInfo(const std::string& biz_info
     } while (0);
 }
 
-int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
-        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ChunkUploadServlet::handleInit(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string type = request->getHeader("X-Upload-Type");
         std::string file_name = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Filename"));
@@ -80,8 +88,7 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
             result->setErrno(errcode::UPLOAD_INVALID_TYPE);
             break;
         }
-        if (file_name.empty() || dir_name.empty() || biz_info.empty()
-                || total_size == 0 || total_chunks == 0 || chunk_size == 0) {
+        if (file_name.empty() || dir_name.empty() || biz_info.empty() || total_size == 0 || total_chunks == 0 || chunk_size == 0) {
             result->setErrno(errcode::UPLOAD_INVALID_PARAMS);
             break;
         }
@@ -93,11 +100,11 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
 
         // 生成 uploadId
         time_t now = time(0);
-        std::string upload_id = chen::EncryptorUtil::MD5(std::to_string(now) + "|"
-            + file_name + "|" + std::to_string(uid) + chen::RandomUtil::RandString(6));
+        std::string upload_id =
+            chen::EncryptorUtil::MD5(std::to_string(now) + "|" + file_name + "|" + std::to_string(uid) + chen::RandomUtil::RandString(6));
 
-        auto session = ChunkUploadMgr::GetInstance()->createSession(upload_id, file_name
-            , total_size, chunk_size, total_chunks, biz_type, std::stoll(biz_id), dir_name);
+        auto session = ChunkUploadMgr::GetInstance()->createSession(
+            upload_id, file_name, total_size, chunk_size, total_chunks, biz_type, std::stoll(biz_id), dir_name);
 
         result->set("upload_id", upload_id);
     } while (0);
@@ -105,8 +112,12 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
-        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ChunkUploadServlet::handleComplete(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     std::string upload_id;
     bool assembly_ok = false;
     do {
@@ -141,8 +152,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         int64_t uid = getUserId(request);
         std::string subject_name = AssignmentMgr::GetInstance()->get(upload_session->biz_id)->getSubjectName();
         std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
-        std::string dir_name = upload_session->biz_type + "/" + subject_name +
-            "/" + upload_session->dir_name + "/" + user_name;
+        std::string dir_name = upload_session->biz_type + "/" + subject_name + "/" + upload_session->dir_name + "/" + user_name;
         std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
 
         INFO(logger) << "File upload save dir: " << save_dir;
@@ -155,7 +165,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         }
 
         // 流式组装分块，buffer 在循环外分配复用
-        std::vector<char> buffer(65536);  // 64KB
+        std::vector<char> buffer(65536); // 64KB
         for (size_t i = 0; i < upload_session->total_chunks; ++i) {
             std::ifstream temp_file(upload_session->chunk_data[i], std::ios::binary);
             if (!temp_file.is_open()) {
@@ -174,7 +184,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
             chen::FSUtil::Unlink(upload_session->chunk_data[i], true);
         }
         assembly_ok = true;
-assembly_done:
+    assembly_done:
         ofs.close();
 
         if (!assembly_ok) {
@@ -188,9 +198,8 @@ assembly_done:
             break;
         }
 
-        INFO(logger) << "File saved: " << filename << " (Size: " << upload_session->total_size
-                << " bytes -- " << (1.0 * upload_session->total_size / 1024)
-                << " kb -- " << (1.0 * upload_session->total_size / (1024 * 1024)) << " mb)";
+        INFO(logger) << "File saved: " << filename << " (Size: " << upload_session->total_size << " bytes -- "
+                     << (1.0 * upload_session->total_size / 1024) << " kb -- " << (1.0 * upload_session->total_size / (1024 * 1024)) << " mb)";
 
         // 流式 MD5 计算，避免全量读入内存
         std::string hash_key = chen::EncryptorUtil::MD5File(filename);
@@ -249,7 +258,8 @@ assembly_done:
             std::vector<data::AssignmentOrganizationRelInfo::ptr> org_rels;
             AssignmentOrganizationRelMgr::GetInstance()->getByAssignmentId(org_rels, assign_id);
             for (auto& org_rel : org_rels) {
-                if (org_rel->getIsDeleted()) continue;
+                if (org_rel->getIsDeleted())
+                    continue;
                 int64_t org_id = org_rel->getOrganizationId();
                 std::vector<data::OrganizationUserRelInfo::ptr> members;
                 OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
@@ -266,7 +276,7 @@ assembly_done:
             data.assignment_id = assign_id;
             data.assignment_name = assign_name;
             data.admin_user_ids = admin_ids;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ASSIGNMENT_SUBMITTED, std::move(data));
         }
 
@@ -278,8 +288,12 @@ assembly_done:
     return 0;
 }
 
-int32_t ChunkUploadServlet::handleCancel(chen::http::HttpRequest::ptr request
-        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ChunkUploadServlet::handleCancel(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string type = request->getHeader("X-Upload-Type");
         std::string upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
@@ -315,8 +329,12 @@ int32_t ChunkUploadServlet::handleCancel(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
-        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ChunkUploadServlet::handleUpload(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string type = request->getHeader("X-Upload-Type");
         std::string upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
@@ -381,8 +399,12 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-int32_t ChunkUploadServlet::handleStatus(chen::http::HttpRequest::ptr request
-        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ChunkUploadServlet::handleStatus(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string type = request->getHeader("X-Upload-Type");
         std::string upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
@@ -414,8 +436,14 @@ int32_t ChunkUploadServlet::handleStatus(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-bool ChunkUploadServlet::dumpToResource(const std::string& biz_type, int64_t biz_id
-        , const std::string& path, const std::string& hash_key, int64_t uid, size_t size) {
+bool ChunkUploadServlet::dumpToResource(
+    const std::string& biz_type,
+    int64_t biz_id,
+    const std::string& path,
+    const std::string& hash_key,
+    int64_t uid,
+    size_t size)
+{
     auto it = path.rfind("/");
     if (it == std::string::npos) {
         return false;

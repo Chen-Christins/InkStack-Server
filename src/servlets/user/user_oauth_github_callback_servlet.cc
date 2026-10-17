@@ -12,11 +12,11 @@
 #include <chen/util/encryptor_util.h>
 #include <chen/util/string_util.h>
 
-#include "../../util.h"
 #include "../../manager/system_settings_manager.h"
 #include "../../manager/user_login_device_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/user_oauth_manager.h"
+#include "../../util.h"
 #include "../../util/ua_parser.h"
 
 namespace blog {
@@ -24,8 +24,7 @@ namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 static chen::ConfigVar<std::string>::ptr g_github_client_id =
     chen::Config::Lookup("oauth.github.client_id", std::string(""), "GitHub OAuth client id");
@@ -36,8 +35,7 @@ static chen::ConfigVar<std::string>::ptr g_github_client_secret =
 static chen::ConfigVar<std::string>::ptr g_github_callback_url =
     chen::Config::Lookup("oauth.github.callback_url", std::string(""), "GitHub OAuth callback url");
 
-static chen::ConfigVar<std::string>::ptr g_frontend_base =
-    chen::Config::Lookup("oauth.github.frontend_base", std::string(""), "Frontend base url");
+static chen::ConfigVar<std::string>::ptr g_frontend_base = chen::Config::Lookup("oauth.github.frontend_base", std::string(""), "Frontend base url");
 
 /// Redis state key 前缀（与入口 servlet 保持一致）
 static const char* kOAuthStatePrefix = "oauth:github:state:";
@@ -58,11 +56,13 @@ struct GithubProfile {
 };
 
 UserOauthGithubCallbackServlet::UserOauthGithubCallbackServlet()
-    :BlogServlet("UserOauthGithubCallbackServlet") {
+    : BlogServlet("UserOauthGithubCallbackServlet")
+{
 }
 
 /// 仅允许站内相对路径作为登录后回跳地址，防止开放重定向
-static std::string NormalizeRedirect(const std::string& raw) {
+static std::string NormalizeRedirect(const std::string& raw)
+{
     static const std::regex pattern(R"(^/[A-Za-z0-9_\-./?=&%]*$)");
     if (!std::regex_match(raw, pattern)) {
         return "/index";
@@ -79,23 +79,25 @@ static const uint64_t kGithubTimeoutMs = 30000;
 static const int kGithubMaxAttempts = 3;
 
 /// 向 GitHub 发起请求，仅对连接失败/超时做重试（退避 0.3s/0.6s）
-static chen::http::HttpResult::ptr DoGithubRequestWithRetry(bool is_post, const std::string& url
-        , const std::map<std::string, std::string>& headers, const std::string& body) {
+static chen::http::HttpResult::ptr DoGithubRequestWithRetry(
+    bool is_post,
+    const std::string& url,
+    const std::map<std::string, std::string>& headers,
+    const std::string& body)
+{
     chen::http::HttpResult::ptr result;
     for (int attempt = 0; attempt < kGithubMaxAttempts; attempt++) {
-        result = is_post
-            ? chen::http::HttpConnection::DoPost(url, kGithubTimeoutMs, headers, body)
-            : chen::http::HttpConnection::DoGet(url, kGithubTimeoutMs, headers, body);
+        result = is_post ? chen::http::HttpConnection::DoPost(url, kGithubTimeoutMs, headers, body)
+                         : chen::http::HttpConnection::DoGet(url, kGithubTimeoutMs, headers, body);
 
-        bool transient = (!result
-            || result->result == (int)chen::http::HttpResult::Error::CONNECT_FAIL
-            || result->result == (int)chen::http::HttpResult::Error::TIMEOUT);
+        bool transient =
+            (!result || result->result == (int)chen::http::HttpResult::Error::CONNECT_FAIL
+             || result->result == (int)chen::http::HttpResult::Error::TIMEOUT);
         if (!transient) {
             return result;
         }
-        ERROR(logger) << "github request transient failure url=" << url
-            << " attempt=" << (attempt + 1)
-            << " result=" << (result ? result->result : -1);
+        ERROR(logger) << "github request transient failure url=" << url << " attempt=" << (attempt + 1)
+                      << " result=" << (result ? result->result : -1);
         if (attempt + 1 < kGithubMaxAttempts) {
             usleep(300000 * (attempt + 1));
         }
@@ -104,22 +106,26 @@ static chen::http::HttpResult::ptr DoGithubRequestWithRetry(bool is_post, const 
 }
 
 /// 用授权码换取 access_token
-static bool ExchangeAccessToken(const std::string& client_id, const std::string& client_secret
-        , const std::string& code, const std::string& callback_url, std::string& access_token) {
+static bool ExchangeAccessToken(
+    const std::string& client_id,
+    const std::string& client_secret,
+    const std::string& code,
+    const std::string& callback_url,
+    std::string& access_token)
+{
     std::map<std::string, std::string> headers;
     headers["Accept"] = "application/json";
     headers["User-Agent"] = kGithubUserAgent;
 
     std::string body = "client_id=" + chen::StringUtil::UrlEncode(client_id, false)
-        + "&client_secret=" + chen::StringUtil::UrlEncode(client_secret, false)
-        + "&code=" + chen::StringUtil::UrlEncode(code, false)
+        + "&client_secret=" + chen::StringUtil::UrlEncode(client_secret, false) + "&code=" + chen::StringUtil::UrlEncode(code, false)
         + "&redirect_uri=" + chen::StringUtil::UrlEncode(callback_url, false);
 
     auto result = DoGithubRequestWithRetry(true, kGithubTokenUrl, headers, body);
     if (!result || result->result != 0 || !result->response || result->response->getStatus() != chen::http::HttpStatus::OK) {
         ERROR(logger) << "ExchangeAccessToken: http failed result=" << (result ? result->result : -1)
-            << " status=" << (result && result->response ? (int)result->response->getStatus() : 0)
-            << " body=" << (result && result->response ? result->response->getBody() : "");
+                      << " status=" << (result && result->response ? (int)result->response->getStatus() : 0)
+                      << " body=" << (result && result->response ? result->response->getBody() : "");
         return false;
     }
 
@@ -138,7 +144,8 @@ static bool ExchangeAccessToken(const std::string& client_id, const std::string&
 }
 
 /// 读取 GitHub 用户信息（id/login/name/email/avatar）
-static bool FetchGithubProfile(const std::string& access_token, GithubProfile& profile) {
+static bool FetchGithubProfile(const std::string& access_token, GithubProfile& profile)
+{
     std::map<std::string, std::string> headers;
     headers["Accept"] = "application/vnd.github+json";
     headers["User-Agent"] = kGithubUserAgent;
@@ -147,7 +154,7 @@ static bool FetchGithubProfile(const std::string& access_token, GithubProfile& p
     auto result = DoGithubRequestWithRetry(false, kGithubUserUrl, headers, "");
     if (!result || result->result != 0 || !result->response || result->response->getStatus() != chen::http::HttpStatus::OK) {
         ERROR(logger) << "FetchGithubProfile: http failed result=" << (result ? result->result : -1)
-            << " status=" << (result && result->response ? (int)result->response->getStatus() : 0);
+                      << " status=" << (result && result->response ? (int)result->response->getStatus() : 0);
         return false;
     }
 
@@ -189,7 +196,8 @@ static bool FetchGithubProfile(const std::string& access_token, GithubProfile& p
 }
 
 /// 拉取 GitHub 邮箱列表，返回 primary + verified 的邮箱
-static std::string FetchPrimaryEmail(const std::string& access_token) {
+static std::string FetchPrimaryEmail(const std::string& access_token)
+{
     std::map<std::string, std::string> headers;
     headers["Accept"] = "application/vnd.github+json";
     headers["User-Agent"] = kGithubUserAgent;
@@ -229,7 +237,8 @@ static std::string FetchPrimaryEmail(const std::string& access_token) {
 }
 
 /// 生成唯一且符合站点规则的账号名
-static std::string BuildAccount(const std::string& open_id, const std::string& login) {
+static std::string BuildAccount(const std::string& open_id, const std::string& login)
+{
     if (IsValidAccount(login) && !UserMgr::GetInstance()->getByAccount(login)) {
         return login;
     }
@@ -257,7 +266,8 @@ static std::string BuildAccount(const std::string& open_id, const std::string& l
 }
 
 /// 生成唯一用户名
-static std::string BuildName(const std::string& open_id, const std::string& uname, const std::string& login) {
+static std::string BuildName(const std::string& open_id, const std::string& uname, const std::string& login)
+{
     std::string base = !uname.empty() ? uname : login;
     base = chen::StringUtil::Trim(base);
     if (base.empty()) {
@@ -275,15 +285,20 @@ static std::string BuildName(const std::string& open_id, const std::string& unam
 }
 
 /// 重定向到前端登录页并携带错误码
-static void RedirectError(chen::http::HttpResponse::ptr response, const std::string& frontend_base, int32_t code) {
+static void RedirectError(chen::http::HttpResponse::ptr response, const std::string& frontend_base, int32_t code)
+{
     if (code == 0) {
         code = errcode::GITHUB_OAUTH_FAILED;
     }
     response->setRedirect(frontend_base + "/auth?oauth_error=" + std::to_string(code));
 }
 
-int32_t UserOauthGithubCallbackServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserOauthGithubCallbackServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     std::string client_id = g_github_client_id->getValue();
     std::string client_secret = g_github_client_secret->getValue();
     std::string callback_url = g_github_callback_url->getValue();
@@ -381,7 +396,7 @@ int32_t UserOauthGithubCallbackServlet::handle(chen::http::HttpRequest::ptr requ
                 user->setUpdateTime(time(0));
                 if (data::UserInfoDao::Insert(user, db)) {
                     ERROR(logger) << "callback: insert user failed"
-                        << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                                  << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
                     error = errcode::DB_OPERATION_FAILED;
                     break;
                 }

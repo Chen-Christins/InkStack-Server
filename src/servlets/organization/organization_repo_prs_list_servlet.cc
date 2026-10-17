@@ -10,9 +10,9 @@
 #include <chen/log/log.h>
 
 #include "../../manager/organization_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_repo_manager.h"
 #include "../../manager/organization_repo_pr_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -20,11 +20,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationRepoPrsListServlet::OrganizationRepoPrsListServlet()
-    : BlogLoginedServlet("OrganizationRepoPrsListServlet") {
+    : BlogLoginedServlet("OrganizationRepoPrsListServlet")
+{
 }
 
-int32_t OrganizationRepoPrsListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationRepoPrsListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t repo_id = request->getParamAs<int64_t>("repo_id", 0);
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
@@ -114,5 +119,5 @@ int32_t OrganizationRepoPrsListServlet::handle(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

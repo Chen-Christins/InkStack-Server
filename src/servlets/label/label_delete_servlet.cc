@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
-#include "blog/data/label_info.h"
 #include "../../manager/label_manager.h"
 #include "../../util.h"
+#include "blog/data/label_info.h"
 
 #include <set>
 
@@ -14,11 +14,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 LabelDeleteServlet::LabelDeleteServlet()
-    : BlogLoginedServlet("LabelDeleteServlet") {
+    : BlogLoginedServlet("LabelDeleteServlet")
+{
 }
 
-int32_t LabelDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t LabelDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> label_ids;
@@ -81,5 +86,5 @@ int32_t LabelDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

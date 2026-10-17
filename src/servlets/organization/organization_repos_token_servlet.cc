@@ -2,11 +2,11 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_repo_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -14,11 +14,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationReposTokenServlet::OrganizationReposTokenServlet()
-    : BlogLoginedServlet("OrganizationReposTokenServlet") {
+    : BlogLoginedServlet("OrganizationReposTokenServlet")
+{
 }
 
-int32_t OrganizationReposTokenServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationReposTokenServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, repo_id, "repo_id");
         DEFINE_AND_CHECK_STRING(result, token, "token");
@@ -51,8 +56,7 @@ int32_t OrganizationReposTokenServlet::handle(chen::http::HttpRequest::ptr reque
                 break;
             }
             int32_t org_role = rel->getRole();
-            if (org_role != OrganizationManager::Role::ORG_ADMIN
-                    && org_role != OrganizationManager::Role::DEV_LEAD) {
+            if (org_role != OrganizationManager::Role::ORG_ADMIN && org_role != OrganizationManager::Role::DEV_LEAD) {
                 result->setErrno(errcode::ACCESS_DENIED, "仅研发主管及以上角色可管理仓库 Token");
                 break;
             }
@@ -68,8 +72,7 @@ int32_t OrganizationReposTokenServlet::handle(chen::http::HttpRequest::ptr reque
         repo->setUpdateTime(time(0));
         if (data::OrganizationReposInfoDao::Update(repo, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "保存 Token 失败");
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
     } while (0);
@@ -77,5 +80,5 @@ int32_t OrganizationReposTokenServlet::handle(chen::http::HttpRequest::ptr reque
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -1,18 +1,22 @@
 #include "backup_delete_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/backup_record_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 BackupDeleteServlet::BackupDeleteServlet()
-    : BlogLoginedServlet("BackupDeleteServlet") {
+    : BlogLoginedServlet("BackupDeleteServlet")
+{
 }
 
-int32_t BackupDeleteServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t BackupDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -57,5 +61,5 @@ int32_t BackupDeleteServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

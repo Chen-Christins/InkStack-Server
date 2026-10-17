@@ -34,4 +34,4 @@ public:
 
 typedef chen::Singleton<FaqManager> FaqMgr;
 
-}
+} // namespace blog

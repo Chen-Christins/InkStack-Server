@@ -8,10 +8,12 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-UserOAuthManager::UserOAuthManager() {
+UserOAuthManager::UserOAuthManager()
+{
 }
 
-data::UserOauthInfo::ptr UserOAuthManager::getByOpenId(const std::string& provider, const std::string& open_id) {
+data::UserOauthInfo::ptr UserOAuthManager::getByOpenId(const std::string& provider, const std::string& open_id)
+{
     if (provider.empty() || open_id.empty()) {
         return nullptr;
     }
@@ -26,7 +28,7 @@ data::UserOauthInfo::ptr UserOAuthManager::getByOpenId(const std::string& provid
     qb->where("open_id", "=", open_id);
     if (data::UserOauthInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "getByOpenId: query failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return nullptr;
     }
     if (results.empty()) {
@@ -35,7 +37,8 @@ data::UserOauthInfo::ptr UserOAuthManager::getByOpenId(const std::string& provid
     return results[0];
 }
 
-data::UserOauthInfo::ptr UserOAuthManager::getByUser(int64_t user_id, const std::string& provider) {
+data::UserOauthInfo::ptr UserOAuthManager::getByUser(int64_t user_id, const std::string& provider)
+{
     if (!user_id || provider.empty()) {
         return nullptr;
     }
@@ -50,7 +53,7 @@ data::UserOauthInfo::ptr UserOAuthManager::getByUser(int64_t user_id, const std:
     qb->where("provider", "=", provider);
     if (data::UserOauthInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "getByUser: query failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return nullptr;
     }
     if (results.empty()) {
@@ -59,8 +62,8 @@ data::UserOauthInfo::ptr UserOAuthManager::getByUser(int64_t user_id, const std:
     return results[0];
 }
 
-int UserOAuthManager::bind(int64_t user_id, const std::string& provider
-        , const std::string& open_id, const std::string& login_name) {
+int UserOAuthManager::bind(int64_t user_id, const std::string& provider, const std::string& open_id, const std::string& login_name)
+{
     if (!user_id || provider.empty() || open_id.empty()) {
         return -1;
     }
@@ -78,10 +81,10 @@ int UserOAuthManager::bind(int64_t user_id, const std::string& provider
     info->setUpdateTime(time(0));
     if (data::UserOauthInfoDao::Insert(info, db)) {
         ERROR(logger) << "bind: Insert failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
     return 0;
 }
 
-}
+} // namespace blog

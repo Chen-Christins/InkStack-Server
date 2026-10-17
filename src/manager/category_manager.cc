@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 namespace blog {
 
@@ -12,19 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 300;
 
 CategoryManager::CategoryManager()
-    :m_cache(4, kCacheMaxSize, 30) {
+    : m_cache(4, kCacheMaxSize, 30)
+{
 }
 
-data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt) {
+data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::CategoryInfoDao::ParseRow(rt);
 }
 
-
-void CategoryManager::add(blog::data::CategoryInfo::ptr info) {
+void CategoryManager::add(blog::data::CategoryInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-blog::data::CategoryInfo::ptr CategoryManager::get(int64_t id) {
+blog::data::CategoryInfo::ptr CategoryManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -41,7 +44,8 @@ blog::data::CategoryInfo::ptr CategoryManager::get(int64_t id) {
     return v;
 }
 
-void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos, bool isValid) {
+void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -61,7 +65,8 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
     }
 }
 
-blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name) {
+blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name)
+{
     int64_t cachedId = getCachedIdMapping("cat:name:" + name);
     if (cachedId > 0) {
         return get(cachedId);

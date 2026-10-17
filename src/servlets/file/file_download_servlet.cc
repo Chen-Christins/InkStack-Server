@@ -1,11 +1,11 @@
 #include "file_download_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
+#include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/resource_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 #include <fstream>
 
@@ -17,12 +17,12 @@ static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup
 static const int64_t MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB文件大小限制
 
 // 安全处理文件名，移除危险字符
-std::string SanitizeFileName(const std::string& file_name) {
+std::string SanitizeFileName(const std::string& file_name)
+{
     std::string result;
     for (char c : file_name) {
         // 只保留安全字符：字母、数字、点、下划线、连字符
-        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-            (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-') {
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-') {
             result += c;
         } else {
             result += '_'; // 替换危险字符为下划线
@@ -32,7 +32,8 @@ std::string SanitizeFileName(const std::string& file_name) {
 }
 
 // 验证路径安全性，防止路径遍历
-bool IsPathSafe(const std::string& path) {
+bool IsPathSafe(const std::string& path)
+{
     // 检查是否包含路径遍历字符
     if (path.find("..") != std::string::npos) {
         return false;
@@ -50,11 +51,16 @@ bool IsPathSafe(const std::string& path) {
 }
 
 FileDownloadServlet::FileDownloadServlet()
-    : BlogLoginedServlet("FileDownloadServlet") {
+    : BlogLoginedServlet("FileDownloadServlet")
+{
 }
 
-int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t FileDownloadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     bool success = false;
     do {
         DEFINE_AND_CHECK_STRING(result, url, "url");
@@ -176,13 +182,13 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         response->setBody(result->toJsonString());
     }
     const std::string& content = response->getBody();
-    INFO(logger) << "File downloaded: " << request->getParam("fileName") << " (Size: " << content.size()
-                    << " bytes -- " << (1.0 * content.size() / 1024)
-                    << " kb -- " << (1.0 * content.size() / (1024 * 1024)) << " mb)";
+    INFO(logger) << "File downloaded: " << request->getParam("fileName") << " (Size: " << content.size() << " bytes -- "
+                 << (1.0 * content.size() / 1024) << " kb -- " << (1.0 * content.size() / (1024 * 1024)) << " mb)";
     return 0;
 }
 
-bool FileDownloadServlet::checkPermission(int32_t system_role) {
+bool FileDownloadServlet::checkPermission(int32_t system_role)
+{
     // 所有登录用户均可下载文件
     if (system_role == UserManager::Role::ADMIN) {
         return true;
@@ -190,5 +196,5 @@ bool FileDownloadServlet::checkPermission(int32_t system_role) {
     return false;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

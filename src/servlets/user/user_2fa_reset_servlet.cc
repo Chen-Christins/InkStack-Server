@@ -2,10 +2,10 @@
 
 #include <chen/log/log.h>
 
-#include "blog/data/user_recovery_code_info.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 #include "../../util/totp_util.h"
+#include "blog/data/user_recovery_code_info.h"
 
 namespace blog {
 namespace servlet {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 User2faResetServlet::User2faResetServlet()
-    :BlogLoginedServlet("User2faResetServlet") {
+    : BlogLoginedServlet("User2faResetServlet")
+{
 }
 
-int32_t User2faResetServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t User2faResetServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, recoveryCode, "recovery_code");
 
@@ -75,7 +80,7 @@ int32_t User2faResetServlet::handle(chen::http::HttpRequest::ptr request, chen::
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::TOTP_ENABLE_FAILED, "reset 2fa failed");
             ERROR(logger) << "reset 2fa: Update failed"
-                << " errstr=" << db->getErrStr() << " errno=" << db->getErrno();
+                          << " errstr=" << db->getErrStr() << " errno=" << db->getErrno();
             break;
         }
 

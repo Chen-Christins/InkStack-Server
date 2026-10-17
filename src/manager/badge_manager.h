@@ -30,12 +30,16 @@ public:
     void listAll(std::vector<data::BadgeInfo::ptr>& badges);
 
 private:
-    void insertDefault(const std::string& name, const std::string& desc,
-                       const std::string& icon, const std::string& color,
-                       const std::string& condition_key, int64_t condition_value,
-                       int32_t sort_order);
+    void insertDefault(
+        const std::string& name,
+        const std::string& desc,
+        const std::string& icon,
+        const std::string& color,
+        const std::string& condition_key,
+        int64_t condition_value,
+        int32_t sort_order);
 };
 
 typedef chen::Singleton<BadgeManager> BadgeMgr;
 
-}
+} // namespace blog

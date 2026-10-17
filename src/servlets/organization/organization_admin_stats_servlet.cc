@@ -1,17 +1,22 @@
 #include "organization_admin_stats_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 OrganizationAdminStatsServlet::OrganizationAdminStatsServlet()
-    : BlogLoginedServlet("OrganizationAdminStatsServlet") {
+    : BlogLoginedServlet("OrganizationAdminStatsServlet")
+{
 }
 
-int32_t OrganizationAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationAdminStatsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -35,5 +40,5 @@ int32_t OrganizationAdminStatsServlet::handle(chen::http::HttpRequest::ptr reque
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

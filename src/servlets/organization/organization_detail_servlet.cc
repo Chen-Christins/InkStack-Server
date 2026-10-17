@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationDetailServlet::OrganizationDetailServlet()
-    : BlogLoginedServlet("OrganizationDetailServlet") {
+    : BlogLoginedServlet("OrganizationDetailServlet")
+{
 }
 
-int32_t OrganizationDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationDetailServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
 
@@ -43,5 +48,5 @@ int32_t OrganizationDetailServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

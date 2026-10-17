@@ -1,8 +1,8 @@
 #include "rd_bug_servlet.h"
 
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
 #include "rd_helper.h"
 
@@ -10,11 +10,16 @@ namespace blog {
 namespace servlet {
 
 RdBugServlet::RdBugServlet()
-    : BlogLoginedServlet("RdBugServlet") {
+    : BlogLoginedServlet("RdBugServlet")
+{
 }
 
-int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdBugServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
@@ -121,5 +126,5 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -1,18 +1,22 @@
 #include "export_delete_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/export_record_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 ExportDeleteServlet::ExportDeleteServlet()
-    : BlogLoginedServlet("ExportDeleteServlet") {
+    : BlogLoginedServlet("ExportDeleteServlet")
+{
 }
 
-int32_t ExportDeleteServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t ExportDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -57,5 +61,5 @@ int32_t ExportDeleteServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

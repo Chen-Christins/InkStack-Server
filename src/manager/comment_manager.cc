@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 namespace blog {
 
@@ -12,18 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 CommentManager::CommentManager()
-    :m_cache(16, kCacheMaxSize, 0) {
+    : m_cache(16, kCacheMaxSize, 0)
+{
 }
 
-data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt) {
+data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::CommentInfoDao::ParseRow(rt);
 }
 
-void CommentManager::add(data::CommentInfo::ptr info) {
+void CommentManager::add(data::CommentInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::CommentInfo::ptr CommentManager::get(int64_t id) {
+data::CommentInfo::ptr CommentManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -40,8 +44,14 @@ data::CommentInfo::ptr CommentManager::get(int64_t id) {
     return v;
 }
 
-data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_id, const std::string& content
-        , int64_t parent_id, const std::string& ip, const std::string& user_agent) {
+data::CommentInfo::ptr CommentManager::create(
+    int64_t article_id,
+    int64_t user_id,
+    const std::string& content,
+    int64_t parent_id,
+    const std::string& ip,
+    const std::string& user_agent)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -71,7 +81,8 @@ data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_i
     return info;
 }
 
-bool CommentManager::update(int64_t id, const std::string& content) {
+bool CommentManager::update(int64_t id, const std::string& content)
+{
     auto info = get(id);
     if (!info || info->getIsDeleted()) {
         return false;
@@ -92,7 +103,8 @@ bool CommentManager::update(int64_t id, const std::string& content) {
     return true;
 }
 
-bool CommentManager::del(int64_t id) {
+bool CommentManager::del(int64_t id)
+{
     auto info = get(id);
     if (!info || info->getIsDeleted()) {
         return false;
@@ -113,7 +125,8 @@ bool CommentManager::del(int64_t id) {
     return true;
 }
 
-void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id) {
+void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -135,7 +148,8 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
     }
 }
 
-void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id, uint64_t offset, uint64_t size) {
+void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id, uint64_t offset, uint64_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -151,8 +165,7 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     qb->offset((int32_t)offset);
 
     // 结果缓存：仅对首页做缓存
-    std::string listKey =
-        "cmt:art:" + std::to_string(article_id) + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::string listKey = "cmt:art:" + std::to_string(article_id) + ":" + std::to_string(offset) + ":" + std::to_string(size);
     std::vector<int64_t> cachedIds;
     if (getCachedListResult(listKey, cachedIds)) {
         for (auto id : cachedIds) {
@@ -178,7 +191,8 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     cacheListResult(listKey, ids);
 }
 
-void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, int64_t parent_id, uint64_t offset, uint64_t size) {
+void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, int64_t parent_id, uint64_t offset, uint64_t size)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -202,7 +216,8 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, i
     }
 }
 
-int64_t CommentManager::countByArticle(int64_t article_id) {
+int64_t CommentManager::countByArticle(int64_t article_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -216,7 +231,8 @@ int64_t CommentManager::countByArticle(int64_t article_id) {
     return executeCountCached(qb, db, "cmt:cnt:" + std::to_string(article_id));
 }
 
-int64_t CommentManager::countReplies(int64_t parent_id) {
+int64_t CommentManager::countReplies(int64_t parent_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -229,8 +245,15 @@ int64_t CommentManager::countReplies(int64_t parent_id) {
     return executeCountCached(qb, db, "cmt:reply:" + std::to_string(parent_id));
 }
 
-int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results, int64_t page_num, int64_t page_size
-        , int32_t status, const std::string& keyword, int64_t article_id, int32_t is_reported) {
+int64_t CommentManager::listByAdmin(
+    std::vector<data::CommentInfo::ptr>& results,
+    int64_t page_num,
+    int64_t page_size,
+    int32_t status,
+    const std::string& keyword,
+    int64_t article_id,
+    int32_t is_reported)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -258,7 +281,8 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
     return total;
 }
 
-int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32_t status) {
+int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32_t status)
+{
     if (ids.empty()) {
         return 0;
     }
@@ -286,7 +310,8 @@ int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32
     return ids.size();
 }
 
-int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids) {
+int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids)
+{
     if (ids.empty()) {
         return 0;
     }
@@ -314,7 +339,8 @@ int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids) {
     return ids.size();
 }
 
-CommentManager::CommentStats CommentManager::getStats() {
+CommentManager::CommentStats CommentManager::getStats()
+{
     CommentStats stats;
 
     std::string cached;
@@ -350,9 +376,15 @@ CommentManager::CommentStats CommentManager::getStats() {
             for (auto& [s, cnt] : rows) {
                 stats.total += cnt;
                 switch (s) {
-                case PENDING:   stats.pending = cnt;  break;
-                case APPROVED:  stats.approved = cnt; break;
-                case SPAM:      stats.spam = cnt;     break;
+                case PENDING:
+                    stats.pending = cnt;
+                    break;
+                case APPROVED:
+                    stats.approved = cnt;
+                    break;
+                case SPAM:
+                    stats.spam = cnt;
+                    break;
                 }
             }
         }

@@ -1,8 +1,8 @@
 #include "category_query_servlet.h"
 
-#include "../../manager/category_manager.h"
-#include "../../manager/article_manager.h"
 #include "../../manager/article_category_rel_manager.h"
+#include "../../manager/article_manager.h"
+#include "../../manager/category_manager.h"
 
 #include <chen/log/log.h>
 
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryQueryServlet::CategoryQueryServlet()
-    : BlogLoginedServlet("CategoryQueryServlet") {
+    : BlogLoginedServlet("CategoryQueryServlet")
+{
 }
 
-int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CategoryQueryServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -63,5 +68,5 @@ int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

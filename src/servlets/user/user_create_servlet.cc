@@ -1,27 +1,31 @@
 #include "user_create_servlet.h"
 
-#include <chen/log/log.h>
-#include <chen/db/redis.h>
 #include <chen/config/config.h>
+#include <chen/db/redis.h>
+#include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/system_settings_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 UserCreateServlet::UserCreateServlet()
-    :BlogServlet("UserCreateServlet") {
+    : BlogServlet("UserCreateServlet")
+{
 }
 
-int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, account, "account");
         DEFINE_AND_CHECK_STRING(result, email, "email");
@@ -90,7 +94,8 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
     return 0;
 }
 
-bool UserCreateServlet::verificationEmailCode(const std::string& email, const std::string& code) {
+bool UserCreateServlet::verificationEmailCode(const std::string& email, const std::string& code)
+{
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "GET email:verify:1:%s", email.c_str());
     if (!rpy || rpy->type != REDIS_REPLY_STRING) {
         return false;
@@ -103,5 +108,5 @@ bool UserCreateServlet::verificationEmailCode(const std::string& email, const st
     return true;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

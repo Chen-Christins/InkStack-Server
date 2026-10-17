@@ -2,10 +2,10 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_apply_manager.h"
 #include "../../event/event_define.h"
+#include "../../manager/organization_apply_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationApplyCreateServlet::OrganizationApplyCreateServlet()
-    : BlogLoginedServlet("OrganizationApplyCreateServlet") {
+    : BlogLoginedServlet("OrganizationApplyCreateServlet")
+{
 }
 
-int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationApplyCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, name, "name");
         DEFINE_AND_CHECK_STRING(result, type, "type");
@@ -52,8 +57,7 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
 
         if (data::OrganizationApplyInfoDao::Insert(info, db)) {
             result->setErrno(errcode::ORG_APPLY_INSERT_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -70,7 +74,7 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
             data.applicant_name = applicant ? applicant->getName() : std::to_string(user_id);
             data.org_name = name;
             data.apply_id = info->getId();
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_APPLY, std::move(data));
         }
     } while (0);
@@ -78,5 +82,5 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

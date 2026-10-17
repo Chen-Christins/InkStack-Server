@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/organization_apply_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationMyAppliesServlet::OrganizationMyAppliesServlet()
-    : BlogLoginedServlet("OrganizationMyAppliesServlet") {
+    : BlogLoginedServlet("OrganizationMyAppliesServlet")
+{
 }
 
-int32_t OrganizationMyAppliesServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationMyAppliesServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
@@ -55,5 +60,5 @@ int32_t OrganizationMyAppliesServlet::handle(chen::http::HttpRequest::ptr reques
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

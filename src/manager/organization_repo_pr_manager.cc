@@ -1,14 +1,14 @@
 #include "organization_repo_pr_manager.h"
 
+#include "../util.h"
 #include "organization_repo_manager.h"
 #include "organization_user_rel_manager.h"
 #include "protocol_ss_github.h"
-#include "../util.h"
 
-#include <chen/log/log.h>
-#include <chen/iomanager/worker.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
+#include <chen/iomanager/worker.h>
+#include <chen/log/log.h>
 #include <json/json.h>
 #include <json/reader.h>
 #include <json/writer.h>
@@ -27,22 +27,27 @@ static std::mutex s_sync_pr_mutex;
 static std::set<int64_t> s_syncing_pr_ids;
 
 OrganizationRepoPrManager::OrganizationRepoPrManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::parseRow(chen::ISQLData::ptr rt) {
+data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::OrganizationRepoPrsInfoDao::ParseRow(rt);
 }
 
-void OrganizationRepoPrManager::add(data::OrganizationRepoPrsInfo::ptr info) {
+void OrganizationRepoPrManager::add(data::OrganizationRepoPrsInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-void OrganizationRepoPrManager::del(int64_t id) {
+void OrganizationRepoPrManager::del(int64_t id)
+{
     m_cache.del(id);
 }
 
-void OrganizationRepoPrManager::onTick() {
+void OrganizationRepoPrManager::onTick()
+{
     std::vector<data::OrganizationReposInfo::ptr> repos;
     OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
 
@@ -59,7 +64,8 @@ void OrganizationRepoPrManager::onTick() {
     }
 }
 
-data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::get(int64_t id) {
+data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -76,7 +82,8 @@ data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::get(int64_t id) {
     return v;
 }
 
-data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::getByRepoAndPrId(int64_t repo_id, int32_t github_pr_id) {
+data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::getByRepoAndPrId(int64_t repo_id, int32_t github_pr_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -85,8 +92,13 @@ data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::getByRepoAndPrId(i
     return data::OrganizationRepoPrsInfoDao::QueryByRepoIdGithubPrId(repo_id, github_pr_id, db);
 }
 
-int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
-        , int64_t repo_id, const std::string& state, uint64_t offset, uint64_t limit) {
+int64_t OrganizationRepoPrManager::listByRepoPages(
+    std::vector<data::OrganizationRepoPrsInfo::ptr>& prs,
+    int64_t repo_id,
+    const std::string& state,
+    uint64_t offset,
+    uint64_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -111,7 +123,8 @@ int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::Organizatio
     return total;
 }
 
-int64_t OrganizationRepoPrManager::getCountByRepo(int64_t repo_id) {
+int64_t OrganizationRepoPrManager::getCountByRepo(int64_t repo_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -126,8 +139,13 @@ int64_t OrganizationRepoPrManager::getCountByRepo(int64_t repo_id) {
     return total;
 }
 
-int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
-        , int64_t org_id, const std::string& state, uint64_t offset, uint64_t limit) {
+int64_t OrganizationRepoPrManager::listByOrgPages(
+    std::vector<data::OrganizationRepoPrsInfo::ptr>& prs,
+    int64_t org_id,
+    const std::string& state,
+    uint64_t offset,
+    uint64_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -154,8 +172,13 @@ int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::Organization
     return total;
 }
 
-int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
-        , int64_t uid, const std::string& state, uint64_t offset, uint64_t limit) {
+int64_t OrganizationRepoPrManager::listByUserPages(
+    std::vector<data::OrganizationRepoPrsInfo::ptr>& prs,
+    int64_t uid,
+    const std::string& state,
+    uint64_t offset,
+    uint64_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -186,13 +209,15 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
 }
 
 /// MySQL TIMESTAMP 无法存储 0（1970-01-01），空时间统一写 DB 默认哨兵 '1980-01-01 00:00:00'
-static time_t emptyTimestamp() {
-    static time_t s_empty = chen::Str2Time("1980-01-01 00:00:00");
+static time_t emptyTimestamp()
+{
+    static time_t s_empty = chen::TimeUtil::Str2Time("1980-01-01 00:00:00");
     return s_empty;
 }
 
 /// 从 GitHub URL 提取 owner/repo
-static std::string extractGithubRepo(const std::string& url) {
+static std::string extractGithubRepo(const std::string& url)
+{
     auto uri = chen::Uri::Create(url);
     if (!uri) {
         return "";
@@ -208,7 +233,8 @@ static std::string extractGithubRepo(const std::string& url) {
 }
 
 /// 从 Link header 中提取 rel="next" 的 URL
-static std::string getNextPageUrl(const std::string& linkHeader) {
+static std::string getNextPageUrl(const std::string& linkHeader)
+{
     // 格式: <https://...>; rel="next", <https://...>; rel="last"
     size_t pos = 0;
     while (pos < linkHeader.size()) {
@@ -252,7 +278,8 @@ struct SyncPrItem {
 };
 
 /// 解析 GitHub reviews 数组，计算整体审查状态与 reviewers JSON
-static void parseReviews(const Json::Value& arr, std::string& review_status, std::string& reviewers_json) {
+static void parseReviews(const Json::Value& arr, std::string& review_status, std::string& reviewers_json)
+{
     bool has_approved = false;
     bool has_changes = false;
     Json::Value reviewerArr(Json::arrayValue);
@@ -279,14 +306,14 @@ static void parseReviews(const Json::Value& arr, std::string& review_status, std
 }
 
 /// 发起 GitHub GET 请求，仅对连接失败/超时重试，返回原始响应（含非 2xx 状态码）
-static chen::http::HttpResult::ptr githubGetRaw(const std::string& url
-        , const std::map<std::string, std::string>& headers, int max_retries) {
+static chen::http::HttpResult::ptr githubGetRaw(const std::string& url, const std::map<std::string, std::string>& headers, int max_retries)
+{
     chen::http::HttpResult::ptr result;
     for (int retry = 0; retry <= max_retries; ++retry) {
         result = chen::http::HttpConnection::DoGet(url, 30000, headers);
-        bool transient = (!result
-                || result->result == (int)chen::http::HttpResult::Error::CONNECT_FAIL
-                || result->result == (int)chen::http::HttpResult::Error::TIMEOUT);
+        bool transient =
+            (!result || result->result == (int)chen::http::HttpResult::Error::CONNECT_FAIL
+             || result->result == (int)chen::http::HttpResult::Error::TIMEOUT);
         if (!transient) {
             return result;
         }
@@ -298,7 +325,8 @@ static chen::http::HttpResult::ptr githubGetRaw(const std::string& url
 }
 
 /// 判断 GitHub 响应是否因限流被拒绝
-static bool isGithubRateLimited(const chen::http::HttpResponse::ptr& response) {
+static bool isGithubRateLimited(const chen::http::HttpResponse::ptr& response)
+{
     if (!response) {
         return false;
     }
@@ -317,8 +345,13 @@ static bool isGithubRateLimited(const chen::http::HttpResponse::ptr& response) {
     return false;
 }
 
-static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& repo_path
-        , const std::map<std::string, std::string>& headers, chen::IDB::ptr db) {
+static int syncPage(
+    const Json::Value& arr,
+    int64_t repo_id,
+    const std::string& repo_path,
+    const std::map<std::string, std::string>& headers,
+    chen::IDB::ptr db)
+{
     // 先解析列表数据
     std::vector<SyncPrItem> items;
     for (auto& item : arr) {
@@ -338,13 +371,13 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         si.reviewers = "[]";
         si.merged_at = 0;
         if (item.isMember("created_at") && !item["created_at"].isNull()) {
-            si.created_at = chen::Str2Time(item["created_at"].asCString());
+            si.created_at = chen::TimeUtil::Str2Time(item["created_at"].asCString());
         }
         if (item.isMember("closed_at") && !item["closed_at"].isNull()) {
-            si.closed_at = chen::Str2Time(item["closed_at"].asCString());
+            si.closed_at = chen::TimeUtil::Str2Time(item["closed_at"].asCString());
         }
         if (item.isMember("merged_at") && !item["merged_at"].isNull()) {
-            si.merged_at = chen::Str2Time(item["merged_at"].asCString());
+            si.merged_at = chen::TimeUtil::Str2Time(item["merged_at"].asCString());
         }
         items.push_back(si);
     }
@@ -356,21 +389,18 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         auto wg = chen::WorkerGroup::Create(5);
         for (auto& si : items) {
             int num = si.number;
-            wg->schedule([repo_path, &headers, num, &additions, &deletions, &changed_files
-                    , &review_statuses, &reviewers_json]() {
+            wg->schedule([repo_path, &headers, num, &additions, &deletions, &changed_files, &review_statuses, &reviewers_json]() {
                 // 1. 拉详情补全 additions/deletions/changed_files
                 {
                     std::string detail_url = "https://api.github.com/repos/" + repo_path + "/pulls/" + std::to_string(num);
                     chen::http::HttpResult::ptr detail;
                     for (int retry = 0; retry <= 3; ++retry) {
                         detail = chen::http::HttpConnection::DoGet(detail_url, 15000, headers);
-                        if (detail && detail->result == 0 && detail->response
-                                && detail->response->getStatus() == chen::http::HttpStatus::OK) {
+                        if (detail && detail->result == 0 && detail->response && detail->response->getStatus() == chen::http::HttpStatus::OK) {
                             break;
                         }
                     }
-                    if (detail && detail->result == 0 && detail->response
-                            && detail->response->getStatus() == chen::http::HttpStatus::OK) {
+                    if (detail && detail->result == 0 && detail->response && detail->response->getStatus() == chen::http::HttpStatus::OK) {
                         Json::Value detailJson;
                         Json::Reader reader;
                         if (reader.parse(detail->response->getBody(), detailJson)) {
@@ -392,13 +422,11 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
                     chen::http::HttpResult::ptr reviews;
                     for (int retry = 0; retry <= 3; ++retry) {
                         reviews = chen::http::HttpConnection::DoGet(reviews_url, 15000, headers);
-                        if (reviews && reviews->result == 0 && reviews->response
-                                && reviews->response->getStatus() == chen::http::HttpStatus::OK) {
+                        if (reviews && reviews->result == 0 && reviews->response && reviews->response->getStatus() == chen::http::HttpStatus::OK) {
                             break;
                         }
                     }
-                    if (reviews && reviews->result == 0 && reviews->response
-                            && reviews->response->getStatus() == chen::http::HttpStatus::OK) {
+                    if (reviews && reviews->result == 0 && reviews->response && reviews->response->getStatus() == chen::http::HttpStatus::OK) {
                         Json::Value arr;
                         Json::Reader reader;
                         if (reader.parse(reviews->response->getBody(), arr) && arr.isArray()) {
@@ -470,14 +498,14 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
 
         if (existing) {
             if (data::OrganizationRepoPrsInfoDao::Update(info, db)) {
-                ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << info->getGithubPrId()
-                    << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << info->getGithubPrId() << ", errstr=" << db->getErrStr()
+                              << ", errno=" << db->getErrno();
                 continue;
             }
         } else {
             if (data::OrganizationRepoPrsInfoDao::Insert(info, db)) {
-                ERROR(logger) << "SyncPrFromGitHub: Insert failed for PR #" << info->getGithubPrId()
-                    << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                ERROR(logger) << "SyncPrFromGitHub: Insert failed for PR #" << info->getGithubPrId() << ", errstr=" << db->getErrStr()
+                              << ", errno=" << db->getErrno();
                 continue;
             }
             OrganizationRepoPrMgr::GetInstance()->add(info);
@@ -487,7 +515,8 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
     return synced;
 }
 
-void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token, int max_prs) {
+void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token, int max_prs)
+{
     std::string repo_path = extractGithubRepo(repo_url);
     if (repo_path.empty()) {
         ERROR(logger) << "SyncPrFromGitHub: invalid repo url=" << repo_url;
@@ -533,8 +562,7 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
                 return r;
             }
             if (retry < max_retries) {
-                WARN(logger) << "SyncPrFromGitHub: retry " << (retry + 1) << "/" << max_retries
-                    << " for " << url;
+                WARN(logger) << "SyncPrFromGitHub: retry " << (retry + 1) << "/" << max_retries << " for " << url;
             }
         }
         return nullptr;
@@ -585,12 +613,11 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
         }
     }
 
-    INFO(logger) << "SyncPrFromGitHub: synced " << total_synced << " PRs across "
-        << page_no << " pages for repo " << repo_id;
+    INFO(logger) << "SyncPrFromGitHub: synced " << total_synced << " PRs across " << page_no << " pages for repo " << repo_id;
 }
 
-OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGitHub(int64_t pr_id
-        , data::OrganizationRepoPrsInfo::ptr& out) {
+OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGitHub(int64_t pr_id, data::OrganizationRepoPrsInfo::ptr& out)
+{
     auto pr = OrganizationRepoPrMgr::GetInstance()->get(pr_id);
     if (!pr) {
         return SyncPrStatus::PR_NOT_FOUND;
@@ -631,9 +658,11 @@ OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGit
     struct SyncGuard {
         int64_t id;
         explicit SyncGuard(int64_t v)
-            :id(v) {
+            : id(v)
+        {
         }
-        ~SyncGuard() {
+        ~SyncGuard()
+        {
             std::lock_guard<std::mutex> lock(s_sync_pr_mutex);
             s_syncing_pr_ids.erase(id);
         }
@@ -660,8 +689,7 @@ OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGit
         return SyncPrStatus::RATE_LIMITED;
     }
     if (detail_status != chen::http::HttpStatus::OK) {
-        ERROR(logger) << "SyncPrFromGitHub: detail unexpected status=" << (int)detail_status
-            << " pr_id=" << pr_id;
+        ERROR(logger) << "SyncPrFromGitHub: detail unexpected status=" << (int)detail_status << " pr_id=" << pr_id;
         return SyncPrStatus::HTTP_ERROR;
     }
 
@@ -675,7 +703,7 @@ OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGit
     // 2. 回写主字段
     int64_t created_at = 0;
     if (detail_json.isMember("created_at") && !detail_json["created_at"].isNull()) {
-        created_at = chen::Str2Time(detail_json["created_at"].asCString());
+        created_at = chen::TimeUtil::Str2Time(detail_json["created_at"].asCString());
     }
     if (created_at) {
         pr->setCreateTime(created_at);
@@ -695,10 +723,10 @@ OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGit
     int64_t merged_at = 0;
     int64_t closed_at = 0;
     if (detail_json.isMember("merged_at") && !detail_json["merged_at"].isNull()) {
-        merged_at = chen::Str2Time(detail_json["merged_at"].asCString());
+        merged_at = chen::TimeUtil::Str2Time(detail_json["merged_at"].asCString());
     }
     if (detail_json.isMember("closed_at") && !detail_json["closed_at"].isNull()) {
-        closed_at = chen::Str2Time(detail_json["closed_at"].asCString());
+        closed_at = chen::TimeUtil::Str2Time(detail_json["closed_at"].asCString());
     }
     if (merged || merged_at > 0) {
         pr->setState("merged");
@@ -737,19 +765,19 @@ OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGit
         return SyncPrStatus::DB_ERROR;
     }
     if (data::OrganizationRepoPrsInfoDao::Update(pr, db)) {
-        ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << pr->getGithubPrId()
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+        ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << pr->getGithubPrId() << ", errstr=" << db->getErrStr()
+                      << ", errno=" << db->getErrno();
         return SyncPrStatus::DB_ERROR;
     }
     OrganizationRepoPrMgr::GetInstance()->add(pr);
     out = pr;
 
-    INFO(logger) << "SyncPrFromGitHub: synced pr_id=" << pr_id << " PR #" << pr->getGithubPrId()
-        << " state=" << pr->getState();
+    INFO(logger) << "SyncPrFromGitHub: synced pr_id=" << pr_id << " PR #" << pr->getGithubPrId() << " state=" << pr->getState();
     return SyncPrStatus::OK;
 }
 
-data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndName(const std::string& owner, const std::string& name) {
+data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndName(const std::string& owner, const std::string& name)
+{
     if (owner.empty() || name.empty()) {
         return nullptr;
     }
@@ -774,4 +802,4 @@ data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndNa
     return OrganizationRepoMgr::GetInstance()->get(repoId);
 }
 
-}
+} // namespace blog

@@ -8,10 +8,12 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-BadgeManager::BadgeManager() {
+BadgeManager::BadgeManager()
+{
 }
 
-void BadgeManager::ensureDefaults() {
+void BadgeManager::ensureDefaults()
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -35,10 +37,15 @@ void BadgeManager::ensureDefaults() {
     insertDefault("社区之星", "获得 1000 个关注", "star", "#eab308", "total_followers", 1000, 6);
 }
 
-void BadgeManager::insertDefault(const std::string& name, const std::string& desc,
-                                 const std::string& icon, const std::string& color,
-                                 const std::string& condition_key, int64_t condition_value,
-                                 int32_t sort_order) {
+void BadgeManager::insertDefault(
+    const std::string& name,
+    const std::string& desc,
+    const std::string& icon,
+    const std::string& color,
+    const std::string& condition_key,
+    int64_t condition_value,
+    int32_t sort_order)
+{
     auto db = GetDB();
     if (!db) {
         return;
@@ -57,12 +64,12 @@ void BadgeManager::insertDefault(const std::string& name, const std::string& des
     badge->setUpdateTime(time(0));
 
     if (data::BadgeInfoDao::Insert(badge, db)) {
-        ERROR(logger) << "insert badge failed: " << name
-            << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "insert badge failed: " << name << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
     }
 }
 
-void BadgeManager::listAll(std::vector<data::BadgeInfo::ptr>& badges) {
+void BadgeManager::listAll(std::vector<data::BadgeInfo::ptr>& badges)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -79,4 +86,4 @@ void BadgeManager::listAll(std::vector<data::BadgeInfo::ptr>& badges) {
     }
 }
 
-}
+} // namespace blog

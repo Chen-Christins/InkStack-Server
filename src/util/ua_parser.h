@@ -21,16 +21,13 @@ constexpr const char* kPlatformPc = "pc";
  * @param ua User-Agent 字符串
  * @return kPlatformMobile 或 kPlatformPc
  */
-inline const char* DetectPlatform(const std::string& ua) {
+inline const char* DetectPlatform(const std::string& ua)
+{
     if (ua.empty()) {
         return kPlatformPc;
     }
-    if (ua.find("iPhone") != std::string::npos
-            || ua.find("iPad") != std::string::npos
-            || ua.find("iPod") != std::string::npos
-            || ua.find("Android") != std::string::npos
-            || ua.find("Windows Phone") != std::string::npos
-            || ua.find("Mobile") != std::string::npos) {
+    if (ua.find("iPhone") != std::string::npos || ua.find("iPad") != std::string::npos || ua.find("iPod") != std::string::npos
+        || ua.find("Android") != std::string::npos || ua.find("Windows Phone") != std::string::npos || ua.find("Mobile") != std::string::npos) {
         return kPlatformMobile;
     }
     return kPlatformPc;
@@ -41,7 +38,8 @@ inline const char* DetectPlatform(const std::string& ua) {
  * @param ua User-Agent 字符串
  * @return 浏览器名，如 Chrome / Firefox / Safari / Edge / Opera
  */
-inline std::string ParseBrowser(const std::string& ua) {
+inline std::string ParseBrowser(const std::string& ua)
+{
     if (ua.find("Edg/") != std::string::npos || ua.find("Edge/") != std::string::npos) {
         return "Edge";
     }
@@ -65,7 +63,8 @@ inline std::string ParseBrowser(const std::string& ua) {
  * @param ua User-Agent 字符串
  * @return 系统名，如 Windows / macOS / iPhone / iPad / Android / Linux
  */
-inline std::string ParseOS(const std::string& ua) {
+inline std::string ParseOS(const std::string& ua)
+{
     if (ua.find("Windows") != std::string::npos) {
         return "Windows";
     }
@@ -95,8 +94,9 @@ inline std::string ParseOS(const std::string& ua) {
  * @param ua User-Agent 字符串
  * @return 如 "Chrome · macOS" / "Safari · iPhone" / "Edge · Windows"
  */
-inline std::string ParseDeviceName(const std::string& ua) {
+inline std::string ParseDeviceName(const std::string& ua)
+{
     return ParseBrowser(ua) + " · " + ParseOS(ua);
 }
 
-}
+} // namespace blog

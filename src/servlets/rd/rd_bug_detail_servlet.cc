@@ -1,8 +1,8 @@
 #include "rd_bug_detail_servlet.h"
 
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
 #include "rd_helper.h"
 
@@ -10,11 +10,16 @@ namespace blog {
 namespace servlet {
 
 RdBugDetailServlet::RdBugDetailServlet()
-    : BlogLoginedServlet("RdBugDetailServlet") {
+    : BlogLoginedServlet("RdBugDetailServlet")
+{
 }
 
-int32_t RdBugDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdBugDetailServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         if (!id) {
@@ -60,5 +65,5 @@ int32_t RdBugDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::h
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

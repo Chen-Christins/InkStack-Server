@@ -6,14 +6,16 @@
 namespace blog {
 namespace servlet {
 
-void BuildMessageJson(Json::Value& json, data::ConversationMessageInfo::ptr msg, int64_t uid) {
+void BuildMessageJson(Json::Value& json, data::ConversationMessageInfo::ptr msg, int64_t uid)
+{
     json["id"] = (Json::Int64)msg->getId();
     json["fromMe"] = (msg->getSenderId() == uid);
     json["text"] = msg->getContent();
     json["create_time"] = (Json::Int64)msg->getCreateTime();
 }
 
-void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, int64_t uid) {
+void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, int64_t uid)
+{
     int64_t peer_id = (conv->getUserAId() == uid) ? conv->getUserBId() : conv->getUserAId();
     int32_t unread = (conv->getUserAId() == uid) ? conv->getUnreadA() : conv->getUnreadB();
 
@@ -39,7 +41,8 @@ void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, 
     json["messages"] = arr;
 }
 
-int32_t CheckChatPermission(Result::ptr result, int64_t uid) {
+int32_t CheckChatPermission(Result::ptr result, int64_t uid)
+{
     auto user = UserMgr::GetInstance()->get(uid);
     if (!user) {
         result->setErrno(errcode::USER_NOT_FOUND);
@@ -52,5 +55,5 @@ int32_t CheckChatPermission(Result::ptr result, int64_t uid) {
     return errcode::SUCCESS;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

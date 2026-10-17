@@ -10,10 +10,12 @@ namespace blog {
 namespace servlet {
 
 DashboardTrendServlet::DashboardTrendServlet()
-    : BlogLoginedServlet("DashboardTrendServlet") {
+    : BlogLoginedServlet("DashboardTrendServlet")
+{
 }
 
-static std::string FormatDate(int64_t ts) {
+static std::string FormatDate(int64_t ts)
+{
     struct tm t;
     localtime_r(&ts, &t);
     char buf[16];
@@ -21,15 +23,20 @@ static std::string FormatDate(int64_t ts) {
     return buf;
 }
 
-static const char* WeekdayName(int64_t ts) {
+static const char* WeekdayName(int64_t ts)
+{
     static const char* names[] = {"周日", "周一", "周二", "周三", "周四", "周五", "周六"};
     struct tm t;
     localtime_r(&ts, &t);
     return names[t.tm_wday];
 }
 
-int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t DashboardTrendServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -76,8 +83,8 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
         for (auto id : ids) {
             auto u = UserMgr::GetInstance()->get(id);
             if (!u) {
-            continue;
-        }
+                continue;
+            }
             int64_t ts = u->getCreateTime();
             if (ts >= period_start) {
                 int32_t idx = (ts - period_start) / bucket_sec;
@@ -122,8 +129,8 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
             int64_t visits = buckets[i];
             total_visits += visits;
             if (visits > max_visits) {
-            max_visits = visits;
-        }
+                max_visits = visits;
+            }
 
             Json::Value item;
             if (period == 7) {
@@ -135,8 +142,8 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
             } else {
                 int64_t week_end = bucket_ts + bucket_sec - 1;
                 if (week_end > now) {
-                week_end = now;
-            }
+                    week_end = now;
+                }
                 item["label"] = "第" + std::to_string(i + 1) + "周";
                 item["date"] = FormatDate(bucket_ts) + " ~ " + FormatDate(week_end);
             }
@@ -154,5 +161,5 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

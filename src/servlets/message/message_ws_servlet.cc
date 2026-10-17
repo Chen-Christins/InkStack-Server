@@ -14,7 +14,8 @@ namespace blog::servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static void sendError(chen::http::WSSession::ptr session, int32_t errno_, const std::string& errstr) {
+static void sendError(chen::http::WSSession::ptr session, int32_t errno_, const std::string& errstr)
+{
     Json::Value err;
     err["errno"] = errno_;
     err["errstr"] = errstr;
@@ -22,17 +23,17 @@ static void sendError(chen::http::WSSession::ptr session, int32_t errno_, const 
 }
 
 MessageWSServlet::MessageWSServlet()
-    : chen::http::WSServlet("MessageWS") {
+    : chen::http::WSServlet("MessageWS")
+{
 }
 
-int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) {
+int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session)
+{
     std::string uid_str = header->getParam("uid");
     std::string token = header->getParam("token");
     std::string token_time_str = header->getParam("token_time");
 
-    INFO(logger) << "[ChatWS] onConnect: uid=" << uid_str
-        << " token=" << (token.empty() ? "(empty)" : "***")
-        << " token_time=" << token_time_str;
+    INFO(logger) << "[ChatWS] onConnect: uid=" << uid_str << " token=" << (token.empty() ? "(empty)" : "***") << " token_time=" << token_time_str;
 
     if (uid_str.empty() || token.empty() || token_time_str.empty()) {
         INFO(logger) << "[ChatWS] onConnect FAIL: missing params";
@@ -44,8 +45,7 @@ int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::h
     int64_t token_time = std::stoll(token_time_str);
 
     if (token_time <= time(0)) {
-        INFO(logger) << "[ChatWS] onConnect FAIL: token expired, token_time="
-            << token_time << " now=" << time(0);
+        INFO(logger) << "[ChatWS] onConnect FAIL: token expired, token_time=" << token_time << " now=" << time(0);
         sendError(session, errcode::NOT_LOGIN, "Token expired, please re-login");
         return -1;
     }
@@ -57,8 +57,7 @@ int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::h
         return -1;
     }
     if (uinfo->getState() != 1) {
-        INFO(logger) << "[ChatWS] onConnect FAIL: user state=" << uinfo->getState()
-            << " uid=" << uid;
+        INFO(logger) << "[ChatWS] onConnect FAIL: user state=" << uinfo->getState() << " uid=" << uid;
         sendError(session, errcode::ACCOUNT_INVALID, "Account status abnormal");
         return -1;
     }
@@ -80,7 +79,8 @@ int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::h
     return 0;
 }
 
-int32_t MessageWSServlet::onClose(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) {
+int32_t MessageWSServlet::onClose(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session)
+{
     std::string uid_str = header->getParam("uid");
     if (!uid_str.empty()) {
         int64_t uid = std::stoll(uid_str);
@@ -90,8 +90,8 @@ int32_t MessageWSServlet::onClose(chen::http::HttpRequest::ptr header, chen::htt
     return 0;
 }
 
-int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http::WSFrameMessage::ptr msg
-        , chen::http::WSSession::ptr session) {
+int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session)
+{
     do {
         // 身份解析：优先握手请求里的 uid，其次按连接反查
         int64_t uid = MessageMgr::GetInstance()->getUidBySession(session);
@@ -164,8 +164,8 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
                 sendSendError(errcode::MESSAGE_SEND_FAILED, "Send failed");
                 break;
             }
-            INFO(logger) << "[ChatWS] send OK: uid=" << uid << " conv=" << conversation_id
-                << " msg_id=" << msg_info->getId() << " client_id=" << client_id;
+            INFO(logger) << "[ChatWS] send OK: uid=" << uid << " conv=" << conversation_id << " msg_id=" << msg_info->getId()
+                         << " client_id=" << client_id;
 
             // ACK 给发送方（携带 client_id 供前端对齐乐观消息，recipient_online 供送达状态）
             {
@@ -190,8 +190,7 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
                 push["message"] = mj;
                 MessageMgr::GetInstance()->sendToUser(peer_id, chen::JsonUtil::ToString(push));
             }
-            INFO(logger) << "[ChatWS] ack->" << uid << " push->" << peer_id
-                << " peer_online=" << MessageMgr::GetInstance()->isChatConnected(peer_id);
+            INFO(logger) << "[ChatWS] ack->" << uid << " push->" << peer_id << " peer_online=" << MessageMgr::GetInstance()->isChatConnected(peer_id);
         } else if (type == "read") {
             int64_t conversation_id = root.get("conversation_id", (Json::Int64)0).asInt64();
             if (conversation_id <= 0) {

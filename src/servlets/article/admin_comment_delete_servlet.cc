@@ -1,9 +1,9 @@
 #include "admin_comment_delete_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -13,11 +13,16 @@ namespace blog {
 namespace servlet {
 
 AdminCommentDeleteServlet::AdminCommentDeleteServlet()
-    : BlogLoginedServlet("AdminCommentDeleteServlet") {
+    : BlogLoginedServlet("AdminCommentDeleteServlet")
+{
 }
 
-int32_t AdminCommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AdminCommentDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -43,7 +48,8 @@ int32_t AdminCommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
         while (std::getline(ss, token, ',')) {
             try {
                 ids.push_back(std::stoll(token));
-            } catch (...) {}
+            } catch (...) {
+            }
         }
 
         int64_t affected = CommentMgr::GetInstance()->batchDelete(ids);
@@ -72,7 +78,7 @@ int32_t AdminCommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
                 data.comment_id = cid;
                 data.author_id = author_id;
                 data.type = "comment_admin_deleted";
-                
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
             }
         }
@@ -82,5 +88,5 @@ int32_t AdminCommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

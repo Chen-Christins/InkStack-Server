@@ -11,18 +11,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 BugManager::BugManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::BugInfo::ptr BugManager::parseRow(chen::ISQLData::ptr rt) {
+data::BugInfo::ptr BugManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::BugInfoDao::ParseRow(rt);
 }
 
-void BugManager::add(data::BugInfo::ptr info) {
+void BugManager::add(data::BugInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::BugInfo::ptr BugManager::get(int64_t id) {
+data::BugInfo::ptr BugManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -39,8 +43,8 @@ data::BugInfo::ptr BugManager::get(int64_t id) {
     return v;
 }
 
-uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
-        uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -63,8 +67,8 @@ uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
     return total;
 }
 
-uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos,
-        int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos, int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

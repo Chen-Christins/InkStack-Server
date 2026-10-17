@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
+#include "../../event/event_define.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminDeleteServlet::UserAdminDeleteServlet()
-    : BlogLoginedServlet("UserAdminDeleteServlet") {
+    : BlogLoginedServlet("UserAdminDeleteServlet")
+{
 }
 
-int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAdminDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
 
@@ -75,7 +80,7 @@ int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, che
             EventUserAdminData data = {};
             data.type = "account_deleted";
             data.user_id = user_id;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
         }
     } while (0);
@@ -83,5 +88,5 @@ int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

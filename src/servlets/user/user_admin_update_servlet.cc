@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminUpdateServlet::UserAdminUpdateServlet()
-    : BlogLoginedServlet("UserAdminUpdateServlet") {
+    : BlogLoginedServlet("UserAdminUpdateServlet")
+{
 }
 
-int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAdminUpdateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
 
@@ -110,8 +115,7 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
         }
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "update user failed");
-            ERROR(logger) << "db error errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -129,5 +133,5 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

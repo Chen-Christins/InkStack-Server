@@ -86,4 +86,4 @@ private:
 
 typedef chen::Singleton<UserLoginDeviceManager> UserLoginDeviceMgr;
 
-}
+} // namespace blog

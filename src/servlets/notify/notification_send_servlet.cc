@@ -4,8 +4,8 @@
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 
-#include <chen/log/log.h>
 #include <chen/iomanager/iomanager.h>
+#include <chen/log/log.h>
 #include <json/json.h>
 
 #include <vector>
@@ -16,11 +16,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 NotificationSendServlet::NotificationSendServlet()
-    : BlogLoginedServlet("NotificationSendServlet") {
+    : BlogLoginedServlet("NotificationSendServlet")
+{
 }
 
-int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t NotificationSendServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         // 权限检查: 仅管理员可发送通知
         int64_t uid = getUserId(request);
@@ -78,7 +83,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             std::vector<int64_t> user_ids;
             UserMgr::GetInstance()->getAllIds(user_ids, true);
 
-            NotificationData ntf {};
+            NotificationData ntf{};
             ntf.title = title;
             ntf.content = content;
             ntf.type = type;
@@ -96,17 +101,15 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             }
 
             // 给每个用户创建普通通知（is_broadcast=0）并 WS 推送
-            chen::IOManager::GetThis()->schedule(
-                [ntf, msg, user_ids]() mutable {
-                    for (auto target_uid : user_ids) {
-                        ntf.user_id = target_uid;
-                        NotificationMgr::GetInstance()->addNotification(ntf);
-                    }
-                    NotificationMgr::GetInstance()->broadcast(msg);
-                });
+            chen::IOManager::GetThis()->schedule([ntf, msg, user_ids]() mutable {
+                for (auto target_uid : user_ids) {
+                    ntf.user_id = target_uid;
+                    NotificationMgr::GetInstance()->addNotification(ntf);
+                }
+                NotificationMgr::GetInstance()->broadcast(msg);
+            });
 
-            INFO(logger) << "[NOTIFY] broadcast scheduled: type=" << type
-                << " title=" << title << " count=" << user_ids.size();
+            INFO(logger) << "[NOTIFY] broadcast scheduled: type=" << type << " title=" << title << " count=" << user_ids.size();
         } else if (target == "users") {
             std::string user_ids_str = request->getParam("user_ids");
             if (user_ids_str.empty()) {
@@ -124,7 +127,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             int32_t sent = 0;
             for (auto id : ids) {
-                NotificationData ntf {};
+                NotificationData ntf{};
                 ntf.user_id = id;
                 ntf.title = title;
                 ntf.content = content;
@@ -132,14 +135,13 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
                 ntf.sender_id = uid;
                 ntf.article_id = article_id;
                 ntf.comment_id = comment_id;
-                
+
                 notifMgr.addNotification(ntf);
                 if (notifMgr.sendToUser(id, msg) == 0) {
                     sent++;
                 }
             }
-            INFO(logger) << "[NOTIFY] send to users: count=" << ids.size()
-                << " sent=" << sent << " type=" << type << " title=" << title;
+            INFO(logger) << "[NOTIFY] send to users: count=" << ids.size() << " sent=" << sent << " type=" << type << " title=" << title;
         } else {
             result->setErrno(errcode::NOTIFICATION_INVALID_TARGET);
             break;
@@ -151,5 +153,5 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
     response->setBody(result->toJsonString());
     return 0;
 }
-}
-}
+} // namespace servlet
+} // namespace blog

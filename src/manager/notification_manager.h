@@ -1,12 +1,12 @@
 #pragma once
 
+#include <chen/db/query_builder.h>
+#include <chen/ds/lru_cache.h>
 #include <chen/http/ws_session.h>
 #include <chen/util/singleton.h>
-#include <chen/ds/lru_cache.h>
-#include <chen/db/query_builder.h>
 
-#include <unordered_map>
 #include <shared_mutex>
+#include <unordered_map>
 
 #include "blog/data/notification_info.h"
 
@@ -34,48 +34,47 @@ public:
     void addConnection(int64_t user_id, chen::http::WSSession::ptr session);
 
     void removeConnection(int64_t user_id);
-    
+
     void closeAllConnections();
-    
+
     int32_t sendToUser(int64_t user_id, const std::string& message);
-    
+
     void broadcast(const std::string& message);
-    
+
     bool isConnected(int64_t user_id);
-    
+
     int32_t getOnlineCount();
 
     // Presence WS connection management
     void addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session);
-    
+
     void removePresenceConnection(int64_t user_id);
-    
+
     void broadcastPresence(const std::string& message);
-    
+
     int32_t getPresenceOnlineCount();
 
     bool isPresenceConnected(int64_t user_id);
 
     // DB persistence
     data::NotificationInfo::ptr get(int64_t id);
-    
+
     data::NotificationInfo::ptr addNotification(const NotificationData& data);
-    
-    void listByUser(std::vector<data::NotificationInfo::ptr>& results, int64_t user_id,
-        uint64_t offset, uint64_t size, const std::string& type = "");
-    
+
+    void listByUser(std::vector<data::NotificationInfo::ptr>& results, int64_t user_id, uint64_t offset, uint64_t size, const std::string& type = "");
+
     int64_t countByUser(int64_t user_id, const std::string& type = "");
-    
+
     int64_t unreadCount(int64_t user_id);
-    
+
     bool markRead(int64_t notification_id);
-    
+
     bool markRead(const std::vector<int64_t>& ids);
-    
+
     int64_t markAllRead(int64_t user_id);
-    
+
     int64_t markReadByType(int64_t user_id, const std::string& type);
-    
+
     void cleanupExpiredBroadcasts();
 
 private:
@@ -95,4 +94,4 @@ private:
 
 typedef chen::Singleton<NotificationManager> NotificationMgr;
 
-}
+} // namespace blog

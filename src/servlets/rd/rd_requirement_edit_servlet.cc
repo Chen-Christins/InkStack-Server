@@ -1,21 +1,26 @@
 #include "rd_requirement_edit_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 #include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
 
 RdRequirementEditServlet::RdRequirementEditServlet()
-    : BlogLoginedServlet("RdRequirementEditServlet") {
+    : BlogLoginedServlet("RdRequirementEditServlet")
+{
 }
 
-int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdRequirementEditServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
@@ -135,7 +140,8 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
     return 0;
 }
 
-void RdRequirementEditServlet::notifyAssignee(int64_t assignee_id, data::RequirementInfo::ptr requirement) {
+void RdRequirementEditServlet::notifyAssignee(int64_t assignee_id, data::RequirementInfo::ptr requirement)
+{
     if (!assignee_id) {
         return;
     }
@@ -146,9 +152,9 @@ void RdRequirementEditServlet::notifyAssignee(int64_t assignee_id, data::Require
     data.item_id = requirement->getId();
     data.item_title = requirement->getTitle();
     data.creator_id = requirement->getCreatorId();
-    
+
     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_RD_ASSIGN, std::move(data));
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

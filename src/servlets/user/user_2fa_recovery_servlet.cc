@@ -4,31 +4,35 @@
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
 
-#include "blog/data/user_recovery_code_info.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/user_login_device_manager.h"
 #include "../../manager/system_settings_manager.h"
+#include "../../manager/user_login_device_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../util.h"
 #include "../../util/totp_util.h"
 #include "../../util/ua_parser.h"
+#include "blog/data/user_recovery_code_info.h"
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 /// Redis 2FA 临时凭证 key 前缀（5分钟有效）
 static const char* k2faPendingPrefix = "2fa_pending:";
 
 User2faRecoveryServlet::User2faRecoveryServlet()
-    :BlogServlet("User2faRecoveryServlet") {
+    : BlogServlet("User2faRecoveryServlet")
+{
 }
 
-int32_t User2faRecoveryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t User2faRecoveryServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, tempToken, "temp_token");
         DEFINE_AND_CHECK_STRING(result, recoveryCode, "recovery_code");
@@ -140,8 +144,7 @@ int32_t User2faRecoveryServlet::handle(chen::http::HttpRequest::ptr request, che
 
         info->setLoginTime(now);
         data::UserInfoDao::Update(info, db);
-        INFO(logger) << "2fa recovery login user=" << info->getId() << " platform=" << platform
-            << " device=" << device_name;
+        INFO(logger) << "2fa recovery login user=" << info->getId() << " platform=" << platform << " device=" << device_name;
 
         auto sdata = getSessionData(request, response);
         response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");

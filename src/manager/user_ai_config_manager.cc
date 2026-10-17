@@ -18,10 +18,12 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 UserAIConfigManager::UserAIConfigManager()
-    :m_cache(32, kCacheMaxSize, 0) {
+    : m_cache(32, kCacheMaxSize, 0)
+{
 }
 
-blog::data::UserAiConfigInfo::ptr UserAIConfigManager::getByUserId(int64_t user_id) {
+blog::data::UserAiConfigInfo::ptr UserAIConfigManager::getByUserId(int64_t user_id)
+{
     auto v = m_cache.get(user_id);
     if (v) {
         return v;
@@ -40,7 +42,8 @@ blog::data::UserAiConfigInfo::ptr UserAIConfigManager::getByUserId(int64_t user_
     return v;
 }
 
-bool UserAIConfigManager::save(blog::data::UserAiConfigInfo::ptr info) {
+bool UserAIConfigManager::save(blog::data::UserAiConfigInfo::ptr info)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -65,4 +68,4 @@ bool UserAIConfigManager::save(blog::data::UserAiConfigInfo::ptr info) {
     return true;
 }
 
-}
+} // namespace blog

@@ -2,10 +2,10 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationCreateServlet::OrganizationCreateServlet()
-    : BlogLoginedServlet("OrganizationCreateServlet") {
+    : BlogLoginedServlet("OrganizationCreateServlet")
+{
 }
 
-int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, name, "name");
         DEFINE_AND_CHECK_STRING(result, type, "type");
@@ -78,8 +83,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         if (data::OrganizationInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::ORG_UPDATE_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -96,8 +100,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
 
             if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
                 result->setErrno(errcode::ORG_USER_REL_FAILED);
-                ERROR(logger) << "db error, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -115,5 +118,5 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -32,9 +32,12 @@ public:
      * @param stream true=流式格式, false=非流式格式
      * @return JSON 字符串
      */
-    virtual std::string buildRequest(const std::string& model, int32_t maxTokens,
-                                     const std::string& systemPrompt, const std::string& prompt,
-                                     bool stream = true) = 0;
+    virtual std::string buildRequest(
+        const std::string& model,
+        int32_t maxTokens,
+        const std::string& systemPrompt,
+        const std::string& prompt,
+        bool stream = true) = 0;
 
     /**
      * @brief API endpoint 路径后缀（如 /v1/chat/completions）

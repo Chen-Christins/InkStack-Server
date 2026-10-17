@@ -1,11 +1,11 @@
 #include "resource_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/config/config.h>
-#include <chen/util/util.h>
 #include <chen/log/log.h>
+#include <chen/util/util.h>
 
 namespace blog {
 
@@ -15,10 +15,12 @@ static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup
 static const size_t kCacheMaxSize = 500;
 
 ResourceManager::ResourceManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string& filename) {
+ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string& filename)
+{
     auto pos = filename.rfind('.');
     if (pos == std::string::npos) {
         return TYPE_OTHER;
@@ -29,8 +31,9 @@ ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string
         return TYPE_IMAGE;
     } else if (ext == "mp4" || ext == "avi" || ext == "mov" || ext == "wmv" || ext == "flv" || ext == "mkv") {
         return TYPE_VIDEO;
-    } else if (ext == "pdf" || ext == "doc" || ext == "docx" || ext == "xls" || ext == "xlsx" || ext == "ppt" ||
-               ext == "pptx" || ext == "txt" || ext == "md") {
+    } else if (
+        ext == "pdf" || ext == "doc" || ext == "docx" || ext == "xls" || ext == "xlsx" || ext == "ppt" || ext == "pptx" || ext == "txt"
+        || ext == "md") {
         return TYPE_DOCUMENT;
     } else if (ext == "zip" || ext == "rar" || ext == "7z" || ext == "tar" || ext == "gz") {
         return TYPE_COMPRESSED;
@@ -41,16 +44,18 @@ ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string
     }
 }
 
-data::ResourceInfo::ptr ResourceManager::parseRow(chen::ISQLData::ptr rt) {
+data::ResourceInfo::ptr ResourceManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::ResourceInfoDao::ParseRow(rt);
 }
 
-
-void ResourceManager::add(blog::data::ResourceInfo::ptr info) {
+void ResourceManager::add(blog::data::ResourceInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::ResourceInfo::ptr ResourceManager::get(int64_t id) {
+data::ResourceInfo::ptr ResourceManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -67,8 +72,8 @@ data::ResourceInfo::ptr ResourceManager::get(int64_t id) {
     return v;
 }
 
-void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
-        , const std::string& biz_type, int64_t biz_id, int64_t uid) {
+void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results, const std::string& biz_type, int64_t biz_id, int64_t uid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -91,8 +96,8 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
     }
 }
 
-data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_type
-        , int64_t biz_id, int64_t uid, const std::string& filename) {
+data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_type, int64_t biz_id, int64_t uid, const std::string& filename)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -113,7 +118,8 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
     return info;
 }
 
-data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
+data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path)
+{
     std::string ck = "res:path:" + path;
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -136,4 +142,4 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
     cacheIdMapping(ck, info->getId());
     return info;
 }
-}
+} // namespace blog

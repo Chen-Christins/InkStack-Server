@@ -1,9 +1,9 @@
 #include "admin_comment_list_servlet.h"
 
+#include "../../manager/article_manager.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/comment_praise_rel_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/article_manager.h"
 #include "../../util.h"
 
 #include <json/json.h>
@@ -12,11 +12,16 @@ namespace blog {
 namespace servlet {
 
 AdminCommentListServlet::AdminCommentListServlet()
-    : BlogLoginedServlet("AdminCommentListServlet") {
+    : BlogLoginedServlet("AdminCommentListServlet")
+{
 }
 
-int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AdminCommentListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -55,8 +60,7 @@ int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, ch
         int32_t is_reported = request->getParamAs<int32_t>("is_reported", -1);
 
         std::vector<data::CommentInfo::ptr> comments;
-        int64_t total = CommentMgr::GetInstance()->listByAdmin(
-            comments, page_num, page_size, status, keyword, article_id, is_reported);
+        int64_t total = CommentMgr::GetInstance()->listByAdmin(comments, page_num, page_size, status, keyword, article_id, is_reported);
 
         Json::Value list(Json::arrayValue);
         for (auto& c : comments) {
@@ -119,5 +123,5 @@ int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

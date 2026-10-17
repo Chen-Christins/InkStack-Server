@@ -1,7 +1,7 @@
 #include "organization_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,19 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 300;
 
 OrganizationManager::OrganizationManager()
-    :m_cache(4, kCacheMaxSize, 30) {
+    : m_cache(4, kCacheMaxSize, 30)
+{
 }
 
-data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt) {
+data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::OrganizationInfoDao::ParseRow(rt);
 }
 
-
-void OrganizationManager::add(data::OrganizationInfo::ptr info) {
+void OrganizationManager::add(data::OrganizationInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::OrganizationInfo::ptr OrganizationManager::get(int64_t id) {
+data::OrganizationInfo::ptr OrganizationManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -41,7 +44,8 @@ data::OrganizationInfo::ptr OrganizationManager::get(int64_t id) {
     return v;
 }
 
-data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& name) {
+data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& name)
+{
     int64_t cachedId = getCachedIdMapping("org:name:" + name);
     if (cachedId > 0) {
         return get(cachedId);
@@ -59,8 +63,13 @@ data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& na
     return info;
 }
 
-int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr>& orgs
-        , uint64_t offset, uint64_t limit, int32_t status, bool isValid) {
+int64_t OrganizationManager::listByPages(
+    std::vector<data::OrganizationInfo::ptr>& orgs,
+    uint64_t offset,
+    uint64_t limit,
+    int32_t status,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -83,7 +92,8 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
     return total;
 }
 
-OrganizationManager::OrganizationStats OrganizationManager::getStats() {
+OrganizationManager::OrganizationStats OrganizationManager::getStats()
+{
     OrganizationStats stats;
 
     std::string cached;
@@ -145,4 +155,4 @@ OrganizationManager::OrganizationStats OrganizationManager::getStats() {
     return stats;
 }
 
-}
+} // namespace blog

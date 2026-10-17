@@ -10,11 +10,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 FaqsServlet::FaqsServlet()
-    :BlogServlet("FaqsServlet") {
+    : BlogServlet("FaqsServlet")
+{
 }
 
-int32_t FaqsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t FaqsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string keyword = request->getParam("keyword");
 
@@ -39,5 +44,5 @@ int32_t FaqsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::Ht
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

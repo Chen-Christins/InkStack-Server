@@ -1,14 +1,14 @@
 #include "assignment_delete_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/assignment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 #include "blog/data/assignment_info.h"
 #include "blog/data/assignment_user_rel_info.h"
 
-#include <chen/log/log.h>
 #include <chen/db/query_builder.h>
+#include <chen/log/log.h>
 
 #include <set>
 
@@ -18,11 +18,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 AssignmentDeleteServlet::AssignmentDeleteServlet()
-    : BlogLoginedServlet("AssignmentDeleteServlet") {
+    : BlogLoginedServlet("AssignmentDeleteServlet")
+{
 }
 
-int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AssignmentDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> assignment_ids;
@@ -127,5 +132,5 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

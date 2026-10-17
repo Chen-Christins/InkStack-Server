@@ -2,11 +2,11 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_repo_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -14,11 +14,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationReposDeleteServlet::OrganizationReposDeleteServlet()
-    : BlogLoginedServlet("OrganizationReposDeleteServlet") {
+    : BlogLoginedServlet("OrganizationReposDeleteServlet")
+{
 }
 
-int32_t OrganizationReposDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationReposDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
@@ -52,8 +57,7 @@ int32_t OrganizationReposDeleteServlet::handle(chen::http::HttpRequest::ptr requ
                 break;
             }
             int32_t org_role = rel->getRole();
-            if (org_role != OrganizationManager::Role::ORG_ADMIN
-                    && org_role != OrganizationManager::Role::DEV_LEAD) {
+            if (org_role != OrganizationManager::Role::ORG_ADMIN && org_role != OrganizationManager::Role::DEV_LEAD) {
                 result->setErrno(errcode::ACCESS_DENIED, "仅研发主管及以上角色可删除仓库");
                 break;
             }
@@ -67,8 +71,7 @@ int32_t OrganizationReposDeleteServlet::handle(chen::http::HttpRequest::ptr requ
 
         if (data::OrganizationReposInfoDao::DeleteById(id, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "删除仓库失败");
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -78,5 +81,5 @@ int32_t OrganizationReposDeleteServlet::handle(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

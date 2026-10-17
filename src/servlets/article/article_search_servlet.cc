@@ -12,26 +12,34 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleSearchServlet::ArticleSearchServlet()
-    :BlogServlet("ArticleSearchServlet") {
+    : BlogServlet("ArticleSearchServlet")
+{
 }
 
-int32_t ArticleSearchServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleSearchServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string keyword = request->getParam("keyword");
 
         int64_t category_id = request->getParamAs<int64_t>("category_id");
         int64_t label_id = request->getParamAs<int64_t>("label_id");
-        int64_t state = request->getParamAs<int64_t>("state", 2);  // 默认只搜已发布
+        int64_t state = request->getParamAs<int64_t>("state", 2); // 默认只搜已发布
         int64_t channel = request->getParamAs<int64_t>("channel");
         int64_t user_id = request->getParamAs<int64_t>("user_id");
         std::string year_month = request->getParam("year_month");
 
         int64_t page = request->getParamAs<int64_t>("page", 1);
         int64_t page_size = request->getParamAs<int64_t>("page_size", 20);
-        if (page < 1) page = 1;
-        if (page_size < 1) page_size = 20;
-        if (page_size > 100) page_size = 100;
+        if (page < 1)
+            page = 1;
+        if (page_size < 1)
+            page_size = 20;
+        if (page_size > 100)
+            page_size = 100;
 
         // 构建索引查询参数
         std::map<uint64_t, std::set<uint64_t>> params;
@@ -108,5 +116,5 @@ int32_t ArticleSearchServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

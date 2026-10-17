@@ -11,11 +11,16 @@ namespace blog {
 namespace servlet {
 
 UserMutualFollowingListServlet::UserMutualFollowingListServlet()
-    : BlogLoginedServlet("UserMutualFollowingListServlet") {
+    : BlogLoginedServlet("UserMutualFollowingListServlet")
+{
 }
 
-int32_t UserMutualFollowingListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserMutualFollowingListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -41,8 +46,7 @@ int32_t UserMutualFollowingListServlet::handle(chen::http::HttpRequest::ptr requ
             if (!kw_lower.empty()) {
                 std::string name_lower = chen::StringUtil::ToLower(user->getName());
                 std::string account_lower = chen::StringUtil::ToLower(user->getAccount());
-                if (name_lower.find(kw_lower) == std::string::npos
-                        && account_lower.find(kw_lower) == std::string::npos) {
+                if (name_lower.find(kw_lower) == std::string::npos && account_lower.find(kw_lower) == std::string::npos) {
                     continue;
                 }
             }
@@ -85,5 +89,5 @@ int32_t UserMutualFollowingListServlet::handle(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-}
+} // namespace servlet
 }

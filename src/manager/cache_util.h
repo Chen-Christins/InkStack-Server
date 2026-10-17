@@ -28,8 +28,7 @@ static const int kIdMapCacheTTL = 300;
  * @param ttlSec 缓存 TTL 秒数
  * @return COUNT 结果，失败返回 0
  */
-int64_t executeCountCached(chen::QueryBuilder::ptr qb, chen::IDB::ptr conn, const std::string& cacheKey,
-                           int ttlSec = kCountCacheTTL);
+int64_t executeCountCached(chen::QueryBuilder::ptr qb, chen::IDB::ptr conn, const std::string& cacheKey, int ttlSec = kCountCacheTTL);
 
 /**
  * @brief 缓存分页列表结果（ID 数组）

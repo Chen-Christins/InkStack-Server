@@ -8,13 +8,14 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-
-void SystemSettingsManager::add(blog::data::SystemSettingsInfo::ptr info) {
+void SystemSettingsManager::add(blog::data::SystemSettingsInfo::ptr info)
+{
     std::unique_lock<std::mutex> lock(m_mutex);
     m_data = info;
 }
 
-blog::data::SystemSettingsInfo::ptr SystemSettingsManager::get() {
+blog::data::SystemSettingsInfo::ptr SystemSettingsManager::get()
+{
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         if (m_data) {
@@ -41,7 +42,8 @@ blog::data::SystemSettingsInfo::ptr SystemSettingsManager::get() {
     return info;
 }
 
-bool SystemSettingsManager::update(blog::data::SystemSettingsInfo::ptr info) {
+bool SystemSettingsManager::update(blog::data::SystemSettingsInfo::ptr info)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -57,4 +59,4 @@ bool SystemSettingsManager::update(blog::data::SystemSettingsInfo::ptr info) {
     return true;
 }
 
-}
+} // namespace blog

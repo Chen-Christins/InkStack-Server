@@ -50,18 +50,18 @@ constexpr int32_t USER_PASSWORDS_DIFFER = 2013;   // 两次密码不一致
 constexpr int32_t USER_CANNOT_FOLLOW_SELF = 2014; // 不能关注自己
 constexpr int32_t USER_NOT_FOLLOWING = 2015;      // 未关注该用户
 constexpr int32_t USER_FOLLOW_FAILED = 2016;      // 关注操作失败
-constexpr int32_t SEND_CODE_FREQUENT = 2017;       // 验证码发送过于频繁
-constexpr int32_t DEVICE_NOT_FOUND = 2018;         // 登录设备不存在
-constexpr int32_t DEVICE_KICK_FAILED = 2019;       // 设备下线失败
-constexpr int32_t TOTP_INVALID_CODE = 2020;        // TOTP验证码错误
-constexpr int32_t TOTP_NOT_ENABLED = 2021;         // 2FA未启用
-constexpr int32_t TOTP_ALREADY_ENABLED = 2022;     // 2FA已启用
-constexpr int32_t TOTP_ENABLE_FAILED = 2023;       // 2FA启用失败
-constexpr int32_t TOTP_CONFIRM_FAILED = 2024;      // 2FA确认失败
-constexpr int32_t RECOVERY_CODE_INVALID = 2025;    // 恢复码无效或已使用
-constexpr int32_t TEMP_TOKEN_INVALID = 2026;       // 临时凭证无效或已过期
-constexpr int32_t GITHUB_OAUTH_FAILED = 2027;      // GitHub 授权登录失败
-constexpr int32_t GITHUB_STATE_INVALID = 2028;     // OAuth state 无效或已过期
+constexpr int32_t SEND_CODE_FREQUENT = 2017;      // 验证码发送过于频繁
+constexpr int32_t DEVICE_NOT_FOUND = 2018;        // 登录设备不存在
+constexpr int32_t DEVICE_KICK_FAILED = 2019;      // 设备下线失败
+constexpr int32_t TOTP_INVALID_CODE = 2020;       // TOTP验证码错误
+constexpr int32_t TOTP_NOT_ENABLED = 2021;        // 2FA未启用
+constexpr int32_t TOTP_ALREADY_ENABLED = 2022;    // 2FA已启用
+constexpr int32_t TOTP_ENABLE_FAILED = 2023;      // 2FA启用失败
+constexpr int32_t TOTP_CONFIRM_FAILED = 2024;     // 2FA确认失败
+constexpr int32_t RECOVERY_CODE_INVALID = 2025;   // 恢复码无效或已使用
+constexpr int32_t TEMP_TOKEN_INVALID = 2026;      // 临时凭证无效或已过期
+constexpr int32_t GITHUB_OAUTH_FAILED = 2027;     // GitHub 授权登录失败
+constexpr int32_t GITHUB_STATE_INVALID = 2028;    // OAuth state 无效或已过期
 
 // ==================== 模块03: 文章模块 (03001-03999) ====================
 constexpr int32_t ARTICLE_NOT_FOUND = 3001;      // 文章不存在
@@ -177,17 +177,17 @@ constexpr int32_t NOTIFICATION_USERS_REQUIRED = 9017;   // 缺少目标用户
 constexpr int32_t NOTIFICATION_INVALID_TARGET = 9018;   // 无效的通知目标类型
 
 // ==================== 模块10: 反馈模块 (10001-10999) ====================
-constexpr int32_t FEEDBACK_NOT_FOUND = 10001;          // 反馈不存在
+constexpr int32_t FEEDBACK_NOT_FOUND = 10001; // 反馈不存在
 
 // ==================== 模块11: 帮助中心模块 (11001-11999) ====================
-constexpr int32_t FAQ_NOT_FOUND = 11001;               // 常见问题不存在
+constexpr int32_t FAQ_NOT_FOUND = 11001; // 常见问题不存在
 
 // ==================== 模块12: 私信模块 (12001-12999) ====================
 constexpr int32_t MESSAGE_CONVERSATION_NOT_FOUND = 12001; // 会话不存在
-constexpr int32_t MESSAGE_SEND_FAILED = 12002;           // 消息发送失败
-constexpr int32_t MESSAGE_TEXT_TOO_LONG = 12003;         // 消息内容过长
-constexpr int32_t MESSAGE_PEER_NOT_FOUND = 12004;        // 对端用户不存在
-constexpr int32_t MESSAGE_CANNOT_SELF = 12005;           // 不能与自己私信
+constexpr int32_t MESSAGE_SEND_FAILED = 12002;            // 消息发送失败
+constexpr int32_t MESSAGE_TEXT_TOO_LONG = 12003;          // 消息内容过长
+constexpr int32_t MESSAGE_PEER_NOT_FOUND = 12004;         // 对端用户不存在
+constexpr int32_t MESSAGE_CANNOT_SELF = 12005;            // 不能与自己私信
 
 } // namespace errcode
 } // namespace blog

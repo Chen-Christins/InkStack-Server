@@ -1,8 +1,8 @@
 #include "comment_list_servlet.h"
 
+#include "../../manager/article_manager.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/comment_praise_rel_manager.h"
-#include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 
@@ -13,17 +13,20 @@ namespace blog {
 namespace servlet {
 
 CommentListServlet::CommentListServlet()
-    :BlogServlet("CommentListServlet") {
+    : BlogServlet("CommentListServlet")
+{
 }
 
-static Json::Value buildCommentItem(data::CommentInfo::ptr c,
-        const std::unordered_map<int64_t, std::vector<data::CommentInfo::ptr>>& children,
-        int64_t uid) {
+static Json::Value buildCommentItem(
+    data::CommentInfo::ptr c,
+    const std::unordered_map<int64_t, std::vector<data::CommentInfo::ptr>>& children,
+    int64_t uid)
+{
     Json::Value item;
     item["id"] = c->getId();
     item["content"] = c->getContent();
     item["user_id"] = c->getUserId();
-    item["time"] = chen::Time2Str(c->getCreateTime());
+    item["time"] = chen::TimeUtil::Time2Str(c->getCreateTime());
 
     auto user = UserMgr::GetInstance()->get(c->getUserId());
     if (user) {
@@ -56,8 +59,12 @@ static Json::Value buildCommentItem(data::CommentInfo::ptr c,
     return item;
 }
 
-int32_t CommentListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CommentListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, article_id, "article_id");
 
@@ -105,5 +112,5 @@ int32_t CommentListServlet::handle(chen::http::HttpRequest::ptr request, chen::h
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -2,10 +2,10 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_repo_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationReposListServlet::OrganizationReposListServlet()
-    : BlogLoginedServlet("OrganizationReposListServlet") {
+    : BlogLoginedServlet("OrganizationReposListServlet")
+{
 }
 
-int32_t OrganizationReposListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationReposListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
         uint64_t page = request->getParamAs<uint64_t>("page", 1);
@@ -80,5 +85,5 @@ int32_t OrganizationReposListServlet::handle(chen::http::HttpRequest::ptr reques
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -1,19 +1,24 @@
 #include "user_admin_detail_servlet.h"
 
-#include "blog/data/comment_info.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../util.h"
+#include "blog/data/comment_info.h"
 
 namespace blog {
 namespace servlet {
 
 UserAdminDetailServlet::UserAdminDetailServlet()
-    : BlogLoginedServlet("UserAdminDetailServlet") {
+    : BlogLoginedServlet("UserAdminDetailServlet")
+{
 }
 
-int32_t UserAdminDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAdminDetailServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
 
@@ -69,5 +74,5 @@ int32_t UserAdminDetailServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

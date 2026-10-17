@@ -30,8 +30,7 @@ public:
     /// @param secret Base32 编码的密钥
     /// @param account 账号（邮箱或用户名）
     /// @param issuer 发行者名称
-    static std::string GetOtpUri(const std::string& secret, const std::string& account,
-                                 const std::string& issuer = "TechHaven");
+    static std::string GetOtpUri(const std::string& secret, const std::string& account, const std::string& issuer = "TechHaven");
 
     /// 生成恢复码（明文列表），同时返回哈希列表用于存储
     /// @param count 生成数量

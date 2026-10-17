@@ -1,23 +1,27 @@
 #include "database_stats_servlet.h"
 
 #include "../../manager/article_manager.h"
+#include "../../manager/backup_record_manager.h"
+#include "../../manager/category_manager.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/category_manager.h"
-#include "../../manager/backup_record_manager.h"
-#include "blog/data/label_info.h"
 #include "../../util.h"
+#include "blog/data/label_info.h"
 
 namespace blog {
 namespace servlet {
 
 DatabaseStatsServlet::DatabaseStatsServlet()
-    : BlogLoginedServlet("DatabaseStatsServlet") {
+    : BlogLoginedServlet("DatabaseStatsServlet")
+{
 }
 
-int32_t DatabaseStatsServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t DatabaseStatsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -78,5 +82,5 @@ int32_t DatabaseStatsServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog
