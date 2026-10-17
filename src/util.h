@@ -74,11 +74,6 @@ inline bool IsValidAccount(const std::string& str) {
     return std::regex_match(str, s_account_regex);
 }
 
-/// MySQL TIMESTAMP 无法存储 0（1970-01-01），空时间统一用 DB 默认哨兵 '1980-01-01 00:00:00'
-inline int64_t EmptyTimestamp() {
-    return (int64_t)chen::TimeUtil::Str2Time("1980-01-01 00:00:00");
-}
-
 static const std::string s_api_key_secret = "BlogServer!2025$%^APIKey#@!SecretKey";
 
 inline std::string EncryptApiKey(const std::string& api_key) {

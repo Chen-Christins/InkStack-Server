@@ -73,7 +73,7 @@ int32_t ArticleUpdateServlet::handle(
         } else if (old_state == ArticleManager::Status::REJECTED) {
             info->setState(ArticleManager::Status::PRIVATE);
         }
-        info->setUpdateTime(chen::TimeUtil::TimeUtil::GetCurrentSec());
+        info->setUpdateTime(chen::TimeUtil::GetCurrentSec());
 
         auto db = getDB();
         if (!db) {
@@ -93,7 +93,7 @@ int32_t ArticleUpdateServlet::handle(
             break;
         }
 
-        time_t now = chen::TimeUtil::TimeUtil::GetCurrentSec();
+        time_t now = chen::TimeUtil::GetCurrentSec();
 
         if (syncCategoryRels(request, id, db, now, result)) {
             break;
@@ -109,7 +109,7 @@ int32_t ArticleUpdateServlet::handle(
 
         // 更新定时发布调度：先移除旧的，再按需添加新的
         ArticleMgr::GetInstance()->unscheduleArticle(id);
-        time_t now_publish = chen::TimeUtil::TimeUtil::GetCurrentSec();
+        time_t now_publish = chen::TimeUtil::GetCurrentSec();
         int32_t new_state = info->getState();
         if ((new_state == ArticleManager::Status::CHECKING || new_state == ArticleManager::Status::PRIVATE) && info->getPublishTime() > now_publish) {
             ArticleMgr::GetInstance()->scheduleArticle(id, info->getPublishTime());

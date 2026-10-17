@@ -113,7 +113,11 @@ make dist ENV=prod      # 架构按当前机器自动识别（dependencies.json 
 **CI**：`.github/workflows/build.yml` 在 `ubuntu-24.04`(amd64) 与 `ubuntu-24.04-arm`(arm64) 矩阵上执行同样的流程，产出 `techhaven-server-*.tar.gz`：
 
 - 手动 `workflow_dispatch`（可选 `prod`/`dev`）→ 上传为 Actions artifact；
-- 推送 `v*` tag → 额外发布到 GitHub Release。
+- 推送 `v*` tag → 创建 **draft GitHub Release**，notes 自动从 `CHANGELOG.md` 中对应的
+  `## v<版本>` 段落提取；确认 notes/资产后手动 publish，再按 tag 触发部署。
+
+> 发版前请先在 `CHANGELOG.md` 增加本次版本的段落；找不到对应版本时 Release notes 会回退为
+> `Release <tag>`。draft Release 默认不对外可见，部署前必须先 publish。
 
 CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepare prod.env`），未配置时使用占位值，可在部署机再改。涉及的 Secrets/Variables：
 
