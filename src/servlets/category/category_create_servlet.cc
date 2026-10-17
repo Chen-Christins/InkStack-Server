@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryCreateServlet::CategoryCreateServlet()
-    : BlogLoginedServlet("CategoryCreateServlet") {
+    : BlogLoginedServlet("CategoryCreateServlet")
+{
 }
 
-int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CategoryCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, name, "name");
         DEFINE_AND_CHECK_STRING(result, url, "url");
@@ -78,8 +83,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         if (data::CategoryInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "category operation failed");
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -100,5 +104,5 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

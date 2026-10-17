@@ -37,11 +37,9 @@ public:
     void listConversations(std::vector<data::ConversationInfo::ptr>& results, int64_t uid);
 
     /// 消息相关
-    void listMessages(std::vector<data::ConversationMessageInfo::ptr>& results
-        , int64_t conversation_id, int32_t offset, int32_t limit);
+    void listMessages(std::vector<data::ConversationMessageInfo::ptr>& results, int64_t conversation_id, int32_t offset, int32_t limit);
 
-    data::ConversationMessageInfo::ptr sendMessage(int64_t conversation_id
-        , int64_t sender_id, const std::string& text);
+    data::ConversationMessageInfo::ptr sendMessage(int64_t conversation_id, int64_t sender_id, const std::string& text);
 
     bool markRead(int64_t conversation_id, int64_t uid);
 
@@ -63,13 +61,9 @@ public:
     int64_t getUidBySession(chen::http::WSSession::ptr session);
 
     /// 参与者归一化：user_a_id 恒为较小值
-    static int64_t NormalizeUserA(int64_t uid_a, int64_t uid_b) {
-        return uid_a < uid_b ? uid_a : uid_b;
-    }
+    static int64_t NormalizeUserA(int64_t uid_a, int64_t uid_b) { return uid_a < uid_b ? uid_a : uid_b; }
 
-    static int64_t NormalizeUserB(int64_t uid_a, int64_t uid_b) {
-        return uid_a < uid_b ? uid_b : uid_a;
-    }
+    static int64_t NormalizeUserB(int64_t uid_a, int64_t uid_b) { return uid_a < uid_b ? uid_b : uid_a; }
 
 private:
     /// 会话缓存
@@ -82,4 +76,4 @@ private:
 
 typedef chen::Singleton<MessageManager> MessageMgr;
 
-}
+} // namespace blog

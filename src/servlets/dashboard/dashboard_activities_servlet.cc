@@ -8,7 +8,8 @@ namespace blog {
 namespace servlet {
 
 DashboardActivitiesServlet::DashboardActivitiesServlet()
-    : BlogLoginedServlet("DashboardActivitiesServlet") {
+    : BlogLoginedServlet("DashboardActivitiesServlet")
+{
 }
 
 struct ActivityItem {
@@ -17,7 +18,8 @@ struct ActivityItem {
     int64_t create_time;
 };
 
-static std::string TimeAgo(int64_t now, int64_t ts) {
+static std::string TimeAgo(int64_t now, int64_t ts)
+{
     int64_t diff = now - ts;
     if (diff < 0) {
         diff = 0;
@@ -34,8 +36,12 @@ static std::string TimeAgo(int64_t now, int64_t ts) {
     return std::to_string(diff / 86400) + "天前";
 }
 
-int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t DashboardActivitiesServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -72,8 +78,9 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
                     users.push_back(u);
                 }
             }
-            std::sort(users.begin(), users.end(),
-                [](auto& a, auto& b) { return a->getCreateTime() > b->getCreateTime(); });
+            std::sort(users.begin(), users.end(), [](auto& a, auto& b) {
+                return a->getCreateTime() > b->getCreateTime();
+            });
             for (size_t i = 0; i < users.size() && i < (size_t)fetch_count; i++) {
                 ActivityItem act;
                 act.type = "user_register";
@@ -87,8 +94,9 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
         {
             std::vector<data::ArticleInfo::ptr> articles;
             ArticleMgr::GetInstance()->listByPages(articles, 0, 0, 0, -1, 0, 0x7FFFFFFF, true);
-            std::sort(articles.begin(), articles.end(),
-                [](auto& a, auto& b) { return a->getCreateTime() > b->getCreateTime(); });
+            std::sort(articles.begin(), articles.end(), [](auto& a, auto& b) {
+                return a->getCreateTime() > b->getCreateTime();
+            });
             for (size_t i = 0; i < articles.size() && i < (size_t)fetch_count; i++) {
                 ActivityItem act;
                 act.type = "article_publish";
@@ -120,8 +128,9 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         // sort merged by create_time desc
-        std::sort(all.begin(), all.end(),
-            [](auto& a, auto& b) { return a.create_time > b.create_time; });
+        std::sort(all.begin(), all.end(), [](auto& a, auto& b) {
+            return a.create_time > b.create_time;
+        });
 
         if ((int32_t)all.size() > limit) {
             all.resize(limit);
@@ -145,5 +154,5 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

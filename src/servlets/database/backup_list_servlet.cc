@@ -1,18 +1,22 @@
 #include "backup_list_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/backup_record_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 BackupListServlet::BackupListServlet()
-    : BlogLoginedServlet("BackupListServlet") {
+    : BlogLoginedServlet("BackupListServlet")
+{
 }
 
-int32_t BackupListServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t BackupListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -35,9 +39,12 @@ int32_t BackupListServlet::handle(chen::http::HttpRequest::ptr request,
         int32_t page = 1, pageSize = 15;
         request->checkGetParamAs("page", page);
         request->checkGetParamAs("pageSize", pageSize);
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 15;
-        if (pageSize > 100) pageSize = 100;
+        if (page < 1)
+            page = 1;
+        if (pageSize < 1)
+            pageSize = 15;
+        if (pageSize > 100)
+            pageSize = 100;
 
         int32_t offset = (page - 1) * pageSize;
 
@@ -78,5 +85,5 @@ int32_t BackupListServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

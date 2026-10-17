@@ -1,9 +1,9 @@
 #include "user_follow_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/user_follow_rel_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -11,12 +11,16 @@ namespace blog {
 namespace servlet {
 
 UserFollowServlet::UserFollowServlet()
-    : BlogLoginedServlet("UserFollowServlet") {
+    : BlogLoginedServlet("UserFollowServlet")
+{
 }
 
-int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
+int32_t UserFollowServlet::handle(
+    chen::http::HttpRequest::ptr request,
     chen::http::HttpResponse::ptr response,
-    chen::http::HttpSession::ptr session, Result::ptr result) {
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -53,7 +57,7 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
             data.follower_id = uid;
             data.follower_name = follower_info ? follower_info->getName() : "someone";
             data.following_id = following_id;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_FOLLOW, std::move(data));
         }
 
@@ -64,5 +68,5 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

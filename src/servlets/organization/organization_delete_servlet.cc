@@ -1,10 +1,10 @@
 #include "organization_delete_servlet.h"
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
+#include "../../event/event_define.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../event/event_define.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 #include <chen/log/log.h>
 
@@ -14,11 +14,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationDeleteServlet::OrganizationDeleteServlet()
-    : BlogLoginedServlet("OrganizationDeleteServlet") {
+    : BlogLoginedServlet("OrganizationDeleteServlet")
+{
 }
 
-int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> assignment_ids;
@@ -107,16 +112,18 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
             for (auto& org : del_organizations) {
                 std::set<int64_t> notified_users;
                 for (auto& rel : all_rels) {
-                    if (rel->getOrgId() != org->getId() || rel->getIsDeleted()) continue;
+                    if (rel->getOrgId() != org->getId() || rel->getIsDeleted())
+                        continue;
                     int64_t member_id = rel->getUserId();
-                    if (notified_users.count(member_id)) continue;
+                    if (notified_users.count(member_id))
+                        continue;
                     notified_users.insert(member_id);
 
                     EventOrgDeletedData data = {};
                     data.member_id = member_id;
                     data.org_id = org->getId();
                     data.org_name = org->getName();
-                    
+
                     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_DELETED, std::move(data));
                 }
             }
@@ -126,5 +133,5 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

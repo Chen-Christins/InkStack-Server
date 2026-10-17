@@ -40,4 +40,4 @@ chen::http::SessionData::ptr LoadSessionFromRedis(const std::string& session_id)
  */
 void DeleteSessionFromRedis(const std::string& session_id);
 
-}  // namespace blog
+} // namespace blog

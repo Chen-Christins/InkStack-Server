@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
-#include "blog/data/category_info.h"
 #include "../../manager/category_manager.h"
 #include "../../util.h"
+#include "blog/data/category_info.h"
 
 #include <set>
 
@@ -14,11 +14,12 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryDeleteServlet::CategoryDeleteServlet()
-    : BlogLoginedServlet("CategoryDeleteServlet") {
+    : BlogLoginedServlet("CategoryDeleteServlet")
+{
 }
 
-void get_delete_values(std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr> > parent_map
-                       ,int64_t id, std::set<data::CategoryInfo::ptr>& infos) {
+void get_delete_values(std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr>> parent_map, int64_t id, std::set<data::CategoryInfo::ptr>& infos)
+{
     auto it = parent_map[0].find(id);
     if (it == parent_map[0].end()) {
         return;
@@ -35,8 +36,12 @@ void get_delete_values(std::map<int64_t, std::map<int64_t, data::CategoryInfo::p
     }
 }
 
-int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CategoryDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> cat_ids;
@@ -111,5 +116,5 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

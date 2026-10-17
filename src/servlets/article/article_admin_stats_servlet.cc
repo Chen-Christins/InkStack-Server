@@ -1,17 +1,22 @@
 #include "article_admin_stats_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 ArticleAdminStatsServlet::ArticleAdminStatsServlet()
-    : BlogLoginedServlet("ArticleAdminStatsServlet") {
+    : BlogLoginedServlet("ArticleAdminStatsServlet")
+{
 }
 
-int32_t ArticleAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleAdminStatsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int32_t category = request->getParamAs<int32_t>("category_id", 0);
         int32_t role = request->getParamAs<int32_t>("role", -1);
@@ -47,5 +52,5 @@ int32_t ArticleAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, c
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

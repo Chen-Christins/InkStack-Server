@@ -2,9 +2,9 @@
 
 #include "../util.h"
 
+#include <chen/config/config.h>
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
-#include <chen/config/config.h>
 
 namespace blog {
 
@@ -13,13 +13,14 @@ static chen::Logger::ptr logger = LOG_ROOT();
 /// Redis token 缓存 key 前缀
 static const char* kTokenKeyPrefix = "login_token:";
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
-UserLoginDeviceManager::UserLoginDeviceManager() {
+UserLoginDeviceManager::UserLoginDeviceManager()
+{
 }
 
-void UserLoginDeviceManager::cacheToken(const std::string& token, int64_t uid, int64_t token_time) {
+void UserLoginDeviceManager::cacheToken(const std::string& token, int64_t uid, int64_t token_time)
+{
     if (token.empty()) {
         return;
     }
@@ -31,7 +32,8 @@ void UserLoginDeviceManager::cacheToken(const std::string& token, int64_t uid, i
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "setex %s %lld %lld", key.c_str(), (long long)ttl, (long long)uid);
 }
 
-void UserLoginDeviceManager::removeTokenCache(const std::string& token) {
+void UserLoginDeviceManager::removeTokenCache(const std::string& token)
+{
     if (token.empty()) {
         return;
     }
@@ -39,7 +41,8 @@ void UserLoginDeviceManager::removeTokenCache(const std::string& token) {
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.c_str());
 }
 
-int UserLoginDeviceManager::recordLogin(const LoginParam& param) {
+int UserLoginDeviceManager::recordLogin(const LoginParam& param)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "recordLogin: GetDB failed";
@@ -60,14 +63,15 @@ int UserLoginDeviceManager::recordLogin(const LoginParam& param) {
     info->setLogoutTime(EmptyTimestamp());
     if (data::UserLoginDeviceInfoDao::Insert(info, db)) {
         ERROR(logger) << "recordLogin: Insert failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
     cacheToken(param.token, param.uid, param.token_time);
     return 0;
 }
 
-data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getByToken(const std::string& token) {
+data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getByToken(const std::string& token)
+{
     if (token.empty()) {
         return nullptr;
     }
@@ -79,7 +83,8 @@ data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getByToken(const std::str
     return data::UserLoginDeviceInfoDao::QueryByToken(token, db);
 }
 
-bool UserLoginDeviceManager::validateToken(int64_t uid, const std::string& token, int64_t now) {
+bool UserLoginDeviceManager::validateToken(int64_t uid, const std::string& token, int64_t now)
+{
     if (!uid || token.empty()) {
         return false;
     }
@@ -103,7 +108,8 @@ bool UserLoginDeviceManager::validateToken(int64_t uid, const std::string& token
     return false;
 }
 
-data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getActiveByDevice(const std::string& device_id) {
+data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getActiveByDevice(const std::string& device_id)
+{
     if (device_id.empty()) {
         return nullptr;
     }
@@ -124,7 +130,8 @@ data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getActiveByDevice(const s
     return nullptr;
 }
 
-data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getActiveByUserAndPlatform(int64_t uid, const std::string& platform) {
+data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getActiveByUserAndPlatform(int64_t uid, const std::string& platform)
+{
     if (!uid || platform.empty()) {
         return nullptr;
     }
@@ -145,7 +152,8 @@ data::UserLoginDeviceInfo::ptr UserLoginDeviceManager::getActiveByUserAndPlatfor
     return nullptr;
 }
 
-int UserLoginDeviceManager::kick(data::UserLoginDeviceInfo::ptr info) {
+int UserLoginDeviceManager::kick(data::UserLoginDeviceInfo::ptr info)
+{
     if (!info) {
         return -1;
     }
@@ -159,14 +167,15 @@ int UserLoginDeviceManager::kick(data::UserLoginDeviceInfo::ptr info) {
     info->setUpdateTime(time(0));
     if (data::UserLoginDeviceInfoDao::Update(info, db)) {
         ERROR(logger) << "kick: Update failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
     removeTokenCache(info->getToken());
     return 0;
 }
 
-int UserLoginDeviceManager::logout(const std::string& token) {
+int UserLoginDeviceManager::logout(const std::string& token)
+{
     auto info = getByToken(token);
     if (!info || info->getIsActive() != 1) {
         return -1;
@@ -174,7 +183,8 @@ int UserLoginDeviceManager::logout(const std::string& token) {
     return kick(info);
 }
 
-int UserLoginDeviceManager::updateToken(const std::string& old_token, const std::string& new_token, int64_t new_token_time) {
+int UserLoginDeviceManager::updateToken(const std::string& old_token, const std::string& new_token, int64_t new_token_time)
+{
     auto info = getByToken(old_token);
     if (!info || info->getIsActive() != 1) {
         return -1;
@@ -190,7 +200,7 @@ int UserLoginDeviceManager::updateToken(const std::string& old_token, const std:
     info->setUpdateTime(time(0));
     if (data::UserLoginDeviceInfoDao::Update(info, db)) {
         ERROR(logger) << "updateToken: Update failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
     removeTokenCache(old_token);
@@ -198,7 +208,8 @@ int UserLoginDeviceManager::updateToken(const std::string& old_token, const std:
     return 0;
 }
 
-int UserLoginDeviceManager::listActiveByUser(std::vector<data::UserLoginDeviceInfo::ptr>& results, int64_t uid) {
+int UserLoginDeviceManager::listActiveByUser(std::vector<data::UserLoginDeviceInfo::ptr>& results, int64_t uid)
+{
     if (!uid) {
         return 0;
     }
@@ -213,10 +224,10 @@ int UserLoginDeviceManager::listActiveByUser(std::vector<data::UserLoginDeviceIn
     qb->orderBy("last_active_time", "DESC");
     if (data::UserLoginDeviceInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "listActiveByUser: QueryByBuilder failed"
-            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return 0;
     }
     return (int)results.size();
 }
 
-}
+} // namespace blog

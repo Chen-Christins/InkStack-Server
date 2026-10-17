@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
+#include "../../include/tables.h"
 #include "../../manager/session_manager.h"
 #include "../../manager/user_login_device_manager.h"
-#include "../../include/tables.h"
 
 namespace blog {
 namespace servlet {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserLogoutServlet::UserLogoutServlet()
-    :BlogServlet("UserLogoutServlet") {
+    : BlogServlet("UserLogoutServlet")
+{
 }
 
-int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserLogoutServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         auto sdata = getSessionData(request, response);
         if (!sdata->getData<int64_t>(CookieKey::USER_ID)) {
@@ -45,5 +50,5 @@ int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

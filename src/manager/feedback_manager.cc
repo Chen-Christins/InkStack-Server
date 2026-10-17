@@ -8,11 +8,12 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-FeedbackManager::FeedbackManager() {
+FeedbackManager::FeedbackManager()
+{
 }
 
-bool FeedbackManager::list(std::vector<data::UserFeedbackInfo::ptr>& infos,
-        const std::string& type, int32_t page, int32_t page_size, int64_t* total) {
+bool FeedbackManager::list(std::vector<data::UserFeedbackInfo::ptr>& infos, const std::string& type, int32_t page, int32_t page_size, int64_t* total)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -40,7 +41,8 @@ bool FeedbackManager::list(std::vector<data::UserFeedbackInfo::ptr>& infos,
     return true;
 }
 
-data::UserFeedbackInfo::ptr FeedbackManager::get(int64_t id) {
+data::UserFeedbackInfo::ptr FeedbackManager::get(int64_t id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -58,7 +60,8 @@ data::UserFeedbackInfo::ptr FeedbackManager::get(int64_t id) {
     return results[0];
 }
 
-bool FeedbackManager::remove(int64_t id) {
+bool FeedbackManager::remove(int64_t id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -75,12 +78,11 @@ bool FeedbackManager::remove(int64_t id) {
     info->setUpdateTime(time(0));
 
     if (data::UserFeedbackInfoDao::Update(info, db)) {
-        ERROR(logger) << "soft delete feedback failed, errno=" << db->getErrno()
-            << " errstr=" << db->getErrStr();
+        ERROR(logger) << "soft delete feedback failed, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
 
     return true;
 }
 
-}
+} // namespace blog

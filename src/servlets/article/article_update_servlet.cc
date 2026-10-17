@@ -5,13 +5,13 @@
 #include <set>
 
 #include "../../index.h"
+#include "../../manager/article_category_rel_manager.h"
+#include "../../manager/article_label_rel_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/category_manager.h"
 #include "../../manager/label_manager.h"
-#include "../../manager/article_category_rel_manager.h"
-#include "../../manager/article_label_rel_manager.h"
-#include "../../util.h"
 #include "../../permission.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -19,11 +19,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleUpdateServlet::ArticleUpdateServlet()
-    : BlogLoginedServlet("ArticleUpdateServlet") {
+    : BlogLoginedServlet("ArticleUpdateServlet")
+{
 }
 
-int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleUpdateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         DEFINE_AND_CHECK_STRING(result, title, "title");
@@ -68,7 +73,7 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         } else if (old_state == ArticleManager::Status::REJECTED) {
             info->setState(ArticleManager::Status::PRIVATE);
         }
-        info->setUpdateTime(chen::TimeUtil::GetCurrentSec());
+        info->setUpdateTime(chen::TimeUtil::TimeUtil::GetCurrentSec());
 
         auto db = getDB();
         if (!db) {
@@ -83,13 +88,12 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
 
         if (data::ArticleInfoDao::Update(info, db)) {
-            ERROR(logger) << "db error errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             result->setErrno(errcode::ARTICLE_UPDATE_FAILED);
             break;
         }
 
-        time_t now = chen::TimeUtil::GetCurrentSec();
+        time_t now = chen::TimeUtil::TimeUtil::GetCurrentSec();
 
         if (syncCategoryRels(request, id, db, now, result)) {
             break;
@@ -105,11 +109,9 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         // 更新定时发布调度：先移除旧的，再按需添加新的
         ArticleMgr::GetInstance()->unscheduleArticle(id);
-        time_t now_publish = chen::TimeUtil::GetCurrentSec();
+        time_t now_publish = chen::TimeUtil::TimeUtil::GetCurrentSec();
         int32_t new_state = info->getState();
-        if ((new_state == ArticleManager::Status::CHECKING
-                || new_state == ArticleManager::Status::PRIVATE)
-                && info->getPublishTime() > now_publish) {
+        if ((new_state == ArticleManager::Status::CHECKING || new_state == ArticleManager::Status::PRIVATE) && info->getPublishTime() > now_publish) {
             ArticleMgr::GetInstance()->scheduleArticle(id, info->getPublishTime());
         }
 
@@ -123,8 +125,8 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-int32_t ArticleUpdateServlet::updateOptionalFields(chen::http::HttpRequest::ptr request
-        ,std::shared_ptr<data::ArticleInfo> info, Result::ptr result) {
+int32_t ArticleUpdateServlet::updateOptionalFields(chen::http::HttpRequest::ptr request, std::shared_ptr<data::ArticleInfo> info, Result::ptr result)
+{
     std::string type_str = request->getParam("type");
     if (!type_str.empty()) {
         int32_t type = chen::TypeUtil::Atoi(type_str);
@@ -144,8 +146,8 @@ int32_t ArticleUpdateServlet::updateOptionalFields(chen::http::HttpRequest::ptr 
     return 0;
 }
 
-int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr request
-        ,int64_t id, chen::IDB::ptr db, time_t now, Result::ptr result) {
+int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr request, int64_t id, chen::IDB::ptr db, time_t now, Result::ptr result)
+{
     std::string category = request->getParam("category");
     if (category.empty()) {
         return 0;
@@ -176,8 +178,7 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
                 existing->setIsDeleted(0);
                 existing->setUpdateTime(now);
                 if (data::ArticleCategoryRelInfoDao::Update(existing, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 ArticleCategoryRelMgr::GetInstance()->add(existing);
             } else if (!existing) {
@@ -186,8 +187,7 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
                 rel->setCategoryId(cid);
                 rel->setUpdateTime(now);
                 if (data::ArticleCategoryRelInfoDao::Insert(rel, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 ArticleCategoryRelMgr::GetInstance()->add(rel);
             }
@@ -201,8 +201,7 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
                 existing->setIsDeleted(1);
                 existing->setUpdateTime(now);
                 if (data::ArticleCategoryRelInfoDao::Update(existing, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 ArticleCategoryRelMgr::GetInstance()->add(existing);
             }
@@ -212,8 +211,8 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
-        ,int64_t id, chen::IDB::ptr db, time_t now, Result::ptr result) {
+int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request, int64_t id, chen::IDB::ptr db, time_t now, Result::ptr result)
+{
     std::string label = request->getParam("label");
     if (label.empty()) {
         return 0;
@@ -244,8 +243,7 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
                 existing->setIsDeleted(0);
                 existing->setUpdateTime(now);
                 if (data::ArticleLabelRelInfoDao::Update(existing, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 ArticleLabelRelMgr::GetInstance()->add(existing);
             } else if (!existing) {
@@ -254,8 +252,7 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
                 rel->setLabelId(lid);
                 rel->setUpdateTime(now);
                 if (data::ArticleLabelRelInfoDao::Insert(rel, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 ArticleLabelRelMgr::GetInstance()->add(rel);
             }
@@ -269,8 +266,7 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
                 existing->setIsDeleted(1);
                 existing->setUpdateTime(now);
                 if (data::ArticleLabelRelInfoDao::Update(existing, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << " errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 ArticleLabelRelMgr::GetInstance()->add(existing);
             }
@@ -280,5 +276,5 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

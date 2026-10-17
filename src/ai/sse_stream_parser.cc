@@ -9,10 +9,12 @@ namespace ai {
 
 SSEStreamParser::SSEStreamParser(chen::http::SSESession::ptr session, AIProvider::ptr provider)
     : session_(session)
-    , provider_(provider) {
+    , provider_(provider)
+{
 }
 
-bool SSEStreamParser::operator()(const char* data, size_t len) {
+bool SSEStreamParser::operator()(const char* data, size_t len)
+{
     for (size_t i = 0; i < len; i++) {
         char c = data[i];
         if (c == '\n') {
@@ -36,32 +38,34 @@ bool SSEStreamParser::operator()(const char* data, size_t len) {
     return true;
 }
 
-void SSEStreamParser::processEvent() {
+void SSEStreamParser::processEvent()
+{
     if (provider_->isDoneMarker(current_event_)) {
-        SendSSEJson(session_,"done", "message", "总结生成完成");
+        SendSSEJson(session_, "done", "message", "总结生成完成");
         return;
     }
 
     Json::Value parsed;
     Json::Reader reader;
-    if (!reader.parse(current_event_, parsed)) return;
+    if (!reader.parse(current_event_, parsed))
+        return;
 
     std::string content = provider_->extractContent(parsed);
     if (!content.empty()) {
-        SendSSEJson(session_,"chunk", "content", content);
+        SendSSEJson(session_, "chunk", "content", content);
         full_text += content;
     }
 
     if (provider_->isTerminal(parsed)) {
-        SendSSEJson(session_,"done", "message", "总结生成完成");
+        SendSSEJson(session_, "done", "message", "总结生成完成");
         return;
     }
 
     std::string errMsg = provider_->getError(parsed);
     if (!errMsg.empty()) {
-        SendSSEJson(session_,"error", "message", errMsg);
+        SendSSEJson(session_, "error", "message", errMsg);
     }
 }
 
-}  // namespace ai
-}  // namespace blog
+} // namespace ai
+} // namespace blog

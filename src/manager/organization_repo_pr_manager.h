@@ -10,8 +10,8 @@
 #include "blog/data/organization_repo_prs_info.h"
 #include "blog/data/organization_repos_info.h"
 
-#include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
+#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 // 前置声明 RPC 协议结构体，避免在 header 中引入 protocol 头文件
@@ -53,21 +53,33 @@ public:
     void del(int64_t id);
 
     void onTick();
-    
+
     data::OrganizationRepoPrsInfo::ptr get(int64_t id);
-    
+
     data::OrganizationRepoPrsInfo::ptr getByRepoAndPrId(int64_t repo_id, int32_t github_pr_id);
 
-    int64_t listByRepoPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
-        , int64_t repo_id, const std::string& state, uint64_t offset, uint64_t limit);
+    int64_t listByRepoPages(
+        std::vector<data::OrganizationRepoPrsInfo::ptr>& prs,
+        int64_t repo_id,
+        const std::string& state,
+        uint64_t offset,
+        uint64_t limit);
 
     int64_t getCountByRepo(int64_t repo_id);
 
-    int64_t listByOrgPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
-        , int64_t org_id, const std::string& state, uint64_t offset, uint64_t limit);
+    int64_t listByOrgPages(
+        std::vector<data::OrganizationRepoPrsInfo::ptr>& prs,
+        int64_t org_id,
+        const std::string& state,
+        uint64_t offset,
+        uint64_t limit);
 
-    int64_t listByUserPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
-        , int64_t uid, const std::string& state, uint64_t offset, uint64_t limit);
+    int64_t listByUserPages(
+        std::vector<data::OrganizationRepoPrsInfo::ptr>& prs,
+        int64_t uid,
+        const std::string& state,
+        uint64_t offset,
+        uint64_t limit);
 
     /// 从 GitHub API 同步某个仓库的 PR
     /// @param max_prs 最多同步的 PR 条数，0 表示全量同步
@@ -89,4 +101,4 @@ private:
 
 typedef chen::Singleton<OrganizationRepoPrManager> OrganizationRepoPrMgr;
 
-}
+} // namespace blog

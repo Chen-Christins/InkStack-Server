@@ -1,8 +1,8 @@
 #include "session_manager.h"
 
+#include <chen/config/config.h>
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
-#include <chen/config/config.h>
 
 #include <memory>
 #include <string>
@@ -16,10 +16,10 @@ static const char* kSessionKeyPrefix = "session:";
 /// 默认 session TTL（24 小时 = 86400 秒）
 static const int64_t kDefaultSessionTTL = 24 * 3600;
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
-int64_t GetSessionTTL() {
+int64_t GetSessionTTL()
+{
     auto settings = SystemSettingsMgr::GetInstance()->get();
     if (settings && settings->getSessionTimeout() > 0) {
         return static_cast<int64_t>(settings->getSessionTimeout()) * 3600;
@@ -27,7 +27,8 @@ int64_t GetSessionTTL() {
     return kDefaultSessionTTL;
 }
 
-void SaveSessionToRedis(const std::string& session_id, int64_t uid, int32_t is_auth) {
+void SaveSessionToRedis(const std::string& session_id, int64_t uid, int32_t is_auth)
+{
     std::string key = std::string(kSessionKeyPrefix) + session_id;
     int64_t ttl = GetSessionTTL();
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset %s user_id %lld", key.c_str(), (long long)uid);
@@ -35,7 +36,8 @@ void SaveSessionToRedis(const std::string& session_id, int64_t uid, int32_t is_a
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "expire %s %lld", key.c_str(), (long long)ttl);
 }
 
-chen::http::SessionData::ptr LoadSessionFromRedis(const std::string& session_id) {
+chen::http::SessionData::ptr LoadSessionFromRedis(const std::string& session_id)
+{
     std::string key = std::string(kSessionKeyPrefix) + session_id;
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hgetall %s", key.c_str());
     if (!rpy || rpy->type != REDIS_REPLY_ARRAY || rpy->elements == 0) {
@@ -74,9 +76,10 @@ chen::http::SessionData::ptr LoadSessionFromRedis(const std::string& session_id)
     return data;
 }
 
-void DeleteSessionFromRedis(const std::string& session_id) {
+void DeleteSessionFromRedis(const std::string& session_id)
+{
     std::string key = std::string(kSessionKeyPrefix) + session_id;
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.c_str());
 }
 
-}  // namespace blog
+} // namespace blog

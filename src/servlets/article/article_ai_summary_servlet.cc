@@ -19,18 +19,19 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 // 系统默认 AI 配置 — 用户未配置时的兜底
-static chen::ConfigVar<std::string>::ptr g_ai_type =
-    chen::Config::Lookup("ai.type", std::string(""), "default AI provider type");
-static chen::ConfigVar<std::string>::ptr g_ai_model =
-    chen::Config::Lookup("ai.model", std::string(""), "default AI model");
-static chen::ConfigVar<std::string>::ptr g_ai_api_key =
-    chen::Config::Lookup("ai.api_key", std::string(""), "default AI API key");
+static chen::ConfigVar<std::string>::ptr g_ai_type = chen::Config::Lookup("ai.type", std::string(""), "default AI provider type");
+static chen::ConfigVar<std::string>::ptr g_ai_model = chen::Config::Lookup("ai.model", std::string(""), "default AI model");
+static chen::ConfigVar<std::string>::ptr g_ai_api_key = chen::Config::Lookup("ai.api_key", std::string(""), "default AI API key");
 
 static const char* SYSTEM_PROMPT = "你是一个专业的文章总结助手。";
 
-ArticleAISummaryServlet::ArticleAISummaryServlet() : chen::http::SSEServlet("ArticleAISummaryServlet") {}
+ArticleAISummaryServlet::ArticleAISummaryServlet()
+    : chen::http::SSEServlet("ArticleAISummaryServlet")
+{
+}
 
-int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session) {
+int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session)
+{
     // ================================================================
     // 1. 认证
     // ================================================================
@@ -105,13 +106,12 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
             ai_model = config->getModel();
             ai_max_tokens = config->getMaxTokens();
 
-            TRACE(logger) << "AI config source=user, type=" << ai_type
-                << ", model=" << ai_model << ", encrypted_key_len=" << encrypted_key.size()
-                << ", decrypted_key_len=" << ai_key.size();
+            TRACE(logger) << "AI config source=user, type=" << ai_type << ", model=" << ai_model << ", encrypted_key_len=" << encrypted_key.size()
+                          << ", decrypted_key_len=" << ai_key.size();
 
             if (ai_key.empty() && !encrypted_key.empty()) {
                 ERROR(logger) << "DecryptApiKey returned empty for non-empty encrypted key "
-                    << "(len=" << encrypted_key.size() << "), " << "possible Base64Decode failure or raw key stored in DB";
+                              << "(len=" << encrypted_key.size() << "), " << "possible Base64Decode failure or raw key stored in DB";
             }
         } else {
             // 系统默认配置：API key 是明文，无需解密
@@ -119,8 +119,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
             ai_model = g_ai_model->getValue();
             ai_key = g_ai_api_key->getValue();
 
-            INFO(logger) << "AI config source=system, type=" << ai_type
-                << ", model=" << ai_model << ", key_len=" << ai_key.size();
+            INFO(logger) << "AI config source=system, type=" << ai_type << ", model=" << ai_model << ", key_len=" << ai_key.size();
         }
 
         if (ai_type.empty() || ai_key.empty()) {
@@ -139,8 +138,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
             }
         }
 
-        TRACE(logger) << "AI final config: type=" << ai_type
-            << ", url=" << ai_url << ", model=" << ai_model << ", max_tokens=" << ai_max_tokens;
+        TRACE(logger) << "AI final config: type=" << ai_type << ", url=" << ai_url << ", model=" << ai_model << ", max_tokens=" << ai_max_tokens;
     }
 
     // ================================================================
@@ -156,9 +154,9 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
     // ================================================================
     // 5. 构建请求体
     // ================================================================
-    std::string prompt =
-        "请用简洁的中文总结以下文章的核心内容，控制在200字以内：\n\n"
-        "标题：" + article_title + "\n\n" + article_content;
+    std::string prompt = "请用简洁的中文总结以下文章的核心内容，控制在200字以内：\n\n"
+                         "标题："
+        + article_title + "\n\n" + article_content;
 
     std::string api_body_str = provider->buildRequest(ai_model, ai_max_tokens, SYSTEM_PROMPT, prompt, true);
 
@@ -193,15 +191,14 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
             return parser(data, len);
         };
 
-        http_result = chen::http::HttpConnection::DoRequestStreaming(
-            chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
+        http_result = chen::http::HttpConnection::DoRequestStreaming(chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
 
         if (http_result && http_result->result == 0) {
             break;
         }
 
-        ERROR(logger) << "AI API call failed (attempt " << attempt << "/" << MAX_RETRIES << "): "
-            << (http_result ? http_result->error : "null result");
+        ERROR(logger) << "AI API call failed (attempt " << attempt << "/" << MAX_RETRIES
+                      << "): " << (http_result ? http_result->error : "null result");
     }
 
     if (!http_result || http_result->result != 0) {
@@ -234,9 +231,10 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-int32_t ArticleAISummaryServlet::onClose(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session) {
+int32_t ArticleAISummaryServlet::onClose(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session)
+{
     return 0;
 }
 
-}  // namespace servlet
-}  // namespace blog
+} // namespace servlet
+} // namespace blog

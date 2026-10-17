@@ -2,12 +2,12 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
+#include "../../event/event_define.h"
+#include "../../manager/organization_apply_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/organization_apply_manager.h"
-#include "../../event/event_define.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -15,11 +15,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationApplyReviewServlet::OrganizationApplyReviewServlet()
-    : BlogLoginedServlet("OrganizationApplyReviewServlet") {
+    : BlogLoginedServlet("OrganizationApplyReviewServlet")
+{
 }
 
-int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationApplyReviewServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, apply_id_str, "apply_id");
         DEFINE_AND_CHECK_STRING(result, action, "action");
@@ -81,8 +86,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
 
             if (data::OrganizationInfoDao::Insert(org, db)) {
                 result->setErrno(errcode::ORG_INSERT_FAILED);
-                ERROR(logger) << "db error, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -99,8 +103,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
 
             if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
                 result->setErrno(errcode::ORG_USER_REL_FAILED);
-                ERROR(logger) << "db error, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -113,8 +116,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
 
             if (data::OrganizationApplyInfoDao::Update(apply, db)) {
                 result->setErrno(errcode::ORG_APPLY_UPDATE_FAILED);
-                ERROR(logger) << "db error, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -140,8 +142,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
 
             if (data::OrganizationApplyInfoDao::Update(apply, db)) {
                 result->setErrno(errcode::ORG_APPLY_UPDATE_FAILED);
-                ERROR(logger) << "db error, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -154,7 +155,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
                 data.applicant_id = apply->getUserId();
                 data.org_name = apply->getOrgName();
                 data.reason = reason;
-                
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_APPLY, std::move(data));
             }
         }
@@ -163,5 +164,5 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

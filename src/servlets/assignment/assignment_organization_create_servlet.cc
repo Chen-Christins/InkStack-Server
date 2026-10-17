@@ -2,13 +2,13 @@
 
 #include <chen/log/log.h>
 
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/assignment_organization_rel_manager.h"
-#include "../../manager/assignment_manager.h"
-#include "../../util.h"
 #include "../../event/event_define.h"
+#include "../../manager/assignment_manager.h"
+#include "../../manager/assignment_organization_rel_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -16,11 +16,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 AssignmentOrganizationCreateServlet::AssignmentOrganizationCreateServlet()
-    : BlogLoginedServlet("AssignmentOrganizationCreateServlet") {
+    : BlogLoginedServlet("AssignmentOrganizationCreateServlet")
+{
 }
 
-int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AssignmentOrganizationCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
         DEFINE_AND_CHECK_STRING(result, name, "name");
@@ -103,8 +108,7 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
         if (data::AssignmentInfoDao::InsertOrUpdate(assign_info, db)) {
             result->setErrno(errcode::ASSIGNMENT_UPDATE_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -125,8 +129,7 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
             if (data::AssignmentOrganizationRelInfoDao::InsertOrUpdate(org_assign_rel, db)) {
                 result->setErrno(errcode::ASSIGNMENT_UPDATE_FAILED);
-                ERROR(logger) << "db error, errno=" << db->getErrno()
-                    << " errstr=" << db->getErrStr();
+                ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
 
@@ -141,11 +144,13 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
                 std::vector<data::OrganizationUserRelInfo::ptr> org_members;
                 OrganizationUserRelMgr::GetInstance()->getByPages(org_members, org_id, 0, 10000, -1, true);
                 for (auto& m : org_members) {
-                    if (m->getStatus() != OrganizationUserRelManager::Status::APPROVED) continue;
-                    if (m->getUserId() == uid) continue;
+                    if (m->getStatus() != OrganizationUserRelManager::Status::APPROVED)
+                        continue;
+                    if (m->getUserId() == uid)
+                        continue;
                     member_ids.push_back(m->getUserId());
                 }
-                
+
                 EventAssignmentData data = {};
                 data.type = "created";
                 data.assignment_id = assign_info->getId();
@@ -170,5 +175,5 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -11,12 +11,16 @@ namespace blog {
 namespace servlet {
 
 CommentUpdateServlet::CommentUpdateServlet()
-    : BlogLoginedServlet("CommentUpdateServlet") {
+    : BlogLoginedServlet("CommentUpdateServlet")
+{
 }
 
-int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,
+int32_t CommentUpdateServlet::handle(
+    chen::http::HttpRequest::ptr request,
     chen::http::HttpResponse::ptr response,
-    chen::http::HttpSession::ptr session, Result::ptr result) {
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -49,7 +53,7 @@ int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,
         item["id"] = comment->getId();
         item["content"] = comment->getContent();
         item["user_id"] = comment->getUserId();
-        item["time"] = chen::Time2Str(comment->getCreateTime());
+        item["time"] = chen::TimeUtil::Time2Str(comment->getCreateTime());
 
         auto user = UserMgr::GetInstance()->get(uid);
         if (user) {
@@ -74,5 +78,5 @@ int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

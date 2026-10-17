@@ -1,8 +1,8 @@
 #include "user_reset_passwd_servlet.h"
 
-#include <chen/log/log.h>
-#include <chen/db/redis.h>
 #include <chen/config/config.h>
+#include <chen/db/redis.h>
+#include <chen/log/log.h>
 
 #include "../../manager/user_manager.h"
 #include "../../util.h"
@@ -12,15 +12,19 @@ namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 UserResetPasswdServlet::UserResetPasswdServlet()
-    :BlogServlet("UserResetPasswdServlet") {
+    : BlogServlet("UserResetPasswdServlet")
+{
 }
 
-int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserResetPasswdServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, email, "email");
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
@@ -65,7 +69,8 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-bool UserResetPasswdServlet::verificationEmailCode(const std::string& email, const std::string& code) {
+bool UserResetPasswdServlet::verificationEmailCode(const std::string& email, const std::string& code)
+{
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "GET email:verify:3:%s", email.c_str());
     if (!rpy || rpy->type != REDIS_REPLY_STRING) {
         return false;
@@ -78,5 +83,5 @@ bool UserResetPasswdServlet::verificationEmailCode(const std::string& email, con
     return true;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

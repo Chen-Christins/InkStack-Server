@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserListServlet::UserListServlet()
-    : BlogLoginedServlet("UserListServlet") {
+    : BlogLoginedServlet("UserListServlet")
+{
 }
 
-int32_t UserListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -48,5 +53,5 @@ int32_t UserListServlet::handle(chen::http::HttpRequest::ptr request, chen::http
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

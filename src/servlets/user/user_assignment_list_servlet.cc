@@ -3,8 +3,8 @@
 #include <chen/log/log.h>
 
 #include "../../manager/assignment_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAssignmentListServlet::UserAssignmentListServlet()
-    : BlogLoginedServlet("UserAssignmentListServlet") {
+    : BlogLoginedServlet("UserAssignmentListServlet")
+{
 }
 
-int32_t UserAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAssignmentListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         // 获取当前用户
         auto uid = getUserId(request);
@@ -36,15 +41,13 @@ int32_t UserAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, 
         for (auto& org_rel : user_org_rels) {
             // 该组织下的所有作业关系
             std::vector<data::AssignmentOrganizationRelInfo::ptr> assignment_org_rels;
-            AssignmentOrganizationRelMgr::GetInstance()->getByPages(assignment_org_rels
-                , org_rel->getOrgId(), 0, INT32_MAX, -1, true);
+            AssignmentOrganizationRelMgr::GetInstance()->getByPages(assignment_org_rels, org_rel->getOrgId(), 0, INT32_MAX, -1, true);
             for (auto& assign_org_rel : assignment_org_rels) {
                 // 把作业信息加入结果集中
                 int64_t assign_id = assign_org_rel->getAssignmentId();
                 auto assign_info = AssignmentMgr::GetInstance()->get(assign_id);
                 // 只返回激活状态的作业
-                if (!assign_info || assign_info->getStatus() == AssignmentManager::Status::DRAFT
-                        || assign_info->getIsDeleted()) {
+                if (!assign_info || assign_info->getStatus() == AssignmentManager::Status::DRAFT || assign_info->getIsDeleted()) {
                     continue;
                 }
                 Json::Value item;
@@ -67,5 +70,5 @@ int32_t UserAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

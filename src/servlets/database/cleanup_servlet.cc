@@ -1,13 +1,13 @@
 #include "cleanup_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
+#include <chen/log/log.h>
 #include <chen/util/util.h>
 
 #include "../../manager/user_manager.h"
+#include "../../util.h"
 #include "blog/data/backup_record_info.h"
 #include "blog/data/export_record_info.h"
-#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -16,12 +16,16 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
 CleanupServlet::CleanupServlet()
-    : BlogLoginedServlet("CleanupServlet") {
+    : BlogLoginedServlet("CleanupServlet")
+{
 }
 
-int32_t CleanupServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t CleanupServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -99,5 +103,5 @@ int32_t CleanupServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

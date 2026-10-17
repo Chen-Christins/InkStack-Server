@@ -39,4 +39,4 @@ private:
 
 typedef chen::Singleton<UserAIConfigManager> UserAIConfigMgr;
 
-}
+} // namespace blog

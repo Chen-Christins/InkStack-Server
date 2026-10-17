@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleListByLabelServlet::ArticleListByLabelServlet()
-    :BlogServlet("ArticleListByLabelServlet") {
+    : BlogServlet("ArticleListByLabelServlet")
+{
 }
 
-int32_t ArticleListByLabelServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleListByLabelServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, label_id, "label_id");
         int64_t page_from = request->getParamAs<int64_t>("page_from");
@@ -47,5 +52,5 @@ int32_t ArticleListByLabelServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

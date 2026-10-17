@@ -1,9 +1,9 @@
 #include "admin_comment_spam_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -13,11 +13,16 @@ namespace blog {
 namespace servlet {
 
 AdminCommentSpamServlet::AdminCommentSpamServlet()
-    : BlogLoginedServlet("AdminCommentSpamServlet") {
+    : BlogLoginedServlet("AdminCommentSpamServlet")
+{
 }
 
-int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AdminCommentSpamServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -43,11 +48,11 @@ int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, ch
         while (std::getline(ss, token, ',')) {
             try {
                 ids.push_back(std::stoll(token));
-            } catch (...) {}
+            } catch (...) {
+            }
         }
 
-        int64_t affected = CommentMgr::GetInstance()->batchUpdateStatus(
-            ids, CommentManager::SPAM);
+        int64_t affected = CommentMgr::GetInstance()->batchUpdateStatus(ids, CommentManager::SPAM);
 
         Json::Value idList(Json::arrayValue);
         for (auto& id : ids) {
@@ -74,7 +79,7 @@ int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, ch
                 data.comment_id = cid;
                 data.author_id = author_id;
                 data.type = "comment_spam";
-                
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
             }
         }
@@ -84,5 +89,5 @@ int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

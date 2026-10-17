@@ -1,8 +1,8 @@
 #include "rd_requirement_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
 #include "rd_helper.h"
 
@@ -10,11 +10,16 @@ namespace blog {
 namespace servlet {
 
 RdRequirementServlet::RdRequirementServlet()
-    : BlogLoginedServlet("RdRequirementServlet") {
+    : BlogLoginedServlet("RdRequirementServlet")
+{
 }
 
-int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdRequirementServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
@@ -97,9 +102,7 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 std::string title = info->getTitle();
                 std::string desc = info->getDescription();
                 std::string creator = rd::GetUserName(info->getCreatorId());
-                if (title.find(search) == std::string::npos
-                        && desc.find(search) == std::string::npos
-                        && creator.find(search) == std::string::npos) {
+                if (title.find(search) == std::string::npos && desc.find(search) == std::string::npos && creator.find(search) == std::string::npos) {
                     continue;
                 }
             }
@@ -122,5 +125,5 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

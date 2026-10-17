@@ -3,11 +3,11 @@
 #include <chen/log/log.h>
 #include <json/json.h>
 
-#include "../../util.h"
+#include "../../event/event_define.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../event/event_define.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -15,11 +15,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationJoinServlet::OrganizationJoinServlet()
-    : BlogLoginedServlet("OrganizationJoinServlet") {
+    : BlogLoginedServlet("OrganizationJoinServlet")
+{
 }
 
-int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationJoinServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
 
@@ -49,7 +54,7 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
             result->setErrno(errcode::ORG_ALREADY_APPLIED);
             break;
         }
-        info->setRole(OrganizationManager::Role::MEMBER); // 普通成员
+        info->setRole(OrganizationManager::Role::MEMBER);             // 普通成员
         info->setStatus(OrganizationUserRelManager::Status::PENDING); // 申请中
         info->setUpdateTime(time(0));
 
@@ -61,8 +66,7 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::ORG_UPDATE_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -75,7 +79,7 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
             data.org_id = id;
             data.org_name = org->getName();
             data.applicant_id = uid;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
@@ -90,5 +94,5 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

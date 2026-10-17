@@ -12,11 +12,16 @@ namespace blog {
 namespace servlet {
 
 CommentRepliesServlet::CommentRepliesServlet()
-    :BlogServlet("CommentRepliesServlet") {
+    : BlogServlet("CommentRepliesServlet")
+{
 }
 
-int32_t CommentRepliesServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CommentRepliesServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, comment_id, "comment_id");
 
@@ -42,7 +47,7 @@ int32_t CommentRepliesServlet::handle(chen::http::HttpRequest::ptr request, chen
             item["id"] = r->getId();
             item["content"] = r->getContent();
             item["user_id"] = r->getUserId();
-            item["time"] = chen::Time2Str(r->getCreateTime());
+            item["time"] = chen::TimeUtil::Time2Str(r->getCreateTime());
 
             auto user = UserMgr::GetInstance()->get(r->getUserId());
             if (user) {
@@ -74,5 +79,5 @@ int32_t CommentRepliesServlet::handle(chen::http::HttpRequest::ptr request, chen
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

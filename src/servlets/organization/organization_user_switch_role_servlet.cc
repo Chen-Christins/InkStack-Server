@@ -3,12 +3,12 @@
 #include <chen/log/log.h>
 #include <json/json.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/organization_manager.h"
-#include "../../permission.h"
 #include "../../event/event_define.h"
+#include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../permission.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -16,15 +16,20 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationUserSwitchRoleServlet::OrganizationUserSwitchRoleServlet()
-    : BlogLoginedServlet("OrganizationUserSwitchRoleServlet") {
+    : BlogLoginedServlet("OrganizationUserSwitchRoleServlet")
+{
 }
 
-int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationUserSwitchRoleServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
-        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id"); // organization_user_rel id
-        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id"); // organization id
-        DEFINE_AND_CHECK_TYPE(result, int32_t, role, "role"); // new role
+        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");           // organization_user_rel id
+        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");   // organization id
+        DEFINE_AND_CHECK_TYPE(result, int32_t, role, "role");       // new role
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id"); // user_id
 
         // 操作者权限检查
@@ -55,15 +60,13 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
         // 更新用户角色
         rel = blog::OrganizationUserRelMgr::GetInstance()->get(id);
         if (!rel || rel->getOrgId() != org_id || rel->getUserId() != user_id) {
-            result->setErrno(errcode::ARTICLE_INVALID_ID);;
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
+            ;
             break;
         }
 
-        if (role != OrganizationManager::Role::MEMBER
-                && role != OrganizationManager::Role::REPORTER
-                && role != OrganizationManager::Role::DEVELOPER
-                && role != OrganizationManager::Role::DEV_LEAD
-                && role != OrganizationManager::Role::ORG_ADMIN) {
+        if (role != OrganizationManager::Role::MEMBER && role != OrganizationManager::Role::REPORTER && role != OrganizationManager::Role::DEVELOPER
+            && role != OrganizationManager::Role::DEV_LEAD && role != OrganizationManager::Role::ORG_ADMIN) {
             result->setErrno(errcode::PARAM_INVALID, "invalid role");
             break;
         }
@@ -105,7 +108,7 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
             data.operator_id = uid;
             data.target_user_id = user_id;
             data.new_role_name = role_name;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
@@ -123,5 +126,5 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

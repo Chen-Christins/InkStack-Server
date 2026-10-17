@@ -1,8 +1,8 @@
 #include "organization_user_rel_manager.h"
 
-#include "organization_manager.h"
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
+#include "organization_manager.h"
 
 #include <chen/log/log.h>
 
@@ -13,19 +13,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 OrganizationUserRelManager::OrganizationUserRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::OrganizationUserRelInfoDao::ParseRow(rt);
 }
 
-
-void OrganizationUserRelManager::add(data::OrganizationUserRelInfo::ptr info) {
+void OrganizationUserRelManager::add(data::OrganizationUserRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id) {
+data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -42,7 +45,8 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id) {
     return v;
 }
 
-data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(int64_t o_id, int64_t u_id) {
+data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(int64_t o_id, int64_t u_id)
+{
     int64_t cachedId = getCachedIdMapping("org_usr:" + std::to_string(o_id) + ":" + std::to_string(u_id));
     if (cachedId > 0) {
         return get(cachedId);
@@ -60,8 +64,14 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(i
     return info;
 }
 
-int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
-        , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+int64_t OrganizationUserRelManager::getByPages(
+    std::vector<data::OrganizationUserRelInfo::ptr>& results,
+    int64_t o_id,
+    uint64_t offset,
+    uint64_t size,
+    int32_t status,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -85,8 +95,12 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
     return total;
 }
 
-int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::OrganizationUserRelInfo::ptr>& results
-        , int64_t u_id, int32_t status, bool isValid) {
+int64_t OrganizationUserRelManager::getOrgByUserId(
+    std::vector<data::OrganizationUserRelInfo::ptr>& results,
+    int64_t u_id,
+    int32_t status,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -112,7 +126,8 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
     return results.size();
 }
 
-int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status, bool isValid) {
+int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -130,7 +145,8 @@ int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status,
     return total;
 }
 
-OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t org_id) {
+OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t org_id)
+{
     Stats stats;
     auto db = GetDB();
     if (!db) {
@@ -175,4 +191,4 @@ OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t o
     return stats;
 }
 
-}
+} // namespace blog

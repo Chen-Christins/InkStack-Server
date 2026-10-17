@@ -3,12 +3,12 @@
 #include <chen/log/log.h>
 #include <json/json.h>
 
-#include "../../util.h"
-#include "../../manager/user_manager.h"
+#include "../../event/event_define.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
-#include "../../event/event_define.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -16,18 +16,22 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationJoinCheckServlet::OrganizationJoinCheckServlet()
-    : BlogLoginedServlet("OrganizationJoinCheckServlet") {
+    : BlogLoginedServlet("OrganizationJoinCheckServlet")
+{
 }
 
-int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationJoinCheckServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
         DEFINE_AND_CHECK_TYPE(result, int32_t, state, "state");
 
-        if (state != OrganizationUserRelManager::Status::REJECTED
-                && state != OrganizationUserRelManager::Status::APPROVED) {
+        if (state != OrganizationUserRelManager::Status::REJECTED && state != OrganizationUserRelManager::Status::APPROVED) {
             result->setErrno(errcode::PARAM_INVALID, "invalid state");
             break;
         }
@@ -85,8 +89,7 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
             result->setErrno(errcode::ORG_USER_REL_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                          << ", errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << ", errstr=" << db->getErrStr();
             break;
         }
 
@@ -98,7 +101,7 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
             data.org_name = org->getName();
             data.applicant_id = user_id;
             data.operator_id = uid;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
@@ -108,5 +111,5 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -32,14 +32,16 @@ struct Result {
     Json::Value jsondata;
 
     template <class T>
-    void set(const std::string& key, const T& v) {
+    void set(const std::string& key, const T& v)
+    {
         jsondata[key] = v;
     }
     void set(const std::string& key, const char* v) { jsondata[key] = v; }
     void set(const std::string& key, const std::string& v) { jsondata[key] = v; }
 
     template <class T>
-    void append(const std::string& key, const T& v) {
+    void append(const std::string& key, const T& v)
+    {
         jsondata[key].append(v);
     }
 
@@ -77,27 +79,33 @@ class BlogServlet : public chen::http::Servlet {
 public:
     BlogServlet(const std::string& name);
 
-    int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
-                   chen::http::HttpSession::ptr session) override;
+    int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) override;
 
     int64_t getUserId(chen::http::HttpRequest::ptr request);
 
 protected:
-    virtual bool handlePre(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
-                           chen::http::HttpSession::ptr session, Result::ptr result);
+    virtual bool handlePre(
+        chen::http::HttpRequest::ptr request,
+        chen::http::HttpResponse::ptr response,
+        chen::http::HttpSession::ptr session,
+        Result::ptr result);
 
-    virtual int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
-                           chen::http::HttpSession::ptr session, Result::ptr result) = 0;
+    virtual int32_t handle(
+        chen::http::HttpRequest::ptr request,
+        chen::http::HttpResponse::ptr response,
+        chen::http::HttpSession::ptr session,
+        Result::ptr result) = 0;
 
-    virtual bool handlePost(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
-                            chen::http::HttpSession::ptr session, Result::ptr result);
+    virtual bool handlePost(
+        chen::http::HttpRequest::ptr request,
+        chen::http::HttpResponse::ptr response,
+        chen::http::HttpSession::ptr session,
+        Result::ptr result);
 
 protected:
-    chen::http::SessionData::ptr getSessionData(chen::http::HttpRequest::ptr request,
-                                                chen::http::HttpResponse::ptr response);
+    chen::http::SessionData::ptr getSessionData(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response);
 
-    bool initLogin(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
-                   chen::http::HttpSession::ptr session);
+    bool initLogin(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session);
 
 protected:
     chen::IDB::ptr getDB();
@@ -108,8 +116,11 @@ public:
     BlogLoginedServlet(const std::string& name);
 
 protected:
-    bool handlePre(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
-                   chen::http::HttpSession::ptr session, Result::ptr result) override;
+    bool handlePre(
+        chen::http::HttpRequest::ptr request,
+        chen::http::HttpResponse::ptr response,
+        chen::http::HttpSession::ptr session,
+        Result::ptr result) override;
 };
 
 } // namespace blog

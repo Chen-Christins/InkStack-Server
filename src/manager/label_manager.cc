@@ -1,7 +1,7 @@
 #include "label_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,19 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 LabelManager::LabelManager()
-    :m_cache(8, kCacheMaxSize, 50) {
+    : m_cache(8, kCacheMaxSize, 50)
+{
 }
 
-data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt) {
+data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::LabelInfoDao::ParseRow(rt);
 }
 
-
-void LabelManager::add(data::LabelInfo::ptr info) {
+void LabelManager::add(data::LabelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::LabelInfo::ptr LabelManager::get(int64_t id) {
+data::LabelInfo::ptr LabelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -41,7 +44,8 @@ data::LabelInfo::ptr LabelManager::get(int64_t id) {
     return v;
 }
 
-data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string& name) {
+data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string& name)
+{
     int64_t cachedId = getCachedIdMapping("lbl:uid_name:" + std::to_string(id) + ":" + name);
     if (cachedId > 0) {
         return get(cachedId);
@@ -59,7 +63,8 @@ data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string
     return info;
 }
 
-bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_t id, bool valid) {
+bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_t id, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

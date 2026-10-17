@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "../../manager/user_manager.h"
 #include "../../manager/assignment_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../util.h"
 
 namespace blog {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 AssignmentCreateServlet::AssignmentCreateServlet()
-    : BlogLoginedServlet("AssignmentCreateServlet") {
+    : BlogLoginedServlet("AssignmentCreateServlet")
+{
 }
 
-int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AssignmentCreateServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, name, "name");
         DEFINE_AND_CHECK_STRING(result, subject_name, "subject_name");
@@ -87,8 +92,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         if (data::AssignmentInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::ASSIGNMENT_UPDATE_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -111,5 +115,5 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

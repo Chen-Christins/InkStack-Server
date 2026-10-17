@@ -27,11 +27,12 @@ public:
      * @param[out] total 总条数
      * @return true 成功，false 失败
      */
-    bool list(std::vector<data::UserFeedbackInfo::ptr>& infos,
-              const std::string& type = "",
-              int32_t page = 1,
-              int32_t page_size = 20,
-              int64_t* total = nullptr);
+    bool list(
+        std::vector<data::UserFeedbackInfo::ptr>& infos,
+        const std::string& type = "",
+        int32_t page = 1,
+        int32_t page_size = 20,
+        int64_t* total = nullptr);
 
     /**
      * @brief 根据 ID 获取反馈
@@ -50,4 +51,4 @@ public:
 
 typedef chen::Singleton<FeedbackManager> FeedbackMgr;
 
-}
+} // namespace blog

@@ -1,8 +1,8 @@
 #include "rd_bug_delete_servlet.h"
 
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
 
@@ -10,11 +10,16 @@ namespace blog {
 namespace servlet {
 
 RdBugDeleteServlet::RdBugDeleteServlet()
-    : BlogLoginedServlet("RdBugDeleteServlet") {
+    : BlogLoginedServlet("RdBugDeleteServlet")
+{
 }
 
-int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdBugDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
@@ -100,5 +105,5 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

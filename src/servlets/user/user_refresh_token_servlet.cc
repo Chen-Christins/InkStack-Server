@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
-#include "../../manager/user_manager.h"
-#include "../../manager/user_login_device_manager.h"
 #include "../../manager/system_settings_manager.h"
+#include "../../manager/user_login_device_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../util.h"
 
 namespace blog {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserRefreshTokenServlet::UserRefreshTokenServlet()
-    : BlogServlet("UserRefreshTokenServlet") {
+    : BlogServlet("UserRefreshTokenServlet")
+{
 }
 
-int32_t UserRefreshTokenServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserRefreshTokenServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string uid_str = request->getParam("uid");
         std::string token = request->getParam("token");
@@ -81,5 +86,5 @@ int32_t UserRefreshTokenServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

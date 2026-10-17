@@ -1,15 +1,15 @@
 #include "rd_trend_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/db/query_builder.h>
+#include <chen/log/log.h>
 
 #include <cmath>
 
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
-#include "blog/data/task_info.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "blog/data/organization_repo_prs_info.h"
+#include "blog/data/task_info.h"
 
 namespace blog {
 namespace servlet {
@@ -17,20 +17,24 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 RdTrendServlet::RdTrendServlet()
-    : BlogLoginedServlet("RdTrendServlet") {
+    : BlogLoginedServlet("RdTrendServlet")
+{
 }
 
 // ==================== 静态工具函数 ====================
 
-time_t RdTrendServlet::parseDate(const std::string& date_str) {
-    return chen::Str2Time(date_str.c_str(), "%Y-%m-%d");
+time_t RdTrendServlet::parseDate(const std::string& date_str)
+{
+    return chen::TimeUtil::Str2Time(date_str.c_str(), "%Y-%m-%d");
 }
 
-std::string RdTrendServlet::formatDate(time_t t) {
-    return chen::Time2Str(t, "%Y-%m-%d");
+std::string RdTrendServlet::formatDate(time_t t)
+{
+    return chen::TimeUtil::Time2Str(t, "%Y-%m-%d");
 }
 
-std::string RdTrendServlet::formatGroupKey(time_t t, const std::string& granularity) {
+std::string RdTrendServlet::formatGroupKey(time_t t, const std::string& granularity)
+{
     struct tm tm;
     localtime_r(&t, &tm);
     char buf[32];
@@ -50,7 +54,8 @@ std::string RdTrendServlet::formatGroupKey(time_t t, const std::string& granular
 // ==================== 查询辅助函数 ====================
 
 /// 为 QueryBuilder 添加 is_deleted + org 过滤条件
-static void addBaseConds(chen::QueryBuilder::ptr qb, const TrendContext& ctx) {
+static void addBaseConds(chen::QueryBuilder::ptr qb, const TrendContext& ctx)
+{
     qb->where("is_deleted", "=", (int64_t)0);
     if (!ctx.target_orgs.empty()) {
         qb->whereIn("org_id", ctx.target_orgs);
@@ -58,18 +63,21 @@ static void addBaseConds(chen::QueryBuilder::ptr qb, const TrendContext& ctx) {
 }
 
 /// 为 QueryBuilder 添加标准时间范围条件
-static void addTimeCond(chen::QueryBuilder::ptr qb, time_t start, time_t end) {
+static void addTimeCond(chen::QueryBuilder::ptr qb, time_t start, time_t end)
+{
     qb->whereSQL("create_time >= FROM_UNIXTIME(?)", (int64_t)start);
     qb->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)end);
 }
 
 /// 为 QueryBuilder 添加 PR 表的时间范围条件
-static void addPRTimeCond(chen::QueryBuilder::ptr qb, time_t start, time_t end) {
+static void addPRTimeCond(chen::QueryBuilder::ptr qb, time_t start, time_t end)
+{
     qb->whereSQL("prs.create_time >= FROM_UNIXTIME(?)", (int64_t)start);
     qb->whereSQL("prs.create_time < FROM_UNIXTIME(?)", (int64_t)end);
 }
 
-int64_t RdTrendServlet::countBySql(const TrendContext& ctx, const std::string& table, int32_t min_status) {
+int64_t RdTrendServlet::countBySql(const TrendContext& ctx, const std::string& table, int32_t min_status)
+{
     auto qb = chen::QueryBuilder::Create(table);
     addBaseConds(qb, ctx);
     if (min_status >= 0) {
@@ -81,7 +89,8 @@ int64_t RdTrendServlet::countBySql(const TrendContext& ctx, const std::string& t
     return total;
 }
 
-double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& table, int32_t min_status) {
+double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& table, int32_t min_status)
+{
     auto qb = chen::QueryBuilder::Create(table);
     qb->select("AVG(TIMESTAMPDIFF(SECOND, create_time, update_time)) / 86400.0");
     addBaseConds(qb, ctx);
@@ -93,7 +102,8 @@ double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& 
     return result;
 }
 
-void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name) {
+void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name)
+{
     auto qb = chen::QueryBuilder::Create(table);
     qb->select("DATE_FORMAT(create_time, '%Y-%m-%d') as d, COUNT(*) as cnt");
     addBaseConds(qb, ctx);
@@ -123,8 +133,12 @@ void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table,
 
 // ==================== 核心处理 ====================
 
-int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdTrendServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     TrendContext ctx;
     do {
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
@@ -173,8 +187,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
             ctx.target_orgs.push_back(org_id);
         } else if (!is_admin) {
             std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
-            OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid,
-                OrganizationUserRelManager::Status::APPROVED, true);
+            OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
             for (auto& rel : user_orgs) {
                 ctx.target_orgs.push_back(rel->getOrgId());
             }
@@ -188,8 +201,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         // 权限校验
         if (org_id && !is_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
-            if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED
-                    || rel->getRole() < OrganizationManager::Role::REPORTER) {
+            if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED || rel->getRole() < OrganizationManager::Role::REPORTER) {
                 result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
@@ -202,11 +214,11 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         }
 
         // ====== 汇总统计 ======
-        ctx.new_req   = countBySql(ctx, "requirement");
-        ctx.done_req  = countBySql(ctx, "requirement", 3);
+        ctx.new_req = countBySql(ctx, "requirement");
+        ctx.done_req = countBySql(ctx, "requirement", 3);
         ctx.bug_total = countBySql(ctx, "bug");
-        ctx.done_bug  = countBySql(ctx, "bug", 2);
-        ctx.new_task  = countBySql(ctx, "task");
+        ctx.done_bug = countBySql(ctx, "bug", 2);
+        ctx.new_task = countBySql(ctx, "task");
         ctx.done_task = countBySql(ctx, "task", 2);
         ctx.total_completed = ctx.done_req + ctx.done_bug + ctx.done_task;
 
@@ -239,12 +251,11 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
 
         // avg_cycle_time
         {
-            double req_cycle  = avgCycleTime(ctx, "requirement", 3);
-            double bug_cycle  = avgCycleTime(ctx, "bug", 2);
+            double req_cycle = avgCycleTime(ctx, "requirement", 3);
+            double bug_cycle = avgCycleTime(ctx, "bug", 2);
             double task_cycle = avgCycleTime(ctx, "task", 2);
             if (ctx.total_completed > 0) {
-                ctx.avg_cycle_time = (req_cycle * ctx.done_req + bug_cycle * ctx.done_bug + task_cycle * ctx.done_task)
-                                   / ctx.total_completed;
+                ctx.avg_cycle_time = (req_cycle * ctx.done_req + bug_cycle * ctx.done_bug + task_cycle * ctx.done_task) / ctx.total_completed;
             }
         }
 
@@ -276,12 +287,11 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
                 prev_ctx.start_date = prev_start;
                 prev_ctx.end_date = prev_end;
 
-                double prev_req  = avgCycleTime(prev_ctx, "requirement", 3);
-                double prev_bug  = avgCycleTime(prev_ctx, "bug", 2);
+                double prev_req = avgCycleTime(prev_ctx, "requirement", 3);
+                double prev_bug = avgCycleTime(prev_ctx, "bug", 2);
                 double prev_task = avgCycleTime(prev_ctx, "task", 2);
                 if (ctx.total_completed > 0) {
-                    double prev_total = (prev_req * ctx.done_req + prev_bug * ctx.done_bug + prev_task * ctx.done_task)
-                                      / ctx.total_completed;
+                    double prev_total = (prev_req * ctx.done_req + prev_bug * ctx.done_bug + prev_task * ctx.done_task) / ctx.total_completed;
                     ctx.cycle_delta = ctx.avg_cycle_time - prev_total;
                 }
             }
@@ -357,7 +367,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
             qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
             if (!ctx.target_orgs.empty()) {
                 qb->whereIn("repos.org_id", ctx.target_orgs);
-            } 
+            }
             addPRTimeCond(qb, ctx.start_date, ctx.end_date);
 
             int64_t pr_count = 0;
@@ -396,5 +406,5 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

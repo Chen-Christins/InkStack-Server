@@ -2,10 +2,10 @@
 
 #include <chen/log/log.h>
 
-#include "blog/data/article_info.h"
 #include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../util.h"
+#include "blog/data/article_info.h"
 
 namespace blog {
 namespace servlet {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleDeleteServlet::ArticleDeleteServlet()
-    : BlogLoginedServlet("ArticleDeleteServlet") {
+    : BlogLoginedServlet("ArticleDeleteServlet")
+{
 }
 
-int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleDeleteServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> art_ids;
@@ -79,5 +84,5 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

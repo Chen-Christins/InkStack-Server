@@ -2,9 +2,9 @@
 
 #include <chen/log/log.h>
 
-#include "blog/data/user_info.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
+#include "blog/data/user_info.h"
 
 namespace blog {
 namespace servlet {
@@ -12,11 +12,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserQueryServlet::UserQueryServlet()
-    :BlogServlet("UserQueryServlet") {
+    : BlogServlet("UserQueryServlet")
+{
 }
 
-int32_t UserQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserQueryServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, user_ids, "user_ids");
 
@@ -36,12 +41,11 @@ int32_t UserQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             v["name"] = i->getName();
             result->jsondata.append(v);
         }
-        INFO(logger) << "infos.size=" << infos.size()
-            << " - " << chen::JsonUtil::ToString(result->jsondata);
+        INFO(logger) << "infos.size=" << infos.size() << " - " << chen::JsonUtil::ToString(result->jsondata);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -11,11 +11,16 @@ namespace blog {
 namespace servlet {
 
 UserStatsServlet::UserStatsServlet()
-    : BlogLoginedServlet("UserStatsServlet") {
+    : BlogLoginedServlet("UserStatsServlet")
+{
 }
 
-int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserStatsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = request->getParamAs<int64_t>("user_id", 0);
         if (!uid) {
@@ -39,7 +44,8 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         std::vector<int64_t> published_ids;
 
         for (auto& a : articles) {
-            if (a->getIsDeleted()) continue;
+            if (a->getIsDeleted())
+                continue;
             total_articles++;
 
             int32_t state = a->getState();
@@ -62,8 +68,7 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
 
         // total_organizations
         std::vector<data::OrganizationUserRelInfo::ptr> orgs;
-        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(
-            orgs, uid, OrganizationUserRelManager::APPROVED, true);
+        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(orgs, uid, OrganizationUserRelManager::APPROVED, true);
         int64_t total_organizations = orgs.size();
 
         result->setErrno(errcode::SUCCESS);
@@ -91,5 +96,5 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
     response->setBody(result->toJsonString());
     return 0;
 }
-}
-}
+} // namespace servlet
+} // namespace blog

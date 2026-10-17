@@ -9,11 +9,16 @@ namespace blog::servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 SiteSettingsServlet::SiteSettingsServlet()
-    :BlogServlet("SiteSettingsServlet") {
+    : BlogServlet("SiteSettingsServlet")
+{
 }
 
-int32_t SiteSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t SiteSettingsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         auto settings = SystemSettingsMgr::GetInstance()->get();
         if (!settings) {

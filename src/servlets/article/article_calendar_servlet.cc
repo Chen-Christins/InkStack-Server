@@ -17,11 +17,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleCalendarServlet::ArticleCalendarServlet()
-    :BlogLoginedServlet("ArticleCalendarServlet") {
+    : BlogLoginedServlet("ArticleCalendarServlet")
+{
 }
 
-int32_t ArticleCalendarServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleCalendarServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t user_id = getUserId(request);
         int64_t year = request->getParamAs<int64_t>("year");
@@ -48,5 +53,5 @@ int32_t ArticleCalendarServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

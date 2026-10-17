@@ -7,11 +7,16 @@ namespace blog {
 namespace servlet {
 
 ConversationReadServlet::ConversationReadServlet()
-    : BlogLoginedServlet("ConversationReadServlet") {
+    : BlogLoginedServlet("ConversationReadServlet")
+{
 }
 
-int32_t ConversationReadServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ConversationReadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -56,5 +61,5 @@ int32_t ConversationReadServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -1,7 +1,7 @@
 #include "user_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/config/config.h>
 #include <chen/log/log.h>
@@ -12,31 +12,34 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 1000;
 
-static chen::ConfigVar<std::string>::ptr g_admin_account =
-    chen::Config::Lookup("admin.account", std::string("admin"), "default super admin account");
+static chen::ConfigVar<std::string>::ptr g_admin_account = chen::Config::Lookup("admin.account", std::string("admin"), "default super admin account");
 static chen::ConfigVar<std::string>::ptr g_admin_passwd =
     chen::Config::Lookup("admin.passwd", std::string("admin123456"), "default super admin password");
 static chen::ConfigVar<std::string>::ptr g_admin_email =
     chen::Config::Lookup("admin.email", std::string("admin@example.com"), "default super admin email");
 
 UserManager::UserManager()
-    :m_cache(32, kCacheMaxSize, 0) {
+    : m_cache(32, kCacheMaxSize, 0)
+{
 }
 
-data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt) {
+data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::UserInfoDao::ParseRow(rt);
 }
 
-
-void UserManager::add(blog::data::UserInfo::ptr info) {
+void UserManager::add(blog::data::UserInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-void UserManager::update(blog::data::UserInfo::ptr info) {
+void UserManager::update(blog::data::UserInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
+void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -48,8 +51,15 @@ void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
     qb->queryColumn<int64_t>(ids, db, "id");
 }
 
-uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
-        , int32_t role, int32_t state, int32_t days, bool isValid) {
+uint64_t UserManager::listByPages(
+    std::vector<blog::data::UserInfo::ptr>& infos,
+    uint64_t offset,
+    uint64_t size,
+    int32_t role,
+    int32_t state,
+    int32_t days,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -80,7 +90,8 @@ uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos,
     return total;
 }
 
-blog::data::UserInfo::ptr UserManager::get(int64_t id) {
+blog::data::UserInfo::ptr UserManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -97,7 +108,8 @@ blog::data::UserInfo::ptr UserManager::get(int64_t id) {
     return v;
 }
 
-blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v) {
+blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v)
+{
     int64_t cachedId = getCachedIdMapping("usr:acct:" + v);
     if (cachedId > 0) {
         return get(cachedId);
@@ -117,7 +129,8 @@ blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v) {
     return info;
 }
 
-blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
+blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v)
+{
     int64_t cachedId = getCachedIdMapping("usr:eml:" + v);
     if (cachedId > 0) {
         return get(cachedId);
@@ -135,7 +148,8 @@ blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
     return info;
 }
 
-void UserManager::ensureSuperAdmin() {
+void UserManager::ensureSuperAdmin()
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -172,7 +186,8 @@ void UserManager::ensureSuperAdmin() {
     INFO(logger) << "seeded super admin account=" << account << " email=" << email;
 }
 
-blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {
+blog::data::UserInfo::ptr UserManager::getByName(const std::string& v)
+{
     int64_t cachedId = getCachedIdMapping("usr:name:" + v);
     if (cachedId > 0) {
         return get(cachedId);
@@ -190,20 +205,18 @@ blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {
     return info;
 }
 
-std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us) {
+std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us)
+{
     std::stringstream ss;
-    ss << info->getId()
-       << "|" << info->getAccount()
-       << "|" << info->getEmail()
-       << "|" << info->getPasswd()
-       << "|" << us;
+    ss << info->getId() << "|" << info->getAccount() << "|" << info->getEmail() << "|" << info->getPasswd() << "|" << us;
     return chen::EncryptorUtil::MD5(ss.str());
 }
 
-std::string UserManager::generateToken() {
+std::string UserManager::generateToken()
+{
     std::stringstream ss;
-    ss << std::hex << chen::GetCurrentUs() << rand() << rand();
+    ss << std::hex << chen::TimeUtil::GetCurrentUs() << rand() << rand();
     return chen::EncryptorUtil::MD5(ss.str());
 }
 
-}
+} // namespace blog

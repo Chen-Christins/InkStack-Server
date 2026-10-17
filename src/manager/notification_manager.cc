@@ -1,7 +1,7 @@
 #include "notification_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,28 +12,33 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 2000;
 
 NotificationManager::NotificationManager()
-    :m_cache(16, kCacheMaxSize, 0) {
+    : m_cache(16, kCacheMaxSize, 0)
+{
 }
 
-data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt) {
+data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::NotificationInfoDao::ParseRow(rt);
 }
 
 // ========== WS connection management ==========
 
-void NotificationManager::addConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+void NotificationManager::addConnection(int64_t user_id, chen::http::WSSession::ptr session)
+{
     std::unique_lock lock(m_connMutex);
     m_connections[user_id] = session;
     INFO(logger) << "Notification WS connected: user_id=" << user_id;
 }
 
-void NotificationManager::removeConnection(int64_t user_id) {
+void NotificationManager::removeConnection(int64_t user_id)
+{
     std::unique_lock lock(m_connMutex);
     m_connections.erase(user_id);
     INFO(logger) << "Notification WS disconnected: user_id=" << user_id;
 }
 
-void NotificationManager::closeAllConnections() {
+void NotificationManager::closeAllConnections()
+{
     {
         std::unique_lock lock(m_connMutex);
         for (auto& [user_id, session] : m_connections) {
@@ -54,7 +59,8 @@ void NotificationManager::closeAllConnections() {
     }
 }
 
-int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& message) {
+int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& message)
+{
     std::shared_lock lock(m_connMutex);
     auto it = m_connections.find(user_id);
     if (it == m_connections.end()) {
@@ -63,58 +69,66 @@ int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& mess
     return it->second->sendMessage(message);
 }
 
-void NotificationManager::broadcast(const std::string& message) {
+void NotificationManager::broadcast(const std::string& message)
+{
     std::shared_lock lock(m_connMutex);
     for (auto& [user_id, session] : m_connections) {
         session->sendMessage(message);
     }
 }
 
-bool NotificationManager::isConnected(int64_t user_id) {
+bool NotificationManager::isConnected(int64_t user_id)
+{
     std::shared_lock lock(m_connMutex);
     return m_connections.find(user_id) != m_connections.end();
 }
 
-int32_t NotificationManager::getOnlineCount() {
+int32_t NotificationManager::getOnlineCount()
+{
     std::shared_lock lock(m_connMutex);
     return (int32_t)m_connections.size();
 }
 
 // ========== Presence WS connection management ==========
 
-void NotificationManager::addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+void NotificationManager::addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session)
+{
     std::unique_lock lock(m_presenceMutex);
     m_presenceConnections[user_id] = session;
     INFO(logger) << "Presence WS connected: user_id=" << user_id;
 }
 
-void NotificationManager::removePresenceConnection(int64_t user_id) {
+void NotificationManager::removePresenceConnection(int64_t user_id)
+{
     std::unique_lock lock(m_presenceMutex);
     m_presenceConnections.erase(user_id);
     INFO(logger) << "Presence WS disconnected: user_id=" << user_id;
 }
 
-void NotificationManager::broadcastPresence(const std::string& message) {
+void NotificationManager::broadcastPresence(const std::string& message)
+{
     std::shared_lock lock(m_presenceMutex);
     for (auto& [user_id, session] : m_presenceConnections) {
         session->sendMessage(message);
     }
 }
 
-int32_t NotificationManager::getPresenceOnlineCount() {
+int32_t NotificationManager::getPresenceOnlineCount()
+{
     std::shared_lock lock(m_presenceMutex);
     return (int32_t)m_presenceConnections.size();
 }
 
-bool NotificationManager::isPresenceConnected(int64_t user_id) {
+bool NotificationManager::isPresenceConnected(int64_t user_id)
+{
     std::shared_lock lock(m_presenceMutex);
     return m_presenceConnections.find(user_id) != m_presenceConnections.end();
 }
 
 // ========== DB persistence ==========
 
-
-data::NotificationInfo::ptr NotificationManager::addNotification(const NotificationData& data) {
+data::NotificationInfo::ptr NotificationManager::addNotification(const NotificationData& data)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -148,8 +162,13 @@ data::NotificationInfo::ptr NotificationManager::addNotification(const Notificat
     return info;
 }
 
-void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& results,
-    int64_t user_id, uint64_t offset, uint64_t size, const std::string& type) {
+void NotificationManager::listByUser(
+    std::vector<data::NotificationInfo::ptr>& results,
+    int64_t user_id,
+    uint64_t offset,
+    uint64_t size,
+    const std::string& type)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -190,7 +209,8 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
     cacheListResult(listKey, ids);
 }
 
-int64_t NotificationManager::countByUser(int64_t user_id, const std::string& type) {
+int64_t NotificationManager::countByUser(int64_t user_id, const std::string& type)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -203,7 +223,8 @@ int64_t NotificationManager::countByUser(int64_t user_id, const std::string& typ
     return executeCountCached(qb, db, ck);
 }
 
-int64_t NotificationManager::unreadCount(int64_t user_id) {
+int64_t NotificationManager::unreadCount(int64_t user_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -216,7 +237,8 @@ int64_t NotificationManager::unreadCount(int64_t user_id) {
     return executeCountCached(qb, db, "notif:unread:" + std::to_string(user_id));
 }
 
-bool NotificationManager::markRead(int64_t notification_id) {
+bool NotificationManager::markRead(int64_t notification_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -236,7 +258,8 @@ bool NotificationManager::markRead(int64_t notification_id) {
     return true;
 }
 
-bool NotificationManager::markRead(const std::vector<int64_t>& ids) {
+bool NotificationManager::markRead(const std::vector<int64_t>& ids)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -255,7 +278,8 @@ bool NotificationManager::markRead(const std::vector<int64_t>& ids) {
     return true;
 }
 
-int64_t NotificationManager::markAllRead(int64_t user_id) {
+int64_t NotificationManager::markAllRead(int64_t user_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -285,7 +309,8 @@ int64_t NotificationManager::markAllRead(int64_t user_id) {
     return count;
 }
 
-int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& type) {
+int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& type)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -315,7 +340,8 @@ int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& 
     return count;
 }
 
-data::NotificationInfo::ptr NotificationManager::get(int64_t id) {
+data::NotificationInfo::ptr NotificationManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -332,7 +358,8 @@ data::NotificationInfo::ptr NotificationManager::get(int64_t id) {
     return v;
 }
 
-void NotificationManager::cleanupExpiredBroadcasts() {
+void NotificationManager::cleanupExpiredBroadcasts()
+{
     auto db = GetDB();
     if (!db) {
         return;
@@ -353,4 +380,4 @@ void NotificationManager::cleanupExpiredBroadcasts() {
     stmt->execute();
 }
 
-}
+} // namespace blog

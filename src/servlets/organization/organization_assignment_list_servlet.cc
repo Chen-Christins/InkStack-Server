@@ -2,12 +2,12 @@
 
 #include <chen/log/log.h>
 
-#include "../../manager/user_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/assignment_organization_rel_manager.h"
 #include "../../manager/assignment_manager.h"
-#include "../../util.h"
+#include "../../manager/assignment_organization_rel_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -15,11 +15,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationAssignmentListServlet::OrganizationAssignmentListServlet()
-    : BlogLoginedServlet("OrganizationAssignmentListServlet") {
+    : BlogLoginedServlet("OrganizationAssignmentListServlet")
+{
 }
 
-int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationAssignmentListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
@@ -57,8 +62,7 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
 
         // get assignments in organization
         std::vector<data::AssignmentOrganizationRelInfo::ptr> assign_rels;
-        int64_t total = AssignmentOrganizationRelMgr::GetInstance()->getByPages(assign_rels
-                , org_id, offset, page_size, status, true);
+        int64_t total = AssignmentOrganizationRelMgr::GetInstance()->getByPages(assign_rels, org_id, offset, page_size, status, true);
 
         auto& list = result->jsondata["list"];
         for (auto& i : assign_rels) {
@@ -87,5 +91,5 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

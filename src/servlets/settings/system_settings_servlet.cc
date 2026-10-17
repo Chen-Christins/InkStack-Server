@@ -10,10 +10,12 @@ namespace blog::servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 SystemSettingsServlet::SystemSettingsServlet()
-    : BlogLoginedServlet("SystemSettingsServlet") {
+    : BlogLoginedServlet("SystemSettingsServlet")
+{
 }
 
-static void BuildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr info) {
+static void BuildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr info)
+{
     json["id"] = (Json::Int64)info->getId();
     json["siteName"] = info->getSiteName();
     json["siteDescription"] = info->getSiteDescription();
@@ -51,8 +53,12 @@ static void BuildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr i
     json["updatedAt"] = (Json::Int64)info->getUpdatedAt();
 }
 
-int32_t SystemSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t SystemSettingsServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {

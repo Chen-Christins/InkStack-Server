@@ -22,14 +22,19 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static chen::ConfigVar<std::string>::ptr g_jieba_dict_path =
     chen::Config::Lookup("search.jieba_dict_path", std::string(""), "jieba dict directory path");
-static chen::ConfigVar<std::string>::ptr g_index_path =
-    chen::Config::Lookup("search.index_path", std::string(""), "search index file path");
 
-Index::Index() : m_createTime(0), m_endTime(0) {}
+static chen::ConfigVar<std::string>::ptr g_index_path = chen::Config::Lookup("search.index_path", std::string(""), "search index file path");
+
+Index::Index()
+    : m_createTime(0)
+    , m_endTime(0)
+{
+}
 
 Index::~Index() = default;
 
-bool Index::set(uint64_t type, uint64_t key, uint32_t idx, bool v) {
+bool Index::set(uint64_t type, uint64_t key, uint32_t idx, bool v)
+{
     auto b = m_indexs[type][key];
     if (!b) {
         b.reset(new chen::ds::Bitmap(m_docs.size()));
@@ -39,7 +44,8 @@ bool Index::set(uint64_t type, uint64_t key, uint32_t idx, bool v) {
     return true;
 }
 
-chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
+chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key)
+{
     auto it = m_indexs.find(type);
     if (it == m_indexs.end()) {
         return nullptr;
@@ -48,22 +54,24 @@ chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
     return itt == it->second.end() ? nullptr : itt->second;
 }
 
-void Index::initJieba() {
+void Index::initJieba()
+{
     if (hasJieba()) {
         return;
     }
     std::string dict_path = g_jieba_dict_path->getValue();
     try {
-        m_jieba.reset(new cppjieba::Jieba(dict_path + "/jieba.dict.utf8", dict_path + "/hmm_model.utf8",
-                                          dict_path + "/user.dict.utf8", dict_path + "/idf.utf8",
-                                          dict_path + "/stop_words.utf8"));
+        m_jieba.reset(new cppjieba::Jieba(
+            dict_path + "/jieba.dict.utf8", dict_path + "/hmm_model.utf8", dict_path + "/user.dict.utf8", dict_path + "/idf.utf8",
+            dict_path + "/stop_words.utf8"));
         INFO(logger) << "jieba initialized, dict_path=" << dict_path;
     } catch (const std::exception& e) {
         ERROR(logger) << "jieba init failed: " << e.what();
     }
 }
 
-void Index::build() {
+void Index::build()
+{
     INFO(logger) << "Index build begin...";
 
     initJieba();
@@ -94,10 +102,11 @@ void Index::build() {
     INFO(logger) << "Index build over... used=" << (m_endTime - m_createTime) << " doc.size=" << m_docs.size();
 }
 
-void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
+void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx)
+{
     set((uint64_t)IndexType::USER_ID, info->getUserId(), idx, true);
     set((uint64_t)IndexType::STATE, info->getState(), idx, true);
-    set((uint64_t)IndexType::YEAR_MON, hash(chen::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
+    set((uint64_t)IndexType::YEAR_MON, hash(chen::TimeUtil::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
     set((uint64_t)IndexType::CHANNEL, info->getChannel(), idx, true);
 
     // 中文分词全文索引（正文只取前 2000 字，长文不影响搜索命中且大幅减少分词耗时）
@@ -130,8 +139,8 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
     }
 }
 
-int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params,
-                      uint32_t max_size) {
+int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params, uint32_t max_size)
+{
     if (!isReady()) {
         WARN(logger) << "Index not initialized";
         return -1;
@@ -147,28 +156,34 @@ int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::
     return v->getCount();
 }
 
-int32_t Index::property(std::map<uint64_t, std::map<uint64_t, uint64_t>>& props,
-                        const std::map<uint64_t, std::set<uint64_t>>& params,
-                        std::map<uint64_t, std::set<uint64_t>>& querys) {
+int32_t Index::property(
+    std::map<uint64_t, std::map<uint64_t, uint64_t>>& props,
+    const std::map<uint64_t, std::set<uint64_t>>& params,
+    std::map<uint64_t, std::set<uint64_t>>& querys)
+{
     // TODO: Index::property
     return -1;
 }
 
-uint64_t Index::StrHash(const std::string& str) {
+uint64_t Index::StrHash(const std::string& str)
+{
     return chen::EncryptorUtil::Murmur3_64(chen::StringUtil::ToLower(str).c_str());
 }
 
-std::string Index::toString() {
+std::string Index::toString()
+{
     // TODO: Index::toString
     return "";
 }
 
-std::string Index::getStr(uint64_t id) {
+std::string Index::getStr(uint64_t id)
+{
     auto it = m_strings.find(id);
     return it == m_strings.end() ? "" : it->second;
 }
 
-chen::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>& params) {
+chen::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>& params)
+{
     if (params.empty()) {
         return nullptr;
     }
@@ -213,7 +228,8 @@ chen::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>&
     return result;
 }
 
-uint64_t Index::hash(const std::string& str, bool save) {
+uint64_t Index::hash(const std::string& str, bool save)
+{
     auto v = StrHash(str);
     if (save) {
         m_strings.insert(std::pair(v, str));
@@ -221,7 +237,8 @@ uint64_t Index::hash(const std::string& str, bool save) {
     return v;
 }
 
-void Index::buildWordIdx(const std::string& str, uint32_t idx) {
+void Index::buildWordIdx(const std::string& str, uint32_t idx)
+{
     if (!hasJieba() || str.empty()) {
         return;
     }
@@ -239,18 +256,21 @@ void Index::buildWordIdx(const std::string& str, uint32_t idx) {
     }
 }
 
-void Index::cutWord(const std::string& str, std::vector<std::string>& words) {
+void Index::cutWord(const std::string& str, std::vector<std::string>& words)
+{
     if (hasJieba()) {
         m_jieba->Cut(str, words, true);
     }
 }
 
-int32_t Index::getIdx(uint64_t article_id) {
+int32_t Index::getIdx(uint64_t article_id)
+{
     auto it = m_docMap.find(article_id);
     return it == m_docMap.end() ? -1 : static_cast<int32_t>(it->second);
 }
 
-void Index::addArticle(data::ArticleInfo::ptr info) {
+void Index::addArticle(data::ArticleInfo::ptr info)
+{
     if (!info) {
         return;
     }
@@ -281,7 +301,8 @@ void Index::addArticle(data::ArticleInfo::ptr info) {
     }
 }
 
-void Index::removeArticle(uint64_t article_id) {
+void Index::removeArticle(uint64_t article_id)
+{
     int32_t idx = getIdx(article_id);
     if (idx < 0) {
         return;
@@ -302,7 +323,8 @@ void Index::removeArticle(uint64_t article_id) {
     }
 }
 
-void Index::updateArticle(data::ArticleInfo::ptr info) {
+void Index::updateArticle(data::ArticleInfo::ptr info)
+{
     if (!info) {
         return;
     }
@@ -310,7 +332,8 @@ void Index::updateArticle(data::ArticleInfo::ptr info) {
     addArticle(info);
 }
 
-bool Index::save(const std::string& path) {
+bool Index::save(const std::string& path)
+{
     if (!isReady()) {
         ERROR(logger) << "index not ready, skip save";
         return false;
@@ -356,7 +379,8 @@ bool Index::save(const std::string& path) {
     return true;
 }
 
-bool Index::load(const std::string& path) {
+bool Index::load(const std::string& path)
+{
     // 先检查文件是否存在，避免 ByteArray::readFromFile 打 ERROR 日志
     if (!chen::FSUtil::Exists(path)) {
         INFO(logger) << "no index file at " << path << ", will build from scratch";
@@ -428,7 +452,8 @@ bool Index::load(const std::string& path) {
     return true;
 }
 
-bool Index::initFromFile() {
+bool Index::initFromFile()
+{
     if (g_index_path->getValue().empty()) {
         ERROR(logger) << "index path is empty";
         return false;

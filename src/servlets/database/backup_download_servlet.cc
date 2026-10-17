@@ -1,11 +1,11 @@
 #include "backup_download_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
+#include <chen/log/log.h>
 #include <chen/util/util.h>
 
-#include "../../manager/user_manager.h"
 #include "../../manager/backup_record_manager.h"
+#include "../../manager/user_manager.h"
 
 #include <fstream>
 
@@ -16,12 +16,16 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
 BackupDownloadServlet::BackupDownloadServlet()
-    : BlogLoginedServlet("BackupDownloadServlet") {
+    : BlogLoginedServlet("BackupDownloadServlet")
+{
 }
 
-int32_t BackupDownloadServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t BackupDownloadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     bool success = false;
     do {
         int64_t uid = getUserId(request);
@@ -107,5 +111,5 @@ int32_t BackupDownloadServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

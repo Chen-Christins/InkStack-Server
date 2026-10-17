@@ -6,10 +6,12 @@ namespace blog {
 namespace servlet {
 
 DashboardRecentUsersServlet::DashboardRecentUsersServlet()
-    : BlogLoginedServlet("DashboardRecentUsersServlet") {
+    : BlogLoginedServlet("DashboardRecentUsersServlet")
+{
 }
 
-static const char* RoleToString(int32_t role) {
+static const char* RoleToString(int32_t role)
+{
     switch (role) {
     case UserManager::Role::USER:
         return "user";
@@ -24,7 +26,8 @@ static const char* RoleToString(int32_t role) {
     }
 }
 
-static const char* StatusToString(int32_t state) {
+static const char* StatusToString(int32_t state)
+{
     switch (state) {
     case UserManager::Status::INACTIVE:
         return "inactive";
@@ -37,8 +40,12 @@ static const char* StatusToString(int32_t state) {
     }
 }
 
-int32_t DashboardRecentUsersServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t DashboardRecentUsersServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -72,8 +79,9 @@ int32_t DashboardRecentUsersServlet::handle(chen::http::HttpRequest::ptr request
             }
         }
 
-        std::sort(users.begin(), users.end(),
-            [](auto& a, auto& b) { return a->getCreateTime() > b->getCreateTime(); });
+        std::sort(users.begin(), users.end(), [](auto& a, auto& b) {
+            return a->getCreateTime() > b->getCreateTime();
+        });
 
         if ((int32_t)users.size() > limit) {
             users.resize(limit);
@@ -96,5 +104,5 @@ int32_t DashboardRecentUsersServlet::handle(chen::http::HttpRequest::ptr request
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

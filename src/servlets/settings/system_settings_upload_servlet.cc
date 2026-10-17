@@ -3,8 +3,8 @@
 #include "../../manager/system_settings_manager.h"
 #include "../../manager/user_manager.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
+#include <chen/log/log.h>
 #include <chen/parser/multi_part_parser.h>
 #include <chen/util/util.h>
 
@@ -14,11 +14,16 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
 SystemSettingsUploadServlet::SystemSettingsUploadServlet()
-    : BlogLoginedServlet("SystemSettingsUploadServlet") {
+    : BlogLoginedServlet("SystemSettingsUploadServlet")
+{
 }
 
-int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t SystemSettingsUploadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -73,8 +78,7 @@ int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request
         ofs.close();
 
         std::string url = "/uploads/settings/" + filename;
-        INFO(logger) << "Settings image uploaded: " << url
-                     << " (Size: " << data[1].content.size() << " bytes)";
+        INFO(logger) << "Settings image uploaded: " << url << " (Size: " << data[1].content.size() << " bytes)";
 
         auto settings = SystemSettingsMgr::GetInstance()->get();
         if (!settings) {

@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 OrganizationListServlet::OrganizationListServlet()
-    : BlogLoginedServlet("OrganizationListServlet") {
+    : BlogLoginedServlet("OrganizationListServlet")
+{
 }
 
-int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t OrganizationListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int32_t status = request->getParamAs<int32_t>("status", -1);
 
@@ -41,5 +46,5 @@ int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, ch
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -9,11 +9,16 @@ namespace blog::servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ErrorCodesServlet::ErrorCodesServlet()
-    :BlogServlet("ErrorCodesServlet") {
+    : BlogServlet("ErrorCodesServlet")
+{
 }
 
-int32_t ErrorCodesServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ErrorCodesServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         // 解析语言参数: ?lang=zh-CN 或 ?lang=en-US
         std::string lang = request->getParam("lang");
@@ -22,9 +27,7 @@ int32_t ErrorCodesServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             std::string acceptLang = request->getHeader("Accept-Language");
             if (!acceptLang.empty()) {
                 size_t comma = acceptLang.find(',');
-                std::string first = (comma != std::string::npos)
-                    ? acceptLang.substr(0, comma)
-                    : acceptLang;
+                std::string first = (comma != std::string::npos) ? acceptLang.substr(0, comma) : acceptLang;
                 size_t dash = first.find('-');
                 lang = (dash != std::string::npos) ? first.substr(0, dash) : first;
                 if (lang != "zh" && lang != "en") {

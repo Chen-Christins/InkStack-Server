@@ -4,25 +4,29 @@
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
 
-#include "blog/data/user_recovery_code_info.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 #include "../../util/totp_util.h"
+#include "blog/data/user_recovery_code_info.h"
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 User2faConfirmServlet::User2faConfirmServlet()
-    :BlogLoginedServlet("User2faConfirmServlet") {
+    : BlogLoginedServlet("User2faConfirmServlet")
+{
 }
 
-int32_t User2faConfirmServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t User2faConfirmServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, code, "code");
 
@@ -71,7 +75,7 @@ int32_t User2faConfirmServlet::handle(chen::http::HttpRequest::ptr request, chen
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::TOTP_ENABLE_FAILED);
             ERROR(logger) << "confirm 2fa: Update failed"
-                << " errstr=" << db->getErrStr() << " errno=" << db->getErrno();
+                          << " errstr=" << db->getErrStr() << " errno=" << db->getErrno();
             break;
         }
 
@@ -91,7 +95,7 @@ int32_t User2faConfirmServlet::handle(chen::http::HttpRequest::ptr request, chen
             rc->setUsed(0);
             if (data::UserRecoveryCodeInfoDao::Insert(rc, db)) {
                 ERROR(logger) << "confirm 2fa: insert recovery code failed"
-                    << " errstr=" << db->getErrStr();
+                              << " errstr=" << db->getErrStr();
             }
         }
         if (!trans->commit()) {

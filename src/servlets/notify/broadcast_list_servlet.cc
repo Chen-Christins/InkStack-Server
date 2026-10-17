@@ -3,8 +3,8 @@
 #include "../../util.h"
 #include "blog/data/notification_info.h"
 
-#include <chen/log/log.h>
 #include <chen/db/query_builder.h>
+#include <chen/log/log.h>
 
 namespace blog {
 namespace servlet {
@@ -12,15 +12,21 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 BroadcastListServlet::BroadcastListServlet()
-    :BlogServlet("BroadcastListServlet") {
+    : BlogServlet("BroadcastListServlet")
+{
 }
 
-int32_t BroadcastListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t BroadcastListServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t offset = request->getParamAs<int64_t>("offset", 0);
         int64_t size = request->getParamAs<int64_t>("size", 20);
-        if (size > 100) size = 100;
+        if (size > 100)
+            size = 100;
 
         auto db = GetDB();
         if (!db) {
@@ -66,5 +72,5 @@ int32_t BroadcastListServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

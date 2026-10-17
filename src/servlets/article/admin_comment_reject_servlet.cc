@@ -1,9 +1,9 @@
 #include "admin_comment_reject_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -13,11 +13,16 @@ namespace blog {
 namespace servlet {
 
 AdminCommentRejectServlet::AdminCommentRejectServlet()
-    : BlogLoginedServlet("AdminCommentRejectServlet") {
+    : BlogLoginedServlet("AdminCommentRejectServlet")
+{
 }
 
-int32_t AdminCommentRejectServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t AdminCommentRejectServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -43,11 +48,11 @@ int32_t AdminCommentRejectServlet::handle(chen::http::HttpRequest::ptr request, 
         while (std::getline(ss, token, ',')) {
             try {
                 ids.push_back(std::stoll(token));
-            } catch (...) {}
+            } catch (...) {
+            }
         }
 
-        int64_t affected = CommentMgr::GetInstance()->batchUpdateStatus(
-            ids, CommentManager::REJECTED);
+        int64_t affected = CommentMgr::GetInstance()->batchUpdateStatus(ids, CommentManager::REJECTED);
 
         Json::Value idList(Json::arrayValue);
         for (auto& id : ids) {
@@ -83,5 +88,5 @@ int32_t AdminCommentRejectServlet::handle(chen::http::HttpRequest::ptr request, 
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

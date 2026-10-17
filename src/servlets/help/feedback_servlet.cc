@@ -11,11 +11,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 FeedbackServlet::FeedbackServlet()
-    :BlogServlet("FeedbackServlet") {
+    : BlogServlet("FeedbackServlet")
+{
 }
 
-int32_t FeedbackServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t FeedbackServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, type, "type");
         DEFINE_AND_CHECK_STRING(result, content, "content");
@@ -39,8 +44,7 @@ int32_t FeedbackServlet::handle(chen::http::HttpRequest::ptr request, chen::http
 
         if (data::UserFeedbackInfoDao::Insert(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "feedback insert failed");
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -50,5 +54,5 @@ int32_t FeedbackServlet::handle(chen::http::HttpRequest::ptr request, chen::http
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

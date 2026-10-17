@@ -39,4 +39,4 @@ public:
 
 typedef chen::Singleton<UserOAuthManager> UserOAuthMgr;
 
-}
+} // namespace blog

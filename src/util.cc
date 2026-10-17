@@ -7,7 +7,8 @@ namespace blog {
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
-chen::IDB::ptr GetDB() {
+chen::IDB::ptr GetDB()
+{
     return chen::MySQLMgr::GetInstance()->get(g_mysql_dbs->getValue().begin()->first);
 }
 

@@ -1,27 +1,28 @@
 #include "events.h"
 
-#include <chen/ds/event_bus.h>
-#include <chen/log/log.h>
-#include <chen/email/smtp.h>
 #include <chen/config/config.h>
+#include <chen/ds/event_bus.h>
+#include <chen/email/smtp.h>
+#include <chen/log/log.h>
 #include <chen/util/fs_util.h>
 #include <json/json.h>
 
-#include "event_define.h"
-#include "../manager/notification_manager.h"
-#include "../manager/user_manager.h"
 #include "../manager/article_manager.h"
-#include "../manager/comment_manager.h"
-#include "../manager/organization_user_rel_manager.h"
-#include "../manager/organization_manager.h"
 #include "../manager/backup_record_manager.h"
+#include "../manager/comment_manager.h"
+#include "../manager/notification_manager.h"
+#include "../manager/organization_manager.h"
+#include "../manager/organization_user_rel_manager.h"
+#include "../manager/user_manager.h"
 #include "../util.h"
+#include "event_define.h"
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static void EventUserSendCode(const std::any& d) {
+static void EventUserSendCode(const std::any& d)
+{
     auto data = std::any_cast<const EventUserSendCodeData&>(d);
 
     auto client = chen::SmtpClient::Create(data.smtp_host, data.port, true);
@@ -41,7 +42,8 @@ static void EventUserSendCode(const std::any& d) {
     }
 }
 
-static void EventComment(const std::any& d) {
+static void EventComment(const std::any& d)
+{
     auto data = std::any_cast<const EventCommentData&>(d);
 
     auto comment = CommentMgr::GetInstance()->get(data.comment_id);
@@ -68,7 +70,7 @@ static void EventComment(const std::any& d) {
         return;
     }
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.author_id;
     notif_data.title = title;
     notif_data.content = content;
@@ -92,7 +94,8 @@ static void EventComment(const std::any& d) {
     }
 }
 
-static void EventArticleReview(const std::any& d) {
+static void EventArticleReview(const std::any& d)
+{
     auto data = std::any_cast<const EventArticleReviewData&>(d);
 
     if (data.type == "request") {
@@ -105,7 +108,7 @@ static void EventArticleReview(const std::any& d) {
         for (auto targetId : userIds) {
             auto u = UserMgr::GetInstance()->get(targetId);
             if (u && (u->getRole() == UserManager::Role::ADMIN || u->getRole() == UserManager::Role::CHECKER)) {
-                NotificationData notif_data {};
+                NotificationData notif_data{};
                 notif_data.user_id = targetId;
                 notif_data.title = title;
                 notif_data.content = content;
@@ -133,7 +136,7 @@ static void EventArticleReview(const std::any& d) {
         std::string title = approved ? "文章审核通过" : "文章审核未通过";
         std::string content = "您的文章「" + data.article_title + "」" + (approved ? "已通过审核" : "未通过审核");
 
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = data.author_id;
         notif_data.title = title;
         notif_data.content = content;
@@ -166,14 +169,15 @@ static void EventArticleReview(const std::any& d) {
     }
 }
 
-static void EventArticleStateChanged(const std::any& d) {
+static void EventArticleStateChanged(const std::any& d)
+{
     auto data = std::any_cast<const EventArticleStateChangedData&>(d);
 
     std::string title = "文章状态变更";
-    std::string content = "你的文章《" + data.article_title + "》状态已被管理员变更为「" +
-        (data.new_state == ArticleManager::PUBLISHED ? "已发布" : "私密") + "」";
+    std::string content =
+        "你的文章《" + data.article_title + "》状态已被管理员变更为「" + (data.new_state == ArticleManager::PUBLISHED ? "已发布" : "私密") + "」";
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.author_id;
     notif_data.title = title;
     notif_data.content = content;
@@ -195,13 +199,14 @@ static void EventArticleStateChanged(const std::any& d) {
     }
 }
 
-static void EventArticlePraise(const std::any& d) {
+static void EventArticlePraise(const std::any& d)
+{
     auto data = std::any_cast<const EventArticlePraiseData&>(d);
 
     std::string notify_title = "文章点赞";
     std::string notify_content = data.liker_name + " 赞了你的文章《" + data.article_title + "》";
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.author_id;
     notif_data.title = notify_title;
     notif_data.content = notify_content;
@@ -219,12 +224,12 @@ static void EventArticlePraise(const std::any& d) {
         wsMsg["article_id"] = data.article_id;
         wsMsg["is_read"] = false;
         wsMsg["create_time"] = notif_info->getCreateTime();
-        NotificationMgr::GetInstance()->sendToUser(data.author_id,
-            chen::JsonUtil::ToString(wsMsg));
+        NotificationMgr::GetInstance()->sendToUser(data.author_id, chen::JsonUtil::ToString(wsMsg));
     }
 }
 
-static void EventCommentCreated(const std::any& d) {
+static void EventCommentCreated(const std::any& d)
+{
     auto data = std::any_cast<const EventCommentCreatedData&>(d);
 
     auto send_notify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
@@ -232,7 +237,7 @@ static void EventCommentCreated(const std::any& d) {
             return;
         }
 
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = targetUid;
         notif_data.title = title;
         notif_data.content = content;
@@ -243,15 +248,14 @@ static void EventCommentCreated(const std::any& d) {
         auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif_info) {
             Json::Value wsMsg;
-            wsMsg["id"] = notif_info->getId(); 
+            wsMsg["id"] = notif_info->getId();
             wsMsg["title"] = title;
             wsMsg["content"] = content;
             wsMsg["type"] = "comment";
             wsMsg["article_id"] = data.article_id;
             wsMsg["is_read"] = false;
             wsMsg["create_time"] = notif_info->getCreateTime();
-            NotificationMgr::GetInstance()->sendToUser(targetUid,
-                chen::JsonUtil::ToString(wsMsg));
+            NotificationMgr::GetInstance()->sendToUser(targetUid, chen::JsonUtil::ToString(wsMsg));
         }
     };
 
@@ -264,13 +268,14 @@ static void EventCommentCreated(const std::any& d) {
     }
 }
 
-static void EventCommentPraise(const std::any& d) {
+static void EventCommentPraise(const std::any& d)
+{
     auto data = std::any_cast<const EventCommentPraiseData&>(d);
 
     std::string notify_title = "评论点赞";
     std::string notify_content = data.liker_name + " 赞了你的评论";
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.comment_author_id;
     notif_data.title = notify_title;
     notif_data.content = notify_content;
@@ -294,13 +299,14 @@ static void EventCommentPraise(const std::any& d) {
     }
 }
 
-static void EventUserFollow(const std::any& d) {
+static void EventUserFollow(const std::any& d)
+{
     auto data = std::any_cast<const EventUserFollowData&>(d);
 
     std::string notify_title = "新关注";
     std::string notify_content = data.follower_name + " 关注了你";
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.following_id;
     notif_data.title = notify_title;
     notif_data.content = notify_content;
@@ -320,7 +326,8 @@ static void EventUserFollow(const std::any& d) {
     }
 }
 
-static void EventUserAdminAction(const std::any& d) {
+static void EventUserAdminAction(const std::any& d)
+{
     auto data = std::any_cast<const EventUserAdminData&>(d);
 
     std::string title, content;
@@ -337,7 +344,7 @@ static void EventUserAdminAction(const std::any& d) {
         return;
     }
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.user_id;
     notif_data.title = title;
     notif_data.content = content;
@@ -357,19 +364,20 @@ static void EventUserAdminAction(const std::any& d) {
     }
 }
 
-static void EventOrgDeleted(const std::any& d) {
+static void EventOrgDeleted(const std::any& d)
+{
     auto data = std::any_cast<const EventOrgDeletedData&>(d);
 
     std::string title = "组织已删除";
     std::string content = "组织「" + data.org_name + "」已被管理员删除";
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.member_id;
     notif_data.title = title;
     notif_data.content = content;
     notif_data.type = "org_deleted";
     notif_data.sender_id = 0;
-    
+
     auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif) {
         Json::Value wsMsg;
@@ -383,14 +391,15 @@ static void EventOrgDeleted(const std::any& d) {
     }
 }
 
-static void EventOrgMember(const std::any& d) {
+static void EventOrgMember(const std::any& d)
+{
     auto data = std::any_cast<const EventOrgMemberData&>(d);
 
     if (data.type == "role_change") {
         std::string title = "组织角色变更";
         std::string content = "您在组织「" + data.org_name + "」中的角色已被更新为" + data.new_role_name;
 
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = data.target_user_id;
         notif_data.title = title;
         notif_data.content = content;
@@ -416,13 +425,13 @@ static void EventOrgMember(const std::any& d) {
         OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
         for (auto& m : members) {
             if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                NotificationData notif_data {};
+                NotificationData notif_data{};
                 notif_data.user_id = m->getUserId();
                 notif_data.title = title;
                 notif_data.content = content;
                 notif_data.type = "org_member_kicked";
                 notif_data.sender_id = data.operator_id;
-                
+
                 auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
                 if (notif_info) {
                     Json::Value wsMsg;
@@ -441,7 +450,7 @@ static void EventOrgMember(const std::any& d) {
             std::string kicked_title = "您已被移出组织";
             std::string kicked_content = "您已被移出组织「" + data.org_name + "」";
 
-            NotificationData notif_data {};
+            NotificationData notif_data{};
             notif_data.user_id = data.kicked_user_id;
             notif_data.title = kicked_title;
             notif_data.content = kicked_content;
@@ -469,13 +478,13 @@ static void EventOrgMember(const std::any& d) {
         OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
         for (auto& m : members) {
             if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                NotificationData notif_data {};
+                NotificationData notif_data{};
                 notif_data.user_id = m->getUserId();
                 notif_data.title = title;
                 notif_data.content = content;
                 notif_data.type = "org_join_request";
                 notif_data.sender_id = data.applicant_id;
-                
+
                 auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
                 if (notif_info) {
                     Json::Value wsMsg;
@@ -493,11 +502,10 @@ static void EventOrgMember(const std::any& d) {
         bool approved = (data.type == "join_approved");
         const char* notif_type = approved ? "org_join_approved" : "org_join_rejected";
         std::string title = approved ? "加入申请已通过" : "加入申请被拒绝";
-        std::string content = approved
-            ? "您申请加入组织「" + data.org_name + "」的请求已通过"
-            : "您申请加入组织「" + data.org_name + "」的请求已被拒绝";
+        std::string content =
+            approved ? "您申请加入组织「" + data.org_name + "」的请求已通过" : "您申请加入组织「" + data.org_name + "」的请求已被拒绝";
 
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = data.applicant_id;
         notif_data.title = title;
         notif_data.content = content;
@@ -526,7 +534,8 @@ static void EventOrgMember(const std::any& d) {
     }
 }
 
-static void EventOrgApply(const std::any& d) {
+static void EventOrgApply(const std::any& d)
+{
     auto data = std::any_cast<const EventOrgApplyData&>(d);
 
     if (data.type == "created") {
@@ -535,7 +544,7 @@ static void EventOrgApply(const std::any& d) {
         std::vector<data::UserInfo::ptr> admins;
         UserMgr::GetInstance()->listByPages(admins, 0, 10000, UserManager::Role::ADMIN, -1, -1, true);
         for (auto& admin : admins) {
-            NotificationData notif_data {};
+            NotificationData notif_data{};
             notif_data.user_id = admin->getId();
             notif_data.title = title;
             notif_data.content = content;
@@ -560,7 +569,7 @@ static void EventOrgApply(const std::any& d) {
         std::string title = "组织申请已通过";
         std::string content = "你申请创建的组织「" + data.org_name + "」已通过审核";
 
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = data.applicant_id;
         notif_data.title = title;
         notif_data.content = content;
@@ -584,14 +593,14 @@ static void EventOrgApply(const std::any& d) {
         std::string title = "组织申请被拒绝";
         std::string reject_reason = data.reason.empty() ? "" : "，原因：" + data.reason;
         std::string content = "你申请创建的组织「" + data.org_name + "」未通过审核" + reject_reason;
-        
-        NotificationData notif_data {};
+
+        NotificationData notif_data{};
         notif_data.user_id = data.applicant_id;
         notif_data.title = title;
         notif_data.content = content;
         notif_data.type = "org_apply_rejected";
         notif_data.sender_id = 0;
-        
+
         auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif) {
             Json::Value wsMsg;
@@ -606,20 +615,21 @@ static void EventOrgApply(const std::any& d) {
     }
 }
 
-static void EventAssignment(const std::any& d) {
+static void EventAssignment(const std::any& d)
+{
     auto data = std::any_cast<const EventAssignmentData&>(d);
 
     if (data.type == "deleted") {
         std::string title = "作业已删除";
         std::string content = "作业「" + data.assignment_name + "」已被管理员删除";
 
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = data.submitter_id;
         notif_data.title = title;
         notif_data.content = content;
         notif_data.type = "assignment_deleted";
         notif_data.sender_id = 0;
-        
+
         auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif) {
             Json::Value wsMsg;
@@ -635,7 +645,7 @@ static void EventAssignment(const std::any& d) {
         std::string title = "新作业发布";
         std::string content = "组织发布了新作业「" + data.assignment_name + "」（" + data.subject_name + "），请及时完成";
         for (auto uid : data.member_user_ids) {
-            NotificationData notif_data {};
+            NotificationData notif_data{};
             notif_data.user_id = uid;
             notif_data.title = title;
             notif_data.content = content;
@@ -659,13 +669,14 @@ static void EventAssignment(const std::any& d) {
     }
 }
 
-static void EventAssignmentSubmitted(const std::any& d) {
+static void EventAssignmentSubmitted(const std::any& d)
+{
     auto data = std::any_cast<const EventAssignmentSubmittedData&>(d);
 
     std::string title = "作业提交通知";
     std::string content = "用户「" + data.submitter_name + "」提交了作业「" + data.assignment_name + "」";
     for (auto admin_id : data.admin_user_ids) {
-        NotificationData notif_data {};
+        NotificationData notif_data{};
         notif_data.user_id = admin_id;
         notif_data.title = title;
         notif_data.content = content;
@@ -688,7 +699,8 @@ static void EventAssignmentSubmitted(const std::any& d) {
     }
 }
 
-static void EventRdAssign(const std::any& d) {
+static void EventRdAssign(const std::any& d)
+{
     auto data = std::any_cast<const EventRdAssignData&>(d);
 
     std::string title, notif_type;
@@ -706,14 +718,14 @@ static void EventRdAssign(const std::any& d) {
     }
     std::string content = title.substr(0, title.find("待处理") - 1) + "「" + data.item_title + "」被分配给了你，请尽快处理";
 
-    NotificationData notif_data {};
+    NotificationData notif_data{};
     notif_data.user_id = data.assignee_id;
     notif_data.title = title;
     notif_data.content = content;
     notif_data.type = notif_type;
     notif_data.sender_id = data.creator_id;
     notif_data.article_id = data.item_id;
-    
+
     auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif_info) {
         Json::Value wsMsg;
@@ -734,7 +746,8 @@ static void EventRdAssign(const std::any& d) {
     }
 }
 
-static void EventDatabaseBackup(const std::any& d) {
+static void EventDatabaseBackup(const std::any& d)
+{
     auto data = std::any_cast<const EventDatabaseBackupData&>(d);
 
     if (data.mysql_dbs.empty()) {
@@ -791,13 +804,13 @@ static void EventDatabaseBackup(const std::any& d) {
     info->setDescription("completed in " + std::to_string(elapsed) + "s, size " + std::to_string(fileSize) + " bytes");
     data::BackupRecordInfoDao::Update(info, GetDB());
 
-    INFO(logger) << "Backup " << data.backup_id << " completed: " << filepath
-        << " (" << fileSize << " bytes, " << elapsed << "s)";
+    INFO(logger) << "Backup " << data.backup_id << " completed: " << filepath << " (" << fileSize << " bytes, " << elapsed << "s)";
 }
 
-bool EventMsgsInit() {
+bool EventMsgsInit()
+{
     auto bus = chen::EventBusMgr::GetInstance();
-    
+
     // Register event handlers
     bus->on(EVENT_ID_USER_SEND_CODE, EventUserSendCode);
     bus->on(EVENT_ID_COMMENT, EventComment);

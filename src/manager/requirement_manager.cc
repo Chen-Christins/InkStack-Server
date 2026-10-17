@@ -11,19 +11,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 RequirementManager::RequirementManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::RequirementInfo::ptr RequirementManager::parseRow(chen::ISQLData::ptr rt) {
+data::RequirementInfo::ptr RequirementManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::RequirementInfoDao::ParseRow(rt);
 }
 
-
-void RequirementManager::add(data::RequirementInfo::ptr info) {
+void RequirementManager::add(data::RequirementInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::RequirementInfo::ptr RequirementManager::get(int64_t id) {
+data::RequirementInfo::ptr RequirementManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -40,8 +43,8 @@ data::RequirementInfo::ptr RequirementManager::get(int64_t id) {
     return v;
 }
 
-uint64_t RequirementManager::listByPages(std::vector<data::RequirementInfo::ptr>& infos,
-        uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+uint64_t RequirementManager::listByPages(std::vector<data::RequirementInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -64,8 +67,14 @@ uint64_t RequirementManager::listByPages(std::vector<data::RequirementInfo::ptr>
     return total;
 }
 
-uint64_t RequirementManager::listByOrg(std::vector<data::RequirementInfo::ptr>& infos,
-        int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+uint64_t RequirementManager::listByOrg(
+    std::vector<data::RequirementInfo::ptr>& infos,
+    int64_t orgId,
+    uint64_t offset,
+    uint64_t size,
+    int32_t status,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -88,4 +97,4 @@ uint64_t RequirementManager::listByOrg(std::vector<data::RequirementInfo::ptr>& 
     }
     return total;
 }
-}
+} // namespace blog

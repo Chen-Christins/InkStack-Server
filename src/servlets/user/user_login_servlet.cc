@@ -4,19 +4,18 @@
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
 
+#include "../../manager/system_settings_manager.h"
+#include "../../manager/user_login_device_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../util.h"
 #include "../../util/ua_parser.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/user_login_device_manager.h"
-#include "../../manager/system_settings_manager.h"
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 /// Redis 2FA 临时凭证 key 前缀（5分钟有效）
 static const char* k2faPendingPrefix = "2fa_pending:";
@@ -24,11 +23,16 @@ static const char* k2faPendingPrefix = "2fa_pending:";
 static const int k2faPendingTTL = 300;
 
 UserLoginServlet::UserLoginServlet()
-    :BlogServlet("UserLoginServlet") {
+    : BlogServlet("UserLoginServlet")
+{
 }
 
-int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserLoginServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, auth_id, "auth_id");
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
@@ -75,7 +79,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         }
 
         auto db = getDB();
-        if(!db) {
+        if (!db) {
             result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
@@ -133,8 +137,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
 
         info->setLoginTime(now);
         data::UserInfoDao::Update(info, db);
-        INFO(logger) << "login user=" << info->getId() << " platform=" << platform
-            << " device=" << device_name;
+        INFO(logger) << "login user=" << info->getId() << " platform=" << platform << " device=" << device_name;
 
         response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");
         response->setCookie(CookieKey::TOKEN, token, token_time, "/");
@@ -145,5 +148,5 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

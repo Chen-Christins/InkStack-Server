@@ -1,14 +1,14 @@
 #include "file_upload_servlet.h"
 
+#include <chen/config/config.h>
 #include <chen/log/log.h>
 #include <chen/parser/multi_part_parser.h>
-#include <chen/config/config.h>
 #include <chen/util/util.h>
 
-#include "../../manager/user_manager.h"
+#include "../../manager/assignment_manager.h"
 #include "../../manager/assignment_user_rel_manager.h"
 #include "../../manager/resource_manager.h"
-#include "../../manager/assignment_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -18,11 +18,16 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
 FileUploadServlet::FileUploadServlet()
-    : BlogLoginedServlet("FileUploadServlet") {
+    : BlogLoginedServlet("FileUploadServlet")
+{
 }
 
-int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t FileUploadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         std::string content_type = request->getHeader("content-type");
         chen::MultipartParser::ptr parser = std::make_shared<chen::MultipartParser>(content_type);
@@ -61,9 +66,8 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 ofs.write(data[i].content.c_str(), data[i].content.size());
             }
             ofs.close();
-            INFO(logger) << "File saved: " << filename << " (Size: " << data[i].content.size()
-                    << " bytes -- " << (1.0 * data[i].content.size() / 1024)
-                    << " kb -- " << (1.0 * data[i].content.size() / (1024 * 1024)) << " mb)";
+            INFO(logger) << "File saved: " << filename << " (Size: " << data[i].content.size() << " bytes -- "
+                         << (1.0 * data[i].content.size() / 1024) << " kb -- " << (1.0 * data[i].content.size() / (1024 * 1024)) << " mb)";
 
             // generate hash key
             std::string hash_key = chen::EncryptorUtil::MD5(data[i].content);
@@ -112,8 +116,14 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
     return 0;
 }
 
-bool FileUploadServlet::dumpToResource(const std::string& biz_type, int64_t biz_id
-        , const std::string& path, const std::string& hash_key, int64_t uid, size_t size) {
+bool FileUploadServlet::dumpToResource(
+    const std::string& biz_type,
+    int64_t biz_id,
+    const std::string& path,
+    const std::string& hash_key,
+    int64_t uid,
+    size_t size)
+{
     auto it = path.rfind("/");
     if (it == std::string::npos) {
         return false;

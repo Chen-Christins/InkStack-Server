@@ -1,11 +1,11 @@
 #include "export_download_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/config/config.h>
+#include <chen/log/log.h>
 #include <chen/util/util.h>
 
-#include "../../manager/user_manager.h"
 #include "../../manager/export_record_manager.h"
+#include "../../manager/user_manager.h"
 
 #include <fstream>
 
@@ -16,12 +16,16 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
 ExportDownloadServlet::ExportDownloadServlet()
-    : BlogLoginedServlet("ExportDownloadServlet") {
+    : BlogLoginedServlet("ExportDownloadServlet")
+{
 }
 
-int32_t ExportDownloadServlet::handle(chen::http::HttpRequest::ptr request,
-        chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session,
-        Result::ptr result) {
+int32_t ExportDownloadServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     bool success = false;
     do {
         int64_t uid = getUserId(request);
@@ -77,7 +81,8 @@ int32_t ExportDownloadServlet::handle(chen::http::HttpRequest::ptr request,
         ifs.seekg(0, std::ios::beg);
 
         std::string format = info->getFormat();
-        if (format.empty()) format = "json";
+        if (format.empty())
+            format = "json";
         response->setHeader("Content-Disposition", "attachment; filename=\"" + info->getName() + "." + format + "\"");
         response->setHeader("Content-Type", "application/octet-stream");
         response->setHeader("Content-Length", std::to_string(fileSize));
@@ -109,5 +114,5 @@ int32_t ExportDownloadServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

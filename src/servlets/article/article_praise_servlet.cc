@@ -1,10 +1,10 @@
 #include "article_praise_servlet.h"
 
-#include "../../manager/article_praise_rel_manager.h"
+#include "../../event/event_define.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/article_praise_rel_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -12,12 +12,16 @@ namespace blog {
 namespace servlet {
 
 ArticlePraiseServlet::ArticlePraiseServlet()
-    : BlogLoginedServlet("ArticlePraiseServlet") {
+    : BlogLoginedServlet("ArticlePraiseServlet")
+{
 }
 
-int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
+int32_t ArticlePraiseServlet::handle(
+    chen::http::HttpRequest::ptr request,
     chen::http::HttpResponse::ptr response,
-    chen::http::HttpSession::ptr session, Result::ptr result) {
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -65,7 +69,7 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
                     data.liker_name = liker_info ? liker_info->getName() : "someone";
                     data.article_id = article_id;
                     data.article_title = article->getTitle();
-                    
+
                     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_PRAISE, std::move(data));
                 }
             }
@@ -79,5 +83,5 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

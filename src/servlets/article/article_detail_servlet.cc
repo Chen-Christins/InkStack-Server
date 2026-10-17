@@ -2,14 +2,14 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/article_manager.h"
-#include "../../manager/user_manager.h"
-#include "../../manager/category_manager.h"
-#include "../../manager/label_manager.h"
 #include "../../manager/article_category_rel_manager.h"
 #include "../../manager/article_label_rel_manager.h"
+#include "../../manager/article_manager.h"
+#include "../../manager/category_manager.h"
+#include "../../manager/label_manager.h"
 #include "../../manager/user_follow_rel_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -17,11 +17,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleDetailServlet::ArticleDetailServlet()
-    :BlogServlet("ArticleDetailServlet") {
+    : BlogServlet("ArticleDetailServlet")
+{
 }
 
-int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleDetailServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         auto type = request->getParamAs<uint32_t>("type");
@@ -49,9 +54,7 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
             result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
-        if (state != ArticleManager::Status::PUBLISHED
-                && role != UserManager::Role::ADMIN
-                && !is_author) {
+        if (state != ArticleManager::Status::PUBLISHED && role != UserManager::Role::ADMIN && !is_author) {
             result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
@@ -78,8 +81,7 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
         result->set("author_article_count", author_article_count);
         result->set("author_praise_count", author_praise_total);
-        result->set("author_follower_count",
-            UserFollowRelMgr::GetInstance()->countFollowers(uid));
+        result->set("author_follower_count", UserFollowRelMgr::GetInstance()->countFollowers(uid));
         result->set("title", info->getTitle());
         result->set("content", info->getContent());
         result->set("user_id", uid);
@@ -123,5 +125,5 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

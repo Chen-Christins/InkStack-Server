@@ -10,18 +10,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 ExportRecordManager::ExportRecordManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::ExportRecordInfo::ptr ExportRecordManager::parseRow(chen::ISQLData::ptr rt) {
+data::ExportRecordInfo::ptr ExportRecordManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::ExportRecordInfoDao::ParseRow(rt);
 }
 
-void ExportRecordManager::add(data::ExportRecordInfo::ptr info) {
+void ExportRecordManager::add(data::ExportRecordInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::ExportRecordInfo::ptr ExportRecordManager::get(int64_t id) {
+data::ExportRecordInfo::ptr ExportRecordManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -38,9 +42,15 @@ data::ExportRecordInfo::ptr ExportRecordManager::get(int64_t id) {
     return v;
 }
 
-bool ExportRecordManager::list(std::vector<data::ExportRecordInfo::ptr>& results,
-        int64_t& total, const std::string& search, const std::string& type,
-        const std::string& status, int32_t offset, int32_t limit) {
+bool ExportRecordManager::list(
+    std::vector<data::ExportRecordInfo::ptr>& results,
+    int64_t& total,
+    const std::string& search,
+    const std::string& type,
+    const std::string& status,
+    int32_t offset,
+    int32_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -65,8 +75,8 @@ bool ExportRecordManager::list(std::vector<data::ExportRecordInfo::ptr>& results
     return true;
 }
 
-data::ExportRecordInfo::ptr ExportRecordManager::create(int64_t uid,
-        const std::string& type, const std::string& name) {
+data::ExportRecordInfo::ptr ExportRecordManager::create(int64_t uid, const std::string& type, const std::string& name)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -89,7 +99,8 @@ data::ExportRecordInfo::ptr ExportRecordManager::create(int64_t uid,
     return info;
 }
 
-bool ExportRecordManager::remove(int64_t id) {
+bool ExportRecordManager::remove(int64_t id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 namespace blog {
 
@@ -12,18 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 AssignmentOrganizationRelManager::AssignmentOrganizationRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::AssignmentOrganizationRelInfoDao::ParseRow(rt);
 }
 
-void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info) {
+void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::get(int64_t id) {
+blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -40,7 +44,8 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
     return v;
 }
 
-blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::getByOrgAndAssign(int64_t org_id, int64_t assign_id) {
+blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::getByOrgAndAssign(int64_t org_id, int64_t assign_id)
+{
     int64_t cachedId = getCachedIdMapping("assign_org:" + std::to_string(org_id) + ":" + std::to_string(assign_id));
     if (cachedId > 0) {
         return get(cachedId);
@@ -58,7 +63,8 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
     return info;
 }
 
-int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results, int64_t assign_id) {
+int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results, int64_t assign_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -79,8 +85,14 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
     return results.size();
 }
 
-int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results
-        , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+int64_t AssignmentOrganizationRelManager::getByPages(
+    std::vector<data::AssignmentOrganizationRelInfo::ptr>& results,
+    int64_t o_id,
+    uint64_t offset,
+    uint64_t size,
+    int32_t status,
+    bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";

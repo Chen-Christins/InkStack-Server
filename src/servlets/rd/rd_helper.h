@@ -28,7 +28,8 @@ namespace rd {
 // ============================================================================
 // 分页: page/page_size → offset/size
 // ============================================================================
-inline void ParsePagination(uint64_t page, uint64_t page_size, uint64_t& offset, uint64_t& size) {
+inline void ParsePagination(uint64_t page, uint64_t page_size, uint64_t& offset, uint64_t& size)
+{
     if (page < 1) {
         page = 1;
     }
@@ -39,7 +40,8 @@ inline void ParsePagination(uint64_t page, uint64_t page_size, uint64_t& offset,
 // ============================================================================
 // 需求状态枚举映射
 // ============================================================================
-inline const char* RequirementStatusToString(int32_t status) {
+inline const char* RequirementStatusToString(int32_t status)
+{
     switch (status) {
     case RequirementManager::STATUS_DRAFT:
         return "new";
@@ -56,7 +58,8 @@ inline const char* RequirementStatusToString(int32_t status) {
     }
 }
 
-inline int32_t StringToRequirementStatus(const std::string& s) {
+inline int32_t StringToRequirementStatus(const std::string& s)
+{
     if (s == "new") {
         return RequirementManager::STATUS_DRAFT;
     }
@@ -78,7 +81,8 @@ inline int32_t StringToRequirementStatus(const std::string& s) {
 // ============================================================================
 // 缺陷状态枚举映射
 // ============================================================================
-inline const char* BugStatusToString(int32_t status) {
+inline const char* BugStatusToString(int32_t status)
+{
     switch (status) {
     case BugManager::STATUS_PENDING:
         return "new";
@@ -95,7 +99,8 @@ inline const char* BugStatusToString(int32_t status) {
     }
 }
 
-inline int32_t StringToBugStatus(const std::string& s) {
+inline int32_t StringToBugStatus(const std::string& s)
+{
     if (s == "new") {
         return BugManager::STATUS_PENDING;
     }
@@ -117,7 +122,8 @@ inline int32_t StringToBugStatus(const std::string& s) {
 // ============================================================================
 // 任务状态枚举映射
 // ============================================================================
-inline const char* TaskStatusToString(int32_t status) {
+inline const char* TaskStatusToString(int32_t status)
+{
     switch (status) {
     case TaskManager::STATUS_TODO:
         return "todo";
@@ -132,7 +138,8 @@ inline const char* TaskStatusToString(int32_t status) {
     }
 }
 
-inline int32_t StringToTaskStatus(const std::string& s) {
+inline int32_t StringToTaskStatus(const std::string& s)
+{
     if (s == "todo") {
         return TaskManager::STATUS_TODO;
     }
@@ -151,7 +158,8 @@ inline int32_t StringToTaskStatus(const std::string& s) {
 // ============================================================================
 // 优先级枚举映射
 // ============================================================================
-inline const char* PriorityToString(int32_t priority) {
+inline const char* PriorityToString(int32_t priority)
+{
     switch (priority) {
     case 1:
         return "low";
@@ -166,7 +174,8 @@ inline const char* PriorityToString(int32_t priority) {
     }
 }
 
-inline int32_t StringToPriority(const std::string& s) {
+inline int32_t StringToPriority(const std::string& s)
+{
     if (s == "low") {
         return 1;
     }
@@ -185,7 +194,8 @@ inline int32_t StringToPriority(const std::string& s) {
 // ============================================================================
 // 严重程度枚举映射
 // ============================================================================
-inline const char* SeverityToString(int32_t severity) {
+inline const char* SeverityToString(int32_t severity)
+{
     switch (severity) {
     case 1:
         return "minor";
@@ -200,7 +210,8 @@ inline const char* SeverityToString(int32_t severity) {
     }
 }
 
-inline int32_t StringToSeverity(const std::string& s) {
+inline int32_t StringToSeverity(const std::string& s)
+{
     if (s == "minor") {
         return 1;
     }
@@ -219,7 +230,8 @@ inline int32_t StringToSeverity(const std::string& s) {
 // ============================================================================
 // 组织角色枚举映射（用于前端展示）
 // ============================================================================
-inline int32_t OrgRoleToFrontend(int32_t role) {
+inline int32_t OrgRoleToFrontend(int32_t role)
+{
     // 前端期望: 1=报告者, 2=开发者, 3=研发主管, 4=组织管理员
     switch (role) {
     case OrganizationManager::Role::MEMBER:
@@ -241,17 +253,20 @@ inline int32_t OrgRoleToFrontend(int32_t role) {
 // 构建公共响应字段
 // ============================================================================
 
-inline std::string GetOrgName(int64_t orgId) {
+inline std::string GetOrgName(int64_t orgId)
+{
     auto org = OrganizationMgr::GetInstance()->get(orgId);
     return org ? org->getName() : "";
 }
 
-inline std::string GetUserName(int64_t userId) {
+inline std::string GetUserName(int64_t userId)
+{
     auto user = UserMgr::GetInstance()->get(userId);
     return user ? user->getName() : "";
 }
 
-inline std::string GetUserAvatar(int64_t userId) {
+inline std::string GetUserAvatar(int64_t userId)
+{
     auto user = UserMgr::GetInstance()->get(userId);
     return user ? user->getAvatar() : "";
 }
@@ -259,7 +274,8 @@ inline std::string GetUserAvatar(int64_t userId) {
 // ============================================================================
 // 构建 JSON 响应对象
 // ============================================================================
-inline void BuildRequirementJson(Json::Value& item, data::RequirementInfo::ptr info) {
+inline void BuildRequirementJson(Json::Value& item, data::RequirementInfo::ptr info)
+{
     item["id"] = info->getId();
     item["title"] = info->getTitle();
     item["description"] = info->getDescription();
@@ -280,7 +296,8 @@ inline void BuildRequirementJson(Json::Value& item, data::RequirementInfo::ptr i
     item["updated_at"] = info->getUpdateTime();
 }
 
-inline void BuildBugJson(Json::Value& item, data::BugInfo::ptr info) {
+inline void BuildBugJson(Json::Value& item, data::BugInfo::ptr info)
+{
     item["id"] = info->getId();
     item["title"] = info->getTitle();
     item["description"] = info->getDescription();
@@ -302,7 +319,8 @@ inline void BuildBugJson(Json::Value& item, data::BugInfo::ptr info) {
     item["updated_at"] = info->getUpdateTime();
 }
 
-inline void BuildTaskJson(Json::Value& item, data::TaskInfo::ptr info) {
+inline void BuildTaskJson(Json::Value& item, data::TaskInfo::ptr info)
+{
     item["id"] = info->getId();
     item["title"] = info->getTitle();
     item["description"] = info->getDescription();

@@ -1,7 +1,7 @@
 #include "article_category_rel_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,19 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 ArticleCategoryRelManager::ArticleCategoryRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::ArticleCategoryRelInfoDao::ParseRow(rt);
 }
 
-
-void ArticleCategoryRelManager::add(data::ArticleCategoryRelInfo::ptr info) {
+void ArticleCategoryRelManager::add(data::ArticleCategoryRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::get(int64_t id) {
+data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -41,8 +44,8 @@ data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::get(int64_t id) {
     return v;
 }
 
-bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos
-        , int64_t id, bool valid) {
+bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos, int64_t id, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -64,8 +67,8 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
     return true;
 }
 
-bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos
-        , int64_t category_id, bool valid) {
+bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos, int64_t category_id, bool valid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -87,8 +90,8 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
     return true;
 }
 
-data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCategoryId(int64_t article_id
-        , int64_t category_id) {
+data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCategoryId(int64_t article_id, int64_t category_id)
+{
     std::string ck = "acr:" + std::to_string(article_id) + ":" + std::to_string(category_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -107,4 +110,4 @@ data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCateg
     return info;
 }
 
-}
+} // namespace blog

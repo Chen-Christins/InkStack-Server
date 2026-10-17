@@ -2,10 +2,10 @@
 
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../manager/article_manager.h"
 #include "../../manager/article_category_rel_manager.h"
+#include "../../manager/article_manager.h"
 #include "../../manager/category_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -13,11 +13,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleUpdateCategoryServlet::ArticleUpdateCategoryServlet()
-    : BlogLoginedServlet("ArticleUpdateCategoryServlet") {
+    : BlogLoginedServlet("ArticleUpdateCategoryServlet")
+{
 }
 
-int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleUpdateCategoryServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         std::string adds = request->getParam("add_category_ids");
@@ -78,8 +83,7 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
                     acinfo->setUpdateTime(now);
                     update_add_infos.push_back(acinfo);
                     if (data::ArticleCategoryRelInfoDao::Update(acinfo, db)) {
-                        ERROR(logger) << "db error errno=" << db->getErrno()
-                            << ", errstr=" << db->getErrStr();
+                        ERROR(logger) << "db error errno=" << db->getErrno() << ", errstr=" << db->getErrStr();
                     }
                 }
             } else {
@@ -89,8 +93,7 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
                 acinfo->setUpdateTime(now);
                 new_infos.push_back(acinfo);
                 if (data::ArticleCategoryRelInfoDao::Insert(acinfo, db)) {
-                    ERROR(logger) << "db error errno=" << db->getErrno()
-                        << ", errstr=" << db->getErrStr();
+                    ERROR(logger) << "db error errno=" << db->getErrno() << ", errstr=" << db->getErrStr();
                 }
             }
         }
@@ -112,8 +115,7 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
                     new_infos.push_back(acinfo);
                     update_del_infos.push_back(acinfo);
                     if (data::ArticleCategoryRelInfoDao::Update(acinfo, db)) {
-                        ERROR(logger) << "db error errno=" << db->getErrno()
-                            << ", errstr=" << db->getErrStr();
+                        ERROR(logger) << "db error errno=" << db->getErrno() << ", errstr=" << db->getErrStr();
                     }
                 }
             }
@@ -156,5 +158,5 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

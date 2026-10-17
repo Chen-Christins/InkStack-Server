@@ -1,14 +1,14 @@
 #include "organization_repo_manager.h"
 
-#include <chen/log/log.h>
+#include <chen/config/config.h>
 #include <chen/db/redis.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
-#include <chen/config/config.h>
+#include <chen/log/log.h>
 #include <json/json.h>
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 namespace blog {
 
@@ -16,23 +16,26 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 500;
 
-static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
-    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 OrganizationRepoManager::OrganizationRepoManager()
-    :m_cache(4, kCacheMaxSize, 30) {
+    : m_cache(4, kCacheMaxSize, 30)
+{
 }
 
-data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLData::ptr rt) {
+data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::OrganizationReposInfoDao::ParseRow(rt);
 }
 
-void OrganizationRepoManager::add(data::OrganizationReposInfo::ptr info) {
+void OrganizationRepoManager::add(data::OrganizationReposInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
     invalidateCountCache(info->getOrgId());
 }
 
-void OrganizationRepoManager::del(int64_t id) {
+void OrganizationRepoManager::del(int64_t id)
+{
     auto info = m_cache.get(id);
     if (info) {
         invalidateCountCache(info->getOrgId());
@@ -40,10 +43,11 @@ void OrganizationRepoManager::del(int64_t id) {
     m_cache.del(id);
 }
 
-void OrganizationRepoManager::onTick() {
+void OrganizationRepoManager::onTick()
+{
     std::vector<data::OrganizationReposInfo::ptr> repos;
     getAllWithToken(repos);
-    
+
     for (const auto& repo : repos) {
         if (!repo) {
             continue;
@@ -56,7 +60,8 @@ void OrganizationRepoManager::onTick() {
     }
 }
 
-data::OrganizationReposInfo::ptr OrganizationRepoManager::get(int64_t id) {
+data::OrganizationReposInfo::ptr OrganizationRepoManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -73,7 +78,8 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::get(int64_t id) {
     return v;
 }
 
-data::OrganizationReposInfo::ptr OrganizationRepoManager::getByOrgAndName(int64_t org_id, const std::string& name) {
+data::OrganizationReposInfo::ptr OrganizationRepoManager::getByOrgAndName(int64_t org_id, const std::string& name)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -86,8 +92,8 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::getByOrgAndName(int64_
     return info;
 }
 
-int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationReposInfo::ptr>& repos
-        , int64_t org_id, uint64_t offset, uint64_t limit) {
+int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationReposInfo::ptr>& repos, int64_t org_id, uint64_t offset, uint64_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -111,7 +117,8 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     return total;
 }
 
-int64_t OrganizationRepoManager::getCountByOrg(int64_t org_id) {
+int64_t OrganizationRepoManager::getCountByOrg(int64_t org_id)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -126,7 +133,8 @@ int64_t OrganizationRepoManager::getCountByOrg(int64_t org_id) {
     return executeCountCached(qb, db, ck.str());
 }
 
-void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationReposInfo::ptr>& repos) {
+void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationReposInfo::ptr>& repos)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -139,7 +147,8 @@ void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationRepo
     }
 }
 
-void OrganizationRepoManager::invalidateCountCache(int64_t org_id) {
+void OrganizationRepoManager::invalidateCountCache(int64_t org_id)
+{
     {
         std::stringstream key;
         key << "cache:count:org_repo:count:" << org_id;
@@ -152,7 +161,8 @@ void OrganizationRepoManager::invalidateCountCache(int64_t org_id) {
     }
 }
 
-static std::string extractGithubRepo(const std::string& url) {
+static std::string extractGithubRepo(const std::string& url)
+{
     auto uri = chen::Uri::Create(url);
     if (!uri) {
         return "";
@@ -167,7 +177,8 @@ static std::string extractGithubRepo(const std::string& url) {
     return path;
 }
 
-static void markSyncFailed(int64_t repo_id) {
+static void markSyncFailed(int64_t repo_id)
+{
     auto repo = OrganizationRepoMgr::GetInstance()->get(repo_id);
     if (!repo) {
         return;
@@ -181,7 +192,8 @@ static void markSyncFailed(int64_t repo_id) {
     data::OrganizationReposInfoDao::Update(repo, db);
 }
 
-void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string& url, const std::string& token) {
+void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string& url, const std::string& token)
+{
     std::string repo_path = extractGithubRepo(url);
     if (repo_path.empty()) {
         ERROR(logger) << "SyncFromGitHub: invalid repo url=" << url;
@@ -202,9 +214,9 @@ void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string&
     auto result = chen::http::HttpConnection::DoGet(api_url, 15000, headers);
     if (!result || result->result != 0 || !result->response || result->response->getStatus() != chen::http::HttpStatus::OK) {
         ERROR(logger) << "SyncFromGitHub: HTTP request failed"
-            << " result=" << (result ? result->result : -1)
-            << " status=" << (result && result->response ? (int)result->response->getStatus() : 0)
-            << " body=" << (result && result->response ? result->response->getBody() : "");
+                      << " result=" << (result ? result->result : -1)
+                      << " status=" << (result && result->response ? (int)result->response->getStatus() : 0)
+                      << " body=" << (result && result->response ? result->response->getBody() : "");
         markSyncFailed(repo_id);
         return;
     }
@@ -254,4 +266,4 @@ void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string&
     INFO(logger) << "SyncFromGitHub: success for repo " << repo_id;
 }
 
-}
+} // namespace blog

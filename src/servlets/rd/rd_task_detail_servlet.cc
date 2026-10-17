@@ -1,8 +1,8 @@
 #include "rd_task_detail_servlet.h"
 
-#include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/task_manager.h"
+#include "../../manager/user_manager.h"
 #include "../../permission.h"
 #include "rd_helper.h"
 
@@ -10,11 +10,16 @@ namespace blog {
 namespace servlet {
 
 RdTaskDetailServlet::RdTaskDetailServlet()
-    : BlogLoginedServlet("RdTaskDetailServlet") {
+    : BlogLoginedServlet("RdTaskDetailServlet")
+{
 }
 
-int32_t RdTaskDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t RdTaskDetailServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         if (!id) {
@@ -61,5 +66,5 @@ int32_t RdTaskDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

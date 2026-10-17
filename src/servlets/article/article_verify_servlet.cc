@@ -1,14 +1,14 @@
 #include "article_verify_servlet.h"
 
-#include <chen/log/log.h>
 #include <chen/iomanager/iomanager.h>
+#include <chen/log/log.h>
 #include <json/json.h>
 
-#include "../../util.h"
+#include "../../event/event_define.h"
 #include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../event/event_define.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -16,18 +16,22 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleVerifyServlet::ArticleVerifyServlet()
-    : BlogLoginedServlet("ArticleVerifyServlet") {
+    : BlogLoginedServlet("ArticleVerifyServlet")
+{
 }
 
-int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleVerifyServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         DEFINE_AND_CHECK_TYPE(result, int64_t, state, "state");
 
         // 传入参数state，决定文章的去留
-        if (state != ArticleManager::Status::PUBLISHED
-                && state != ArticleManager::Status::REJECTED) {
+        if (state != ArticleManager::Status::PUBLISHED && state != ArticleManager::Status::REJECTED) {
             result->setErrno(errcode::ARTICLE_INVALID_STATE);
             break;
         }
@@ -70,8 +74,7 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
             result->setErrno(errcode::ARTICLE_UPDATE_FAILED);
             info->setState(ArticleManager::Status::CHECKING);
 
-            ERROR(logger) << "db error errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr();
+            ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -89,7 +92,7 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
             data.article_title = info->getTitle();
             data.author_id = info->getUserId();
             data.reviewer_id = uid;
-            
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_REVIEW, std::move(data));
         }
     } while (0);
@@ -97,5 +100,5 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

@@ -13,10 +13,12 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 2000;
 
 MessageManager::MessageManager()
-    :m_cache(16, kCacheMaxSize, 0) {
+    : m_cache(16, kCacheMaxSize, 0)
+{
 }
 
-data::ConversationInfo::ptr MessageManager::get(int64_t id) {
+data::ConversationInfo::ptr MessageManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -33,7 +35,8 @@ data::ConversationInfo::ptr MessageManager::get(int64_t id) {
     return v;
 }
 
-data::ConversationInfo::ptr MessageManager::getByUsers(int64_t uid_a, int64_t uid_b) {
+data::ConversationInfo::ptr MessageManager::getByUsers(int64_t uid_a, int64_t uid_b)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -55,7 +58,8 @@ data::ConversationInfo::ptr MessageManager::getByUsers(int64_t uid_a, int64_t ui
     return results[0];
 }
 
-data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t uid_b) {
+data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t uid_b)
+{
     auto conv = getByUsers(uid_a, uid_b);
     if (conv) {
         // 本端曾隐藏过该会话，重新发起时复活
@@ -116,7 +120,8 @@ data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t u
     return info;
 }
 
-void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>& results, int64_t uid) {
+void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>& results, int64_t uid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -155,8 +160,8 @@ void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>&
     }
 }
 
-void MessageManager::listMessages(std::vector<data::ConversationMessageInfo::ptr>& results
-        , int64_t conversation_id, int32_t offset, int32_t limit) {
+void MessageManager::listMessages(std::vector<data::ConversationMessageInfo::ptr>& results, int64_t conversation_id, int32_t offset, int32_t limit)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -179,8 +184,8 @@ void MessageManager::listMessages(std::vector<data::ConversationMessageInfo::ptr
     results.swap(tmp);
 }
 
-data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversation_id
-        , int64_t sender_id, const std::string& text) {
+data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversation_id, int64_t sender_id, const std::string& text)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -230,7 +235,8 @@ data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversat
     return msg;
 }
 
-bool MessageManager::markRead(int64_t conversation_id, int64_t uid) {
+bool MessageManager::markRead(int64_t conversation_id, int64_t uid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -276,7 +282,8 @@ bool MessageManager::markRead(int64_t conversation_id, int64_t uid) {
     return true;
 }
 
-bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid) {
+bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -308,7 +315,8 @@ bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid) {
     return true;
 }
 
-void MessageManager::addChatConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+void MessageManager::addChatConnection(int64_t user_id, chen::http::WSSession::ptr session)
+{
     std::unique_lock lock(m_chatMutex);
     auto& conns = m_chatConnections[user_id];
     for (auto& s : conns) {
@@ -320,7 +328,8 @@ void MessageManager::addChatConnection(int64_t user_id, chen::http::WSSession::p
     INFO(logger) << "Chat WS connected: user_id=" << user_id << " sessions=" << conns.size();
 }
 
-void MessageManager::removeChatConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+void MessageManager::removeChatConnection(int64_t user_id, chen::http::WSSession::ptr session)
+{
     std::unique_lock lock(m_chatMutex);
     auto it = m_chatConnections.find(user_id);
     if (it == m_chatConnections.end()) {
@@ -340,13 +349,15 @@ void MessageManager::removeChatConnection(int64_t user_id, chen::http::WSSession
     INFO(logger) << "Chat WS disconnected: user_id=" << user_id;
 }
 
-bool MessageManager::isChatConnected(int64_t user_id) {
+bool MessageManager::isChatConnected(int64_t user_id)
+{
     std::shared_lock lock(m_chatMutex);
     auto it = m_chatConnections.find(user_id);
     return it != m_chatConnections.end() && !it->second.empty();
 }
 
-int32_t MessageManager::sendToUser(int64_t user_id, const std::string& message) {
+int32_t MessageManager::sendToUser(int64_t user_id, const std::string& message)
+{
     std::shared_lock lock(m_chatMutex);
     auto it = m_chatConnections.find(user_id);
     if (it == m_chatConnections.end()) {
@@ -358,7 +369,8 @@ int32_t MessageManager::sendToUser(int64_t user_id, const std::string& message) 
     return 0;
 }
 
-void MessageManager::closeAllChatConnections() {
+void MessageManager::closeAllChatConnections()
+{
     std::unique_lock lock(m_chatMutex);
     for (auto& [user_id, conns] : m_chatConnections) {
         for (auto& s : conns) {
@@ -370,7 +382,8 @@ void MessageManager::closeAllChatConnections() {
     INFO(logger) << "All Chat WS connections closed";
 }
 
-int64_t MessageManager::getUidBySession(chen::http::WSSession::ptr session) {
+int64_t MessageManager::getUidBySession(chen::http::WSSession::ptr session)
+{
     std::shared_lock lock(m_chatMutex);
     auto sock = session->getSocket();
     for (auto& [user_id, conns] : m_chatConnections) {
@@ -383,4 +396,4 @@ int64_t MessageManager::getUidBySession(chen::http::WSSession::ptr session) {
     return 0;
 }
 
-}
+} // namespace blog

@@ -1,7 +1,7 @@
 #include "assignment_manager.h"
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
 
@@ -12,19 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 AssignmentManager::AssignmentManager()
-    :m_cache(4, kCacheMaxSize, 0) {
+    : m_cache(4, kCacheMaxSize, 0)
+{
 }
 
-data::AssignmentInfo::ptr AssignmentManager::parseRow(chen::ISQLData::ptr rt) {
+data::AssignmentInfo::ptr AssignmentManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::AssignmentInfoDao::ParseRow(rt);
 }
 
-
-void AssignmentManager::add(data::AssignmentInfo::ptr info) {
+void AssignmentManager::add(data::AssignmentInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-data::AssignmentInfo::ptr AssignmentManager::get(int64_t id) {
+data::AssignmentInfo::ptr AssignmentManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -41,7 +44,8 @@ data::AssignmentInfo::ptr AssignmentManager::get(int64_t id) {
     return v;
 }
 
-data::AssignmentInfo::ptr AssignmentManager::getByName(const std::string& subject_name, const std::string& name) {
+data::AssignmentInfo::ptr AssignmentManager::getByName(const std::string& subject_name, const std::string& name)
+{
     std::string ck = "assign:name:" + subject_name + ":" + name;
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -64,8 +68,8 @@ data::AssignmentInfo::ptr AssignmentManager::getByName(const std::string& subjec
     return nullptr;
 }
 
-uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& infos
-        , uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid)
+{
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -88,7 +92,8 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
     return total;
 }
 
-AssignmentManager::AssignmentStats AssignmentManager::getStats() {
+AssignmentManager::AssignmentStats AssignmentManager::getStats()
+{
     AssignmentStats stats;
     auto db = GetDB();
     if (!db) {
@@ -107,9 +112,15 @@ AssignmentManager::AssignmentStats AssignmentManager::getStats() {
             for (auto& [s, cnt] : rows) {
                 stats.total += cnt;
                 switch (s) {
-                case Status::ACTIVE:   stats.active = cnt; break;
-                case Status::INACTIVE: stats.closed = cnt; break;
-                case Status::DRAFT:    stats.draft = cnt;  break;
+                case Status::ACTIVE:
+                    stats.active = cnt;
+                    break;
+                case Status::INACTIVE:
+                    stats.closed = cnt;
+                    break;
+                case Status::DRAFT:
+                    stats.draft = cnt;
+                    break;
                 }
             }
         }

@@ -1,8 +1,8 @@
 #include "user_admin_recover_servlet.h"
 
+#include "../../event/event_define.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../event/event_define.h"
 
 #include <chen/log/log.h>
 
@@ -14,11 +14,16 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminRecoverServlet::UserAdminRecoverServlet()
-    : BlogLoginedServlet("UserAdminRecoverServlet") {
+    : BlogLoginedServlet("UserAdminRecoverServlet")
+{
 }
 
-int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAdminRecoverServlet::handle(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
 
@@ -87,14 +92,14 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
                 EventUserAdminData data = {};
                 data.type = "account_recovered";
                 data.user_id = u->getId();
-                
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
             }
         }
-    }while (0);
+    } while (0);
     response->setBody(result->toJsonString());
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

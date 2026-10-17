@@ -2,8 +2,8 @@
 
 #include <chen/log/log.h>
 
-#include "cache_util.h"
 #include "../util.h"
+#include "cache_util.h"
 
 namespace blog {
 
@@ -12,18 +12,22 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 AssignmentUserRelManager::AssignmentUserRelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    : m_cache(8, kCacheMaxSize, 0)
+{
 }
 
-data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLData::ptr rt) {
+data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLData::ptr rt)
+{
     return data::AssignmentUserRelInfoDao::ParseRow(rt);
 }
 
-void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info) {
+void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info)
+{
     m_cache.set(info->getId(), info);
 }
 
-blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::get(int64_t id) {
+blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::get(int64_t id)
+{
     auto v = m_cache.get(id);
     if (v) {
         return v;
@@ -40,7 +44,8 @@ blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::get(int64_t id)
     return v;
 }
 
-blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::getByAssignAndUser(int64_t assign_id, int64_t user_id) {
+blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::getByAssignAndUser(int64_t assign_id, int64_t user_id)
+{
     int64_t cachedId = getCachedIdMapping("assign_usr:" + std::to_string(assign_id) + ":" + std::to_string(user_id));
     if (cachedId > 0) {
         return get(cachedId);
@@ -58,4 +63,4 @@ blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::getByAssignAndU
     return info;
 }
 
-}
+} // namespace blog
