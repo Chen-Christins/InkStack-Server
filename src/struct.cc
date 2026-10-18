@@ -1,9 +1,12 @@
 #include "struct.h"
 
+#include <cstdarg>
+
 #include <chen/log/log.h>
 
 #include "blog/data/user_info.h"
 #include "error_codes.h"
+#include "i18n/i18n.h"
 #include "manager/error_code_manager.h"
 #include "manager/session_manager.h"
 #include "manager/user_login_device_manager.h"
@@ -36,19 +39,35 @@ Result::Result(int32_t ec, const std::string& m)
     : errno_(ec)
     , used(chen::TimeUtil::GetCurrentUs())
     , msg(m)
+    , lang(I18n::DefaultLanguage())
 {
 }
 
 void Result::setErrno(int32_t ec)
 {
     errno_ = ec;
-    msg = ErrorCodeMgr::GetInstance()->getMessage(ec);
+    msg = ErrorCodeMgr::GetInstance()->getMessage(ec, lang);
 }
 
 void Result::setErrno(int32_t ec, const std::string& customMsg)
 {
     errno_ = ec;
-    msg = customMsg;
+    msg = I18n::Translate(customMsg, lang);
+}
+
+void Result::setErrnoFmt(int32_t ec, const char* fmt, ...)
+{
+    errno_ = ec;
+    if (!fmt) {
+        msg.clear();
+        return;
+    }
+
+    const std::string localized = I18n::Translate(fmt, lang);
+    va_list ap;
+    va_start(ap, fmt);
+    msg = chen::StringUtil::Formatv(localized.c_str(), ap);
+    va_end(ap);
 }
 
 void Result::setDataJson(const std::string& jsonStr)
@@ -80,6 +99,7 @@ int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request, chen::http::Ht
 {
     uint64_t ts = chen::TimeUtil::GetCurrentUs();
     Result::ptr result = std::make_shared<Result>();
+    result->lang = I18n::ResolveLanguage(request);
     // response->setHeader("Access-Control-Allow-Origin", "*");
     // response->setHeader("Access-Control-Allow-Credentials", "true");
 

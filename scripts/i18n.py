@@ -19,7 +19,6 @@ KEY_RE = re.compile(r"^[A-Z0-9_]+$")
 PRINTF_RE = re.compile(r"%(?:[-+ #0]*\d*(?:\.\d+)?[diouxXeEfFgGaAcspn%])")
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".h"}
 SOURCE_KEYWORDS = ("setErrno:2", "setErrnoFmt:2")
-IGNORED_MSGIDS = {"param "}
 
 
 class CatalogError(Exception):
@@ -228,17 +227,6 @@ def collect_sources(project_dir):
     )
 
 
-def filter_source_pot(path, ignored):
-    text = path.read_text(encoding="utf-8")
-    blocks = text.split("\n\n")
-    kept = []
-    for block in blocks:
-        if any(f'msgid "{po_escape(msgid)}"' in block for msgid in ignored):
-            continue
-        kept.append(block)
-    path.write_text("\n\n".join(kept), encoding="utf-8", newline="\n")
-
-
 def ensure_po(po_path, pot_path, language, msginit):
     if po_path.is_file():
         return
@@ -276,7 +264,7 @@ def fill_error_translations(path, entries, language):
             if lines[msgstr_index].strip() == 'msgstr ""':
                 lines[msgstr_index] = f'msgstr "{po_escape(translations[msgid])}"'
         output.append("\n".join(lines))
-    path.write_text("\n\n".join(output), encoding="utf-8", newline="\n")
+    path.write_text("\n\n".join(output) + "\n", encoding="utf-8", newline="\n")
 
 
 def preview(values, limit=8):
@@ -315,7 +303,6 @@ def sync(project_dir):
             command.append(f"--keyword={keyword}")
         command.extend(["-o", str(source_pot), *map(str, collect_sources(project_dir))])
         run_tool(command, "xgettext", cwd=project_dir)
-        filter_source_pot(source_pot, IGNORED_MSGIDS)
         run_tool(
             [msgcat, "--use-first", str(errors_pot), str(source_pot), "-o", str(pot_path)],
             "msgcat",

@@ -6,6 +6,8 @@
 #include <chen/log/log.h>
 #include <json/json.h>
 
+#include "../i18n/i18n.h"
+
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
@@ -35,6 +37,7 @@ bool ErrorCodeManager::load(const std::string& configPath)
 
     m_version = root.get("version", "unknown").asString();
 
+    m_keys.clear();
     m_zhMessages.clear();
     m_enMessages.clear();
 
@@ -46,9 +49,13 @@ bool ErrorCodeManager::load(const std::string& configPath)
 
     for (const auto& item : errors) {
         int32_t code = item["errno"].asInt();
+        std::string key = item.get("key", "").asString();
         std::string zh = item.get("zh", "").asString();
         std::string en = item.get("en", "").asString();
 
+        if (!key.empty()) {
+            m_keys[code] = key;
+        }
         m_zhMessages[code] = zh;
         m_enMessages[code] = en;
     }
@@ -74,17 +81,32 @@ std::string ErrorCodeManager::getMessage(int32_t errCode) const
 
 std::string ErrorCodeManager::getMessage(int32_t errCode, const std::string& lang) const
 {
-    const auto& messages = (lang == "en" || lang == "en-US" || lang == "en_US") ? m_enMessages : m_zhMessages;
+    const std::string normalized = I18n::NormalizeLanguage(lang);
+    const bool english = normalized == "en";
+
+    auto keyIt = m_keys.find(errCode);
+    if (keyIt != m_keys.end() && !keyIt->second.empty()) {
+        const std::string translated = I18n::Translate(keyIt->second, normalized.empty() ? I18n::DefaultLanguage() : normalized);
+        if (!translated.empty() && translated != keyIt->second) {
+            return translated;
+        }
+    }
+
+    const auto& messages = english ? m_enMessages : m_zhMessages;
     auto it = messages.find(errCode);
     if (it != messages.end()) {
         return it->second;
     }
-    return lang == "en" ? "Unknown error" : "未知错误";
+    return english ? "Unknown error" : "未知错误";
 }
 
 std::map<int32_t, std::string> ErrorCodeManager::getAllMessages(const std::string& lang) const
 {
-    return (lang == "en" || lang == "en-US" || lang == "en_US") ? m_enMessages : m_zhMessages;
+    std::map<int32_t, std::string> result;
+    for (const auto& entry : m_zhMessages) {
+        result[entry.first] = getMessage(entry.first, lang);
+    }
+    return result;
 }
 
 std::string ErrorCodeManager::toJson(const std::string& lang) const

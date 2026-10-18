@@ -122,20 +122,20 @@ inline void SendWX(const std::string& group, const std::string& msg)
     // TODO: ...
 }
 
-#define DEFINE_AND_CHECK_STRING(result, var, param)                              \
-    std::string var = request->getParam(param);                                  \
-    if (var.empty()) {                                                           \
-        result->setErrno(errcode::PARAM_MISSING, "param " param " is required"); \
-        break;                                                                   \
+#define DEFINE_AND_CHECK_STRING(result, var, param)                                 \
+    std::string var = request->getParam(param);                                     \
+    if (var.empty()) {                                                              \
+        result->setErrnoFmt(errcode::PARAM_MISSING, "param %s is required", param); \
+        break;                                                                      \
     }
 
 #define DEFINE_AND_CHECK_STRING_WITH_DEFAULT(result, var, param, default_val) std::string var = request->getParam(param, default_val);
 
-#define DEFINE_AND_CHECK_TYPE(result, type, var, param)                          \
-    type var;                                                                    \
-    if (!request->checkGetParamAs(param, var)) {                                 \
-        result->setErrno(errcode::PARAM_MISSING, "param " param " is required"); \
-        break;                                                                   \
+#define DEFINE_AND_CHECK_TYPE(result, type, var, param)                             \
+    type var;                                                                       \
+    if (!request->checkGetParamAs(param, var)) {                                    \
+        result->setErrnoFmt(errcode::PARAM_MISSING, "param %s is required", param); \
+        break;                                                                      \
     }
 
 inline void SendSSEJson(chen::http::SSESession::ptr session, const std::string& type, const std::string& key, const std::string& value)

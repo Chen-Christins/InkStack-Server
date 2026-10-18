@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TechHaven-Server 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-18 06:56+0000\n"
+"POT-Creation-Date: 2026-10-18 07:05+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -905,3 +905,8 @@ msgstr "token 不匹配，请重新登录"
 #: src/servlets/user/user_update_servlet.cc:59
 msgid "old password required"
 msgstr "缺少旧密码"
+
+#: src/util.h:128 src/util.h:137
+#, c-format
+msgid "param %s is required"
+msgstr "缺少必填参数 %s"
