@@ -134,7 +134,10 @@ bool BlogServlet::handlePost(
     chen::http::HttpSession::ptr session,
     Result::ptr result)
 {
-    response->setHeader("Content-Type", "application/json");
+    std::string val;
+    if (!response->checkGetHeaderAs<std::string>("Content-Type", val, "application/json")) {
+        response->setHeader("Content-Type", val);
+    }
     INFO(logger) << GetRemoteIP(request, session) << "\t" << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t" << getUserId(request) << "\t"
                  << result->errno_ << "\t" << result->msg << "\t" << request->getPath() << "\t"
                  << (!request->getQuery().empty() ? request->getQuery() : "-");
