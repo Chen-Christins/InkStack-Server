@@ -142,7 +142,7 @@ int32_t DashboardActivitiesServlet::handle(
             Json::Value item;
             item["type"] = act.type;
             item["title"] = act.title;
-            item["timestamp"] = (Json::Int64)act.create_time;
+            item["timestamp"] = act.create_time;
             item["time"] = TimeAgo(now, act.create_time);
             list.append(item);
         }

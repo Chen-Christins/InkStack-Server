@@ -136,8 +136,8 @@ int32_t OrganizationRepoPrsSyncServlet::handle(
             }
 
             Json::Value item;
-            item["id"] = (Json::Int64)updated->getId();
-            item["repo_id"] = (Json::Int64)updated->getRepoId();
+            item["id"] = updated->getId();
+            item["repo_id"] = updated->getRepoId();
             item["github_pr_id"] = updated->getGithubPrId();
             item["title"] = updated->getTitle();
             item["description"] = updated->getDescription();
@@ -152,10 +152,10 @@ int32_t OrganizationRepoPrsSyncServlet::handle(
             item["deletions"] = updated->getDeletions();
             item["reviewers"] = updated->getReviewers();
             item["review_status"] = updated->getReviewStatus();
-            item["closed_at"] = (Json::Int64)updated->getClosedAt();
-            item["merged_at"] = (Json::Int64)updated->getMergedAt();
-            item["created_at"] = (Json::Int64)updated->getCreateTime();
-            item["updated_at"] = (Json::Int64)updated->getUpdateTime();
+            item["closed_at"] = updated->getClosedAt();
+            item["merged_at"] = updated->getMergedAt();
+            item["created_at"] = updated->getCreateTime();
+            item["updated_at"] = updated->getUpdateTime();
             result->jsondata = item;
             break;
         }

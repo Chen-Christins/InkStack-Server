@@ -127,7 +127,7 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
 
         if (type == "send") {
             std::string client_id = root.get("client_id", "").asString();
-            int64_t conversation_id = root.get("conversation_id", (Json::Int64)0).asInt64();
+            int64_t conversation_id = root.get("conversation_id", 0).asInt64();
             std::string text = root.get("text", "").asString();
 
             auto sendSendError = [&](int32_t ec, const std::string& errstr) {
@@ -172,7 +172,7 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
                 Json::Value ack;
                 ack["type"] = "message_ack";
                 ack["client_id"] = client_id;
-                ack["conversation_id"] = (Json::Int64)conversation_id;
+                ack["conversation_id"] = conversation_id;
                 Json::Value mj;
                 BuildMessageJson(mj, msg_info, uid);
                 ack["message"] = mj;
@@ -184,7 +184,7 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
             if (MessageMgr::GetInstance()->isChatConnected(peer_id)) {
                 Json::Value push;
                 push["type"] = "message";
-                push["conversation_id"] = (Json::Int64)conversation_id;
+                push["conversation_id"] = conversation_id;
                 Json::Value mj;
                 BuildMessageJson(mj, msg_info, peer_id);
                 push["message"] = mj;
@@ -192,7 +192,7 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
             }
             INFO(logger) << "[ChatWS] ack->" << uid << " push->" << peer_id << " peer_online=" << MessageMgr::GetInstance()->isChatConnected(peer_id);
         } else if (type == "read") {
-            int64_t conversation_id = root.get("conversation_id", (Json::Int64)0).asInt64();
+            int64_t conversation_id = root.get("conversation_id", 0).asInt64();
             if (conversation_id <= 0) {
                 sendError(session, errcode::PARAM_MISSING, "conversation_id required");
                 break;
@@ -215,7 +215,7 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
             if (MessageMgr::GetInstance()->isChatConnected(peer_id)) {
                 Json::Value rcpt;
                 rcpt["type"] = "read";
-                rcpt["conversation_id"] = (Json::Int64)conversation_id;
+                rcpt["conversation_id"] = conversation_id;
                 rcpt["unread"] = 0;
                 MessageMgr::GetInstance()->sendToUser(peer_id, chen::JsonUtil::ToString(rcpt));
             }

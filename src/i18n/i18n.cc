@@ -65,8 +65,10 @@ std::string BestFromAcceptLanguage(const std::string& header)
     size_t start = 0;
     while (start <= header.size()) {
         const size_t comma = header.find(',', start);
-        const std::string item = chen::StringUtil::Trim(
-            header.substr(start, comma == std::string::npos ? std::string::npos : comma - start), kTrimChars);
+
+        std::string str = header.substr(start, comma == std::string::npos ? std::string::npos : comma - start);
+        const std::string item = chen::StringUtil::Trim(str, kTrimChars);
+
         if (!item.empty()) {
             std::string tag;
             double quality = 1.0;
@@ -75,8 +77,10 @@ std::string BestFromAcceptLanguage(const std::string& header)
             size_t pos = 0;
             while (pos <= item.size()) {
                 const size_t semicolon = item.find(';', pos);
-                const std::string part = chen::StringUtil::Trim(
-                    item.substr(pos, semicolon == std::string::npos ? std::string::npos : semicolon - pos), kTrimChars);
+
+                std::string pt = item.substr(pos, semicolon == std::string::npos ? std::string::npos : semicolon - pos);
+                const std::string part = chen::StringUtil::Trim(pt, kTrimChars);
+
                 if (first) {
                     tag = part;
                     first = false;

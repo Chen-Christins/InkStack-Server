@@ -44,8 +44,8 @@ int32_t CategoryQueryServlet::handle(
             item["description"] = cat->getDescription();
             item["parent_id"] = cat->getParentId();
             item["status"] = cat->getStatus();
-            item["create_time"] = (Json::Int64)cat->getCreateTime();
-            item["update_time"] = (Json::Int64)cat->getUpdateTime();
+            item["create_time"] = cat->getCreateTime();
+            item["update_time"] = cat->getUpdateTime();
 
             int64_t article_count = 0;
             int64_t view_count = 0;
@@ -58,8 +58,8 @@ int32_t CategoryQueryServlet::handle(
                     view_count += article->getViews();
                 }
             }
-            item["article_count"] = (Json::Int64)article_count;
-            item["view_count"] = (Json::Int64)view_count;
+            item["article_count"] = article_count;
+            item["view_count"] = view_count;
 
             list.append(item);
         }

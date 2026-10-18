@@ -54,7 +54,7 @@ static Json::Value buildCommentItem(
         }
     }
     item["replies"] = repliesArr;
-    item["reply_count"] = it != children.end() ? (Json::Int64)it->second.size() : (Json::Int64)0;
+    item["reply_count"] = it != children.end() ? it->second.size() : 0;
 
     return item;
 }
@@ -103,7 +103,7 @@ int32_t CommentListServlet::handle(
             }
         }
 
-        result->set("total", it != children.end() ? (Json::Int64)it->second.size() : (Json::Int64)0);
+        result->set("total", it != children.end() ? it->second.size() : 0);
         result->set("list", list);
         result->setErrno(errcode::SUCCESS);
     } while (0);
