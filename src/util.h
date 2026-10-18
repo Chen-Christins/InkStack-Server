@@ -12,8 +12,8 @@
 #include <chen/util/time_util.h>
 #include <chen/util/util.h>
 
-#include <sys/statvfs.h>
 #include <regex>
+#include <sys/statvfs.h>
 
 namespace blog {
 
@@ -25,7 +25,8 @@ struct DiskUsage {
     int64_t availableSize;
 };
 
-inline DiskUsage GetDiskUsage(const std::string& path = ".") {
+inline DiskUsage GetDiskUsage(const std::string& path = ".")
+{
     DiskUsage du = {0, 0, 0};
     struct statvfs vfs;
     if (statvfs(path.c_str(), &vfs) == 0) {
@@ -36,14 +37,16 @@ inline DiskUsage GetDiskUsage(const std::string& path = ".") {
     return du;
 }
 
-inline bool IsEmail(const std::string& str) {
+inline bool IsEmail(const std::string& str)
+{
     static const std::regex pattern("([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,8}(\\.[a-z]{2,8})?)");
     return std::regex_match(str, pattern);
 }
 
 static const std::string s_uid_secret = "BlogServer!2025$%^UID#@!EncryptKey";
 
-inline std::string EncryptUserId(int64_t uid) {
+inline std::string EncryptUserId(int64_t uid)
+{
     std::string plain = std::to_string(uid);
     for (size_t i = 0; i < plain.size(); i++) {
         plain[i] ^= s_uid_secret[i % s_uid_secret.size()];
@@ -51,7 +54,8 @@ inline std::string EncryptUserId(int64_t uid) {
     return chen::StringUtil::Base64Encode(plain);
 }
 
-inline int64_t DecryptUserId(const std::string& encrypted) {
+inline int64_t DecryptUserId(const std::string& encrypted)
+{
     if (encrypted.empty()) {
         return 0;
     }
@@ -69,14 +73,16 @@ inline int64_t DecryptUserId(const std::string& encrypted) {
     }
 }
 
-inline bool IsValidAccount(const std::string& str) {
+inline bool IsValidAccount(const std::string& str)
+{
     static const std::regex s_account_regex("[A-Za-z][0-9A-Za-z\\-_\\.]{4,15}");
     return std::regex_match(str, s_account_regex);
 }
 
 static const std::string s_api_key_secret = "BlogServer!2025$%^APIKey#@!SecretKey";
 
-inline std::string EncryptApiKey(const std::string& api_key) {
+inline std::string EncryptApiKey(const std::string& api_key)
+{
     if (api_key.empty()) {
         return "";
     }
@@ -87,7 +93,8 @@ inline std::string EncryptApiKey(const std::string& api_key) {
     return chen::StringUtil::Base64Encode(data);
 }
 
-inline std::string DecryptApiKey(const std::string& encrypted) {
+inline std::string DecryptApiKey(const std::string& encrypted)
+{
     if (encrypted.empty()) {
         return "";
     }
@@ -101,7 +108,8 @@ inline std::string DecryptApiKey(const std::string& encrypted) {
     return data;
 }
 
-inline std::string MaskApiKey(const std::string& api_key) {
+inline std::string MaskApiKey(const std::string& api_key)
+{
     if (api_key.length() <= 8) {
         return std::string(api_key.length(), '*');
     }
@@ -109,7 +117,8 @@ inline std::string MaskApiKey(const std::string& api_key) {
     return api_key.substr(0, 3) + std::string(api_key.length() - 8, '*') + api_key.substr(api_key.length() - 2);
 }
 
-inline void SendWX(const std::string& group, const std::string& msg) {
+inline void SendWX(const std::string& group, const std::string& msg)
+{
     // TODO: ...
 }
 
@@ -120,8 +129,7 @@ inline void SendWX(const std::string& group, const std::string& msg) {
         break;                                                                   \
     }
 
-#define DEFINE_AND_CHECK_STRING_WITH_DEFAULT(result, var, param, default_val) \
-    std::string var = request->getParam(param, default_val);
+#define DEFINE_AND_CHECK_STRING_WITH_DEFAULT(result, var, param, default_val) std::string var = request->getParam(param, default_val);
 
 #define DEFINE_AND_CHECK_TYPE(result, type, var, param)                          \
     type var;                                                                    \
@@ -130,13 +138,12 @@ inline void SendWX(const std::string& group, const std::string& msg) {
         break;                                                                   \
     }
 
-inline void SendSSEJson(chen::http::SSESession::ptr session, const std::string& type
-                       , const std::string& key, const std::string& value) {
+inline void SendSSEJson(chen::http::SSESession::ptr session, const std::string& type, const std::string& key, const std::string& value)
+{
     Json::Value obj;
     obj["type"] = type;
     obj[key] = value;
     session->sendEvent(chen::JsonUtil::ToString(obj));
 }
 
-}
-
+} // namespace blog

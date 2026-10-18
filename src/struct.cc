@@ -252,4 +252,4 @@ int64_t BlogServlet::getUserId(chen::http::HttpRequest::ptr request)
     return 0;
 }
 
-}
+} // namespace blog

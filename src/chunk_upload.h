@@ -65,9 +65,15 @@ public:
      * @param total_chunks 总分块数
      * @return ChunkUploadSession::ptr
      */
-    ChunkUploadSession::ptr createSession(const std::string& upload_id
-        , const std::string& file_name, size_t total_size, size_t chunk_size, size_t total_chunks
-        , const std::string& biz_type, int64_t biz_id, const std::string& dir_name);
+    ChunkUploadSession::ptr createSession(
+        const std::string& upload_id,
+        const std::string& file_name,
+        size_t total_size,
+        size_t chunk_size,
+        size_t total_chunks,
+        const std::string& biz_type,
+        int64_t biz_id,
+        const std::string& dir_name);
 
     /**
      * @brief 获取上传会话
@@ -86,6 +92,7 @@ public:
      * @brief 清理所有过期会话及其临时文件（由 BlogModule::onTick 调用）
      */
     void cleanupExpiredSessions();
+
 private:
     // 存储所有上传会话
     std::unordered_map<std::string, ChunkUploadSession::ptr> m_sessions;
@@ -96,4 +103,3 @@ private:
 };
 
 typedef chen::Singleton<ChunkUploadManager> ChunkUploadMgr;
-
