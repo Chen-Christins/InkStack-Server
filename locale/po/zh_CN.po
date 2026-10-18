@@ -1,0 +1,574 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: TechHaven-Server 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-18 06:38+0000\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: scripts/i18n.py\n"
+
+#. errno: 0
+msgid "SUCCESS"
+msgstr "成功"
+
+#. errno: 1001
+msgid "PARAM_MISSING"
+msgstr "缺少必填参数"
+
+#. errno: 1002
+msgid "PARAM_INVALID"
+msgstr "参数格式错误"
+
+#. errno: 1003
+msgid "INVALID_METHOD"
+msgstr "不支持的请求方法"
+
+#. errno: 1101
+msgid "NOT_LOGIN"
+msgstr "未登录"
+
+#. errno: 1102
+msgid "ACCESS_DENIED"
+msgstr "权限不足"
+
+#. errno: 1103
+msgid "ACCOUNT_INVALID"
+msgstr "账号状态异常"
+
+#. errno: 1104
+msgid "AUTH_CODE_INVALID"
+msgstr "验证码错误"
+
+#. errno: 2001
+msgid "USER_NOT_FOUND"
+msgstr "用户不存在"
+
+#. errno: 2002
+msgid "USER_ACCOUNT_EXISTS"
+msgstr "账号已存在"
+
+#. errno: 2003
+msgid "USER_EMAIL_EXISTS"
+msgstr "邮箱已注册"
+
+#. errno: 2004
+msgid "USER_INVALID_ACCOUNT"
+msgstr "账号格式错误"
+
+#. errno: 2005
+msgid "USER_INVALID_EMAIL"
+msgstr "邮箱格式错误"
+
+#. errno: 2006
+msgid "USER_INVALID_PASSWORD"
+msgstr "密码格式错误"
+
+#. errno: 2007
+msgid "USER_PASSWORD_WRONG"
+msgstr "密码错误"
+
+#. errno: 2008
+msgid "USER_OLD_PASSWORD_WRONG"
+msgstr "旧密码错误"
+
+#. errno: 2009
+msgid "USER_ALREADY_DELETED"
+msgstr "用户已删除"
+
+#. errno: 2010
+msgid "USER_ALREADY_LOGIN"
+msgstr "已登录"
+
+#. errno: 2011
+msgid "USER_EMAIL_NOT_REGISTER"
+msgstr "邮箱未注册"
+
+#. errno: 2012
+msgid "USER_NO_PARAM"
+msgstr "缺少更新参数"
+
+#. errno: 2013
+msgid "USER_PASSWORDS_DIFFER"
+msgstr "两次密码不一致"
+
+#. errno: 2014
+msgid "USER_CANNOT_FOLLOW_SELF"
+msgstr "不能关注自己"
+
+#. errno: 2015
+msgid "USER_NOT_FOLLOWING"
+msgstr "未关注该用户"
+
+#. errno: 2016
+msgid "USER_FOLLOW_FAILED"
+msgstr "关注操作失败"
+
+#. errno: 2017
+msgid "SEND_CODE_FREQUENT"
+msgstr "验证码发送过于频繁，请稍后再试"
+
+#. errno: 2018
+msgid "DEVICE_NOT_FOUND"
+msgstr "登录设备不存在"
+
+#. errno: 2019
+msgid "DEVICE_KICK_FAILED"
+msgstr "设备下线失败"
+
+#. errno: 2020
+msgid "TOTP_INVALID_CODE"
+msgstr "验证码错误"
+
+#. errno: 2021
+msgid "TOTP_NOT_ENABLED"
+msgstr "双因素认证未启用"
+
+#. errno: 2022
+msgid "TOTP_ALREADY_ENABLED"
+msgstr "双因素认证已启用"
+
+#. errno: 2023
+msgid "TOTP_ENABLE_FAILED"
+msgstr "启用双因素认证失败"
+
+#. errno: 2024
+msgid "TOTP_CONFIRM_FAILED"
+msgstr "确认双因素认证失败"
+
+#. errno: 2025
+msgid "RECOVERY_CODE_INVALID"
+msgstr "恢复码无效或已使用"
+
+#. errno: 2026
+msgid "TEMP_TOKEN_INVALID"
+msgstr "临时凭证无效或已过期"
+
+#. errno: 2027
+msgid "GITHUB_OAUTH_FAILED"
+msgstr "GitHub 授权登录失败"
+
+#. errno: 2028
+msgid "GITHUB_STATE_INVALID"
+msgstr "登录状态校验失败，请重试"
+
+#. errno: 3001
+msgid "ARTICLE_NOT_FOUND"
+msgstr "文章不存在"
+
+#. errno: 3002
+msgid "ARTICLE_INVALID_TYPE"
+msgstr "文章类型错误"
+
+#. errno: 3003
+msgid "ARTICLE_INVALID_STATE"
+msgstr "文章状态错误"
+
+#. errno: 3004
+msgid "ARTICLE_INVALID_ID"
+msgstr "文章ID无效"
+
+#. errno: 3005
+msgid "ARTICLE_INSERT_FAILED"
+msgstr "创建文章失败"
+
+#. errno: 3006
+msgid "ARTICLE_UPDATE_FAILED"
+msgstr "更新文章失败"
+
+#. errno: 3007
+msgid "ARTICLE_DELETE_FAILED"
+msgstr "删除文章失败"
+
+#. errno: 3008
+msgid "ARTICLE_PUBLISH_FAILED"
+msgstr "发布文章失败"
+
+#. errno: 3009
+msgid "ARTICLE_CATEGORY_EMPTY"
+msgstr "分类参数为空"
+
+#. errno: 4001
+msgid "FILE_NOT_FOUND"
+msgstr "文件不存在"
+
+#. errno: 4002
+msgid "FILE_TOO_LARGE"
+msgstr "文件过大"
+
+#. errno: 4003
+msgid "FILE_INVALID_NAME"
+msgstr "文件名无效"
+
+#. errno: 4004
+msgid "FILE_INVALID_PATH"
+msgstr "文件路径无效"
+
+#. errno: 4005
+msgid "FILE_READ_ERROR"
+msgstr "文件读取失败"
+
+#. errno: 4006
+msgid "FILE_UPLOAD_FAILED"
+msgstr "文件上传失败"
+
+#. errno: 4007
+msgid "FILE_SAVE_FAILED"
+msgstr "文件保存失败"
+
+#. errno: 4008
+msgid "FILE_PROTOCOL_ERROR"
+msgstr "上传协议错误"
+
+#. errno: 4009
+msgid "FILE_DUMP_FAILED"
+msgstr "文件转储失败"
+
+#. errno: 4010
+msgid "UPLOAD_SESSION_NOT_FOUND"
+msgstr "上传会话不存在"
+
+#. errno: 4011
+msgid "UPLOAD_INVALID_TYPE"
+msgstr "上传类型无效"
+
+#. errno: 4012
+msgid "UPLOAD_INVALID_PARAMS"
+msgstr "上传参数无效"
+
+#. errno: 4013
+msgid "UPLOAD_CHUNK_INVALID"
+msgstr "分片参数无效"
+
+#. errno: 4014
+msgid "UPLOAD_CHUNK_ALREADY_DONE"
+msgstr "分片已接收"
+
+#. errno: 4015
+msgid "UPLOAD_CHUNK_INCOMPLETE"
+msgstr "分片未全部上传"
+
+#. errno: 4016
+msgid "UPLOAD_FILE_CREATE_FAILED"
+msgstr "创建文件失败"
+
+#. errno: 4017
+msgid "UPLOAD_FILE_ASSEMBLE_FAILED"
+msgstr "文件合并失败"
+
+#. errno: 4018
+msgid "UPLOAD_FILE_HASH_FAILED"
+msgstr "文件哈希计算失败"
+
+#. errno: 4019
+msgid "UPLOAD_TEMP_DIR_FAILED"
+msgstr "创建临时目录失败"
+
+#. errno: 4020
+msgid "UPLOAD_TEMP_FILE_FAILED"
+msgstr "创建临时文件失败"
+
+#. errno: 4021
+msgid "UPLOAD_CHUNK_SIZE_EXCEED"
+msgstr "分片大小超出声明值"
+
+#. errno: 4022
+msgid "UPLOAD_TYPE_INVALID_TYPE"
+msgstr "上传文件类型无效"
+
+#. errno: 4023
+msgid "UPLOAD_FILE_EMPTY"
+msgstr "上传文件为空"
+
+#. errno: 5001
+msgid "ORG_NOT_FOUND"
+msgstr "组织不存在"
+
+#. errno: 5002
+msgid "ORG_DISABLED"
+msgstr "组织已禁用"
+
+#. errno: 5003
+msgid "ORG_ALREADY_JOINED"
+msgstr "已加入该组织"
+
+#. errno: 5004
+msgid "ORG_ALREADY_APPLIED"
+msgstr "已申请加入该组织"
+
+#. errno: 5005
+msgid "ORG_APPLY_NOT_FOUND"
+msgstr "申请不存在"
+
+#. errno: 5006
+msgid "ORG_APPLY_ALREADY_REVIEWED"
+msgstr "申请已审核"
+
+#. errno: 5007
+msgid "ORG_INVALID_ROLE"
+msgstr "无效的组织角色"
+
+#. errno: 5008
+msgid "ORG_INVALID_STATE"
+msgstr "无效的组织状态"
+
+#. errno: 5009
+msgid "ORG_NOT_MEMBER"
+msgstr "不是组织成员"
+
+#. errno: 5010
+msgid "ORG_INVALID_ID"
+msgstr "组织ID无效"
+
+#. errno: 5011
+msgid "ORG_INSERT_FAILED"
+msgstr "创建组织失败"
+
+#. errno: 5012
+msgid "ORG_UPDATE_FAILED"
+msgstr "更新组织失败"
+
+#. errno: 5013
+msgid "ORG_DELETE_FAILED"
+msgstr "删除组织失败"
+
+#. errno: 5014
+msgid "ORG_NO_VALID_ORGS"
+msgstr "没有有效的组织"
+
+#. errno: 5015
+msgid "ORG_APPLY_INSERT_FAILED"
+msgstr "提交申请失败"
+
+#. errno: 5016
+msgid "ORG_APPLY_UPDATE_FAILED"
+msgstr "更新申请失败"
+
+#. errno: 5017
+msgid "ORG_USER_REL_FAILED"
+msgstr "组织成员操作失败"
+
+#. errno: 5018
+msgid "ORG_REPO_NOT_FOUND"
+msgstr "仓库不存在"
+
+#. errno: 5019
+msgid "ORG_REPO_NAME_EXISTS"
+msgstr "该组织下已存在同名仓库"
+
+#. errno: 5020
+msgid "ORG_PR_NOT_FOUND"
+msgstr "PR 记录不存在"
+
+#. errno: 5021
+msgid "ORG_REPO_TOKEN_MISSING"
+msgstr "仓库未配置 GitHub Token"
+
+#. errno: 5022
+msgid "GITHUB_PR_NOT_FOUND"
+msgstr "GitHub 上未找到该 PR"
+
+#. errno: 5023
+msgid "GITHUB_RATE_LIMITED"
+msgstr "GitHub API 触发限流，请稍后再试"
+
+#. errno: 5024
+msgid "GITHUB_API_FAILED"
+msgstr "GitHub API 请求失败"
+
+#. errno: 5025
+msgid "ORG_PR_SYNC_IN_PROGRESS"
+msgstr "该 PR 正在同步中，请稍后"
+
+#. errno: 6001
+msgid "ASSIGNMENT_NOT_FOUND"
+msgstr "作业不存在"
+
+#. errno: 6002
+msgid "ASSIGNMENT_INVALID_ID"
+msgstr "作业ID无效"
+
+#. errno: 6003
+msgid "ASSIGNMENT_SIZE_EXCEED"
+msgstr "作业文件大小超限"
+
+#. errno: 6004
+msgid "ASSIGNMENT_MAX_SIZE_EXCEED"
+msgstr "提交数量超限"
+
+#. errno: 6005
+msgid "ASSIGNMENT_INSERT_FAILED"
+msgstr "创建作业失败"
+
+#. errno: 6006
+msgid "ASSIGNMENT_UPDATE_FAILED"
+msgstr "更新作业失败"
+
+#. errno: 6007
+msgid "ASSIGNMENT_DELETE_FAILED"
+msgstr "删除作业失败"
+
+#. errno: 7001
+msgid "COMMENT_NOT_FOUND"
+msgstr "评论不存在"
+
+#. errno: 7002
+msgid "COMMENT_PERMISSION_DENIED"
+msgstr "无权操作此评论"
+
+#. errno: 7003
+msgid "COMMENT_CREATE_FAILED"
+msgstr "创建评论失败"
+
+#. errno: 7004
+msgid "COMMENT_UPDATE_FAILED"
+msgstr "更新评论失败"
+
+#. errno: 7005
+msgid "COMMENT_DELETE_FAILED"
+msgstr "删除评论失败"
+
+#. errno: 7006
+msgid "COMMENT_PRAISE_FAILED"
+msgstr "点赞评论失败"
+
+#. errno: 7007
+msgid "COMMENT_UNPRAISE_FAILED"
+msgstr "取消点赞评论失败"
+
+#. errno: 7008
+msgid "COMMENT_PARENT_NOT_FOUND"
+msgstr "父评论不存在"
+
+#. errno: 8001
+msgid "BUG_NOT_FOUND"
+msgstr "Bug不存在"
+
+#. errno: 8002
+msgid "REQUIREMENT_NOT_FOUND"
+msgstr "需求不存在"
+
+#. errno: 8003
+msgid "TASK_NOT_FOUND"
+msgstr "任务不存在"
+
+#. errno: 8004
+msgid "RD_INVALID_TYPE"
+msgstr "无效的工单类型"
+
+#. errno: 8005
+msgid "RD_NOT_ORG_MEMBER"
+msgstr "不是该组织成员"
+
+#. errno: 8006
+msgid "RD_INSERT_FAILED"
+msgstr "创建工单失败"
+
+#. errno: 8007
+msgid "RD_UPDATE_FAILED"
+msgstr "更新工单失败"
+
+#. errno: 8008
+msgid "RD_DELETE_FAILED"
+msgstr "删除工单失败"
+
+#. errno: 8009
+msgid "RD_INVALID_USER"
+msgstr "用户无效"
+
+#. errno: 9001
+msgid "DB_CONNECTION_FAILED"
+msgstr "数据库连接失败"
+
+#. errno: 9002
+msgid "DB_OPERATION_FAILED"
+msgstr "数据库操作失败"
+
+#. errno: 9003
+msgid "DB_TRANSACTION_FAILED"
+msgstr "数据库事务失败"
+
+#. errno: 9004
+msgid "DB_COMMIT_FAILED"
+msgstr "数据库提交失败"
+
+#. errno: 9005
+msgid "INTERNAL_ERROR"
+msgstr "服务器内部错误"
+
+#. errno: 9006
+msgid "SETTINGS_NOT_LOADED"
+msgstr "系统设置未加载"
+
+#. errno: 9007
+msgid "SETTINGS_SAVE_FAILED"
+msgstr "系统设置保存失败"
+
+#. errno: 9008
+msgid "SMTP_NOT_CONFIGURED"
+msgstr "邮件服务未配置"
+
+#. errno: 9009
+msgid "REDIS_OPERATION_FAILED"
+msgstr "缓存服务操作失败"
+
+#. errno: 9010
+msgid "METHOD_NOT_ALLOWED"
+msgstr "不支持的请求方法"
+
+#. errno: 9011
+msgid "NOTIFICATION_SEND_FAILED"
+msgstr "通知发送失败"
+
+#. errno: 9012
+msgid "AI_CONFIG_SAVE_FAILED"
+msgstr "AI配置保存失败"
+
+#. errno: 9013
+msgid "ARTICLE_PRAISE_FAILED"
+msgstr "点赞文章失败"
+
+#. errno: 9014
+msgid "ARTICLE_UNPRAISE_FAILED"
+msgstr "取消点赞文章失败"
+
+#. errno: 9015
+msgid "NOTIFICATION_TITLE_TOO_LONG"
+msgstr "通知标题过长"
+
+#. errno: 9016
+msgid "NOTIFICATION_CONTENT_TOO_LONG"
+msgstr "通知内容过长"
+
+#. errno: 9017
+msgid "NOTIFICATION_USERS_REQUIRED"
+msgstr "缺少目标用户"
+
+#. errno: 9018
+msgid "NOTIFICATION_INVALID_TARGET"
+msgstr "无效的通知目标类型"
+
+#. errno: 12001
+msgid "MESSAGE_CONVERSATION_NOT_FOUND"
+msgstr "会话不存在"
+
+#. errno: 12002
+msgid "MESSAGE_SEND_FAILED"
+msgstr "消息发送失败"
+
+#. errno: 12003
+msgid "MESSAGE_TEXT_TOO_LONG"
+msgstr "消息内容过长"
+
+#. errno: 12004
+msgid "MESSAGE_PEER_NOT_FOUND"
+msgstr "对端用户不存在"
+
+#. errno: 12005
+msgid "MESSAGE_CANNOT_SELF"
+msgstr "不能与自己私信"

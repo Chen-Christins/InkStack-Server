@@ -159,18 +159,25 @@ CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepa
 ```json
 {
   "chen-sdk": { "repo": "Chen-Christins/chen", "version": "1.5.4", "arch": "arm64" },
-  "thirdparty": { "repo": "Chen-Christins/chen", "tag": "v1.0.0", "asset": "deps-{arch}.zip" }
+  "thirdparty": { "repo": "Chen-Christins/chen", "tag": "v1.0.0", "asset": "deps-{arch}.zip" },
+  "cppjieba": {
+    "repo": "yanyiwu/cppjieba",
+    "tag": "v5.1.0",
+    "limonp_repo": "yanyiwu/limonp",
+    "limonp_ref": "a269e34dc4948d5a9209e21a7887b52daa0d3e78"
+  }
 }
 ```
 
 - `chen-sdk`：框架 SDK（`chen-sdk-<version>-<arch>.zip`），解压为根目录 `chen-sdk-<version>/`。
 - `thirdparty`：三方依赖包（protobuf / yaml-cpp / tinyxml2 / jsoncpp / hiredis-vip 的头文件 + 静态库），解压到 `deps/`。
+- `cppjieba`：中文分词头文件（`deps/include/cppjieba`）及其 `limonp` 依赖（`deps/include/limonp`）。两者均为 header-only，编译时直接进入 `libblog.so`。
 
 | 命令 | 说明 |
 |------|------|
-| `./deps.py sync` | 下载 chen-sdk + thirdparty（默认全部） |
+| `./deps.py sync` | 下载 chen-sdk + thirdparty + cppjieba（默认全部） |
 | `./deps.py sync --sdk-only` | 只下载 chen-sdk |
-| `./deps.py thirdparty` | 只下载三方依赖到 `deps/` |
+| `./deps.py thirdparty` | 只下载三方依赖与 cppjieba 到 `deps/` |
 | `./deps.py use 1.5.4 --arch amd64` | 切换 SDK 版本/架构 |
 | `./deps.py use --archive /tmp/chen-sdk.zip` | 使用本地临时 SDK 包 |
 | `./deps.py current` | 查看已安装 SDK 与 `deps/` 状态 |
@@ -179,8 +186,8 @@ CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepa
 
 说明：
 
-- 资产缓存在 `.deps-cache/`，用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）。
-- 三方依赖只用于**编译**（`deps/include`）。模块**不**静态链接三方库，运行时符号由预编译 `bin/server` 提供，避免与 server 内的静态副本重复；部署机也无需安装这些库。
+- 资产缓存在 `.deps-cache/`，用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）；cppjieba/limonp 的源码包按 tag/commit 缓存。
+- 三方依赖与 cppjieba 头文件只用于**编译**（`deps/include`）。模块**不**静态链接三方库，运行时符号由预编译 `bin/server` 提供，避免与 server 内的静态副本重复；部署机也无需安装这些库。cppjieba 为 header-only，不存在需要额外链接的 `.a`。
 - 架构按主机自动识别（`dependencies.json` 的 `arch=auto`）：mac(arm64) / Linux(amd64) 各自 `./deps.py sync` 即可，无需软链；如需固定，用 `./deps.py use <version> --arch <arch>` 改配置。
 
 ## 相关文档

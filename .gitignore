@@ -27,6 +27,7 @@ bin/conf/*.yml
 *.db
 .venv
 *.pyc
+locale/C/LC_MESSAGES/*.mo
 dataset
 models
 protocol/include

@@ -1,0 +1,574 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: TechHaven-Server 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-18 06:38+0000\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: scripts/i18n.py\n"
+
+#. errno: 0
+msgid "SUCCESS"
+msgstr ""
+
+#. errno: 1001
+msgid "PARAM_MISSING"
+msgstr ""
+
+#. errno: 1002
+msgid "PARAM_INVALID"
+msgstr ""
+
+#. errno: 1003
+msgid "INVALID_METHOD"
+msgstr ""
+
+#. errno: 1101
+msgid "NOT_LOGIN"
+msgstr ""
+
+#. errno: 1102
+msgid "ACCESS_DENIED"
+msgstr ""
+
+#. errno: 1103
+msgid "ACCOUNT_INVALID"
+msgstr ""
+
+#. errno: 1104
+msgid "AUTH_CODE_INVALID"
+msgstr ""
+
+#. errno: 2001
+msgid "USER_NOT_FOUND"
+msgstr ""
+
+#. errno: 2002
+msgid "USER_ACCOUNT_EXISTS"
+msgstr ""
+
+#. errno: 2003
+msgid "USER_EMAIL_EXISTS"
+msgstr ""
+
+#. errno: 2004
+msgid "USER_INVALID_ACCOUNT"
+msgstr ""
+
+#. errno: 2005
+msgid "USER_INVALID_EMAIL"
+msgstr ""
+
+#. errno: 2006
+msgid "USER_INVALID_PASSWORD"
+msgstr ""
+
+#. errno: 2007
+msgid "USER_PASSWORD_WRONG"
+msgstr ""
+
+#. errno: 2008
+msgid "USER_OLD_PASSWORD_WRONG"
+msgstr ""
+
+#. errno: 2009
+msgid "USER_ALREADY_DELETED"
+msgstr ""
+
+#. errno: 2010
+msgid "USER_ALREADY_LOGIN"
+msgstr ""
+
+#. errno: 2011
+msgid "USER_EMAIL_NOT_REGISTER"
+msgstr ""
+
+#. errno: 2012
+msgid "USER_NO_PARAM"
+msgstr ""
+
+#. errno: 2013
+msgid "USER_PASSWORDS_DIFFER"
+msgstr ""
+
+#. errno: 2014
+msgid "USER_CANNOT_FOLLOW_SELF"
+msgstr ""
+
+#. errno: 2015
+msgid "USER_NOT_FOLLOWING"
+msgstr ""
+
+#. errno: 2016
+msgid "USER_FOLLOW_FAILED"
+msgstr ""
+
+#. errno: 2017
+msgid "SEND_CODE_FREQUENT"
+msgstr ""
+
+#. errno: 2018
+msgid "DEVICE_NOT_FOUND"
+msgstr ""
+
+#. errno: 2019
+msgid "DEVICE_KICK_FAILED"
+msgstr ""
+
+#. errno: 2020
+msgid "TOTP_INVALID_CODE"
+msgstr ""
+
+#. errno: 2021
+msgid "TOTP_NOT_ENABLED"
+msgstr ""
+
+#. errno: 2022
+msgid "TOTP_ALREADY_ENABLED"
+msgstr ""
+
+#. errno: 2023
+msgid "TOTP_ENABLE_FAILED"
+msgstr ""
+
+#. errno: 2024
+msgid "TOTP_CONFIRM_FAILED"
+msgstr ""
+
+#. errno: 2025
+msgid "RECOVERY_CODE_INVALID"
+msgstr ""
+
+#. errno: 2026
+msgid "TEMP_TOKEN_INVALID"
+msgstr ""
+
+#. errno: 2027
+msgid "GITHUB_OAUTH_FAILED"
+msgstr ""
+
+#. errno: 2028
+msgid "GITHUB_STATE_INVALID"
+msgstr ""
+
+#. errno: 3001
+msgid "ARTICLE_NOT_FOUND"
+msgstr ""
+
+#. errno: 3002
+msgid "ARTICLE_INVALID_TYPE"
+msgstr ""
+
+#. errno: 3003
+msgid "ARTICLE_INVALID_STATE"
+msgstr ""
+
+#. errno: 3004
+msgid "ARTICLE_INVALID_ID"
+msgstr ""
+
+#. errno: 3005
+msgid "ARTICLE_INSERT_FAILED"
+msgstr ""
+
+#. errno: 3006
+msgid "ARTICLE_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 3007
+msgid "ARTICLE_DELETE_FAILED"
+msgstr ""
+
+#. errno: 3008
+msgid "ARTICLE_PUBLISH_FAILED"
+msgstr ""
+
+#. errno: 3009
+msgid "ARTICLE_CATEGORY_EMPTY"
+msgstr ""
+
+#. errno: 4001
+msgid "FILE_NOT_FOUND"
+msgstr ""
+
+#. errno: 4002
+msgid "FILE_TOO_LARGE"
+msgstr ""
+
+#. errno: 4003
+msgid "FILE_INVALID_NAME"
+msgstr ""
+
+#. errno: 4004
+msgid "FILE_INVALID_PATH"
+msgstr ""
+
+#. errno: 4005
+msgid "FILE_READ_ERROR"
+msgstr ""
+
+#. errno: 4006
+msgid "FILE_UPLOAD_FAILED"
+msgstr ""
+
+#. errno: 4007
+msgid "FILE_SAVE_FAILED"
+msgstr ""
+
+#. errno: 4008
+msgid "FILE_PROTOCOL_ERROR"
+msgstr ""
+
+#. errno: 4009
+msgid "FILE_DUMP_FAILED"
+msgstr ""
+
+#. errno: 4010
+msgid "UPLOAD_SESSION_NOT_FOUND"
+msgstr ""
+
+#. errno: 4011
+msgid "UPLOAD_INVALID_TYPE"
+msgstr ""
+
+#. errno: 4012
+msgid "UPLOAD_INVALID_PARAMS"
+msgstr ""
+
+#. errno: 4013
+msgid "UPLOAD_CHUNK_INVALID"
+msgstr ""
+
+#. errno: 4014
+msgid "UPLOAD_CHUNK_ALREADY_DONE"
+msgstr ""
+
+#. errno: 4015
+msgid "UPLOAD_CHUNK_INCOMPLETE"
+msgstr ""
+
+#. errno: 4016
+msgid "UPLOAD_FILE_CREATE_FAILED"
+msgstr ""
+
+#. errno: 4017
+msgid "UPLOAD_FILE_ASSEMBLE_FAILED"
+msgstr ""
+
+#. errno: 4018
+msgid "UPLOAD_FILE_HASH_FAILED"
+msgstr ""
+
+#. errno: 4019
+msgid "UPLOAD_TEMP_DIR_FAILED"
+msgstr ""
+
+#. errno: 4020
+msgid "UPLOAD_TEMP_FILE_FAILED"
+msgstr ""
+
+#. errno: 4021
+msgid "UPLOAD_CHUNK_SIZE_EXCEED"
+msgstr ""
+
+#. errno: 4022
+msgid "UPLOAD_TYPE_INVALID_TYPE"
+msgstr ""
+
+#. errno: 4023
+msgid "UPLOAD_FILE_EMPTY"
+msgstr ""
+
+#. errno: 5001
+msgid "ORG_NOT_FOUND"
+msgstr ""
+
+#. errno: 5002
+msgid "ORG_DISABLED"
+msgstr ""
+
+#. errno: 5003
+msgid "ORG_ALREADY_JOINED"
+msgstr ""
+
+#. errno: 5004
+msgid "ORG_ALREADY_APPLIED"
+msgstr ""
+
+#. errno: 5005
+msgid "ORG_APPLY_NOT_FOUND"
+msgstr ""
+
+#. errno: 5006
+msgid "ORG_APPLY_ALREADY_REVIEWED"
+msgstr ""
+
+#. errno: 5007
+msgid "ORG_INVALID_ROLE"
+msgstr ""
+
+#. errno: 5008
+msgid "ORG_INVALID_STATE"
+msgstr ""
+
+#. errno: 5009
+msgid "ORG_NOT_MEMBER"
+msgstr ""
+
+#. errno: 5010
+msgid "ORG_INVALID_ID"
+msgstr ""
+
+#. errno: 5011
+msgid "ORG_INSERT_FAILED"
+msgstr ""
+
+#. errno: 5012
+msgid "ORG_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 5013
+msgid "ORG_DELETE_FAILED"
+msgstr ""
+
+#. errno: 5014
+msgid "ORG_NO_VALID_ORGS"
+msgstr ""
+
+#. errno: 5015
+msgid "ORG_APPLY_INSERT_FAILED"
+msgstr ""
+
+#. errno: 5016
+msgid "ORG_APPLY_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 5017
+msgid "ORG_USER_REL_FAILED"
+msgstr ""
+
+#. errno: 5018
+msgid "ORG_REPO_NOT_FOUND"
+msgstr ""
+
+#. errno: 5019
+msgid "ORG_REPO_NAME_EXISTS"
+msgstr ""
+
+#. errno: 5020
+msgid "ORG_PR_NOT_FOUND"
+msgstr ""
+
+#. errno: 5021
+msgid "ORG_REPO_TOKEN_MISSING"
+msgstr ""
+
+#. errno: 5022
+msgid "GITHUB_PR_NOT_FOUND"
+msgstr ""
+
+#. errno: 5023
+msgid "GITHUB_RATE_LIMITED"
+msgstr ""
+
+#. errno: 5024
+msgid "GITHUB_API_FAILED"
+msgstr ""
+
+#. errno: 5025
+msgid "ORG_PR_SYNC_IN_PROGRESS"
+msgstr ""
+
+#. errno: 6001
+msgid "ASSIGNMENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 6002
+msgid "ASSIGNMENT_INVALID_ID"
+msgstr ""
+
+#. errno: 6003
+msgid "ASSIGNMENT_SIZE_EXCEED"
+msgstr ""
+
+#. errno: 6004
+msgid "ASSIGNMENT_MAX_SIZE_EXCEED"
+msgstr ""
+
+#. errno: 6005
+msgid "ASSIGNMENT_INSERT_FAILED"
+msgstr ""
+
+#. errno: 6006
+msgid "ASSIGNMENT_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 6007
+msgid "ASSIGNMENT_DELETE_FAILED"
+msgstr ""
+
+#. errno: 7001
+msgid "COMMENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 7002
+msgid "COMMENT_PERMISSION_DENIED"
+msgstr ""
+
+#. errno: 7003
+msgid "COMMENT_CREATE_FAILED"
+msgstr ""
+
+#. errno: 7004
+msgid "COMMENT_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 7005
+msgid "COMMENT_DELETE_FAILED"
+msgstr ""
+
+#. errno: 7006
+msgid "COMMENT_PRAISE_FAILED"
+msgstr ""
+
+#. errno: 7007
+msgid "COMMENT_UNPRAISE_FAILED"
+msgstr ""
+
+#. errno: 7008
+msgid "COMMENT_PARENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 8001
+msgid "BUG_NOT_FOUND"
+msgstr ""
+
+#. errno: 8002
+msgid "REQUIREMENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 8003
+msgid "TASK_NOT_FOUND"
+msgstr ""
+
+#. errno: 8004
+msgid "RD_INVALID_TYPE"
+msgstr ""
+
+#. errno: 8005
+msgid "RD_NOT_ORG_MEMBER"
+msgstr ""
+
+#. errno: 8006
+msgid "RD_INSERT_FAILED"
+msgstr ""
+
+#. errno: 8007
+msgid "RD_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 8008
+msgid "RD_DELETE_FAILED"
+msgstr ""
+
+#. errno: 8009
+msgid "RD_INVALID_USER"
+msgstr ""
+
+#. errno: 9001
+msgid "DB_CONNECTION_FAILED"
+msgstr ""
+
+#. errno: 9002
+msgid "DB_OPERATION_FAILED"
+msgstr ""
+
+#. errno: 9003
+msgid "DB_TRANSACTION_FAILED"
+msgstr ""
+
+#. errno: 9004
+msgid "DB_COMMIT_FAILED"
+msgstr ""
+
+#. errno: 9005
+msgid "INTERNAL_ERROR"
+msgstr ""
+
+#. errno: 9006
+msgid "SETTINGS_NOT_LOADED"
+msgstr ""
+
+#. errno: 9007
+msgid "SETTINGS_SAVE_FAILED"
+msgstr ""
+
+#. errno: 9008
+msgid "SMTP_NOT_CONFIGURED"
+msgstr ""
+
+#. errno: 9009
+msgid "REDIS_OPERATION_FAILED"
+msgstr ""
+
+#. errno: 9010
+msgid "METHOD_NOT_ALLOWED"
+msgstr ""
+
+#. errno: 9011
+msgid "NOTIFICATION_SEND_FAILED"
+msgstr ""
+
+#. errno: 9012
+msgid "AI_CONFIG_SAVE_FAILED"
+msgstr ""
+
+#. errno: 9013
+msgid "ARTICLE_PRAISE_FAILED"
+msgstr ""
+
+#. errno: 9014
+msgid "ARTICLE_UNPRAISE_FAILED"
+msgstr ""
+
+#. errno: 9015
+msgid "NOTIFICATION_TITLE_TOO_LONG"
+msgstr ""
+
+#. errno: 9016
+msgid "NOTIFICATION_CONTENT_TOO_LONG"
+msgstr ""
+
+#. errno: 9017
+msgid "NOTIFICATION_USERS_REQUIRED"
+msgstr ""
+
+#. errno: 9018
+msgid "NOTIFICATION_INVALID_TARGET"
+msgstr ""
+
+#. errno: 12001
+msgid "MESSAGE_CONVERSATION_NOT_FOUND"
+msgstr ""
+
+#. errno: 12002
+msgid "MESSAGE_SEND_FAILED"
+msgstr ""
+
+#. errno: 12003
+msgid "MESSAGE_TEXT_TOO_LONG"
+msgstr ""
+
+#. errno: 12004
+msgid "MESSAGE_PEER_NOT_FOUND"
+msgstr ""
+
+#. errno: 12005
+msgid "MESSAGE_CANNOT_SELF"
+msgstr ""
