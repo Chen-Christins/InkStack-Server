@@ -118,6 +118,7 @@ bool BlogServlet::handlePost(
     chen::http::HttpSession::ptr session,
     Result::ptr result)
 {
+    response->setHeader("Content-Type", "application/json");
     INFO(logger) << GetRemoteIP(request, session) << "\t" << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t" << getUserId(request) << "\t"
                  << result->errno_ << "\t" << result->msg << "\t" << request->getPath() << "\t"
                  << (!request->getQuery().empty() ? request->getQuery() : "-");
@@ -251,4 +252,4 @@ int64_t BlogServlet::getUserId(chen::http::HttpRequest::ptr request)
     return 0;
 }
 
-}
+} // namespace blog

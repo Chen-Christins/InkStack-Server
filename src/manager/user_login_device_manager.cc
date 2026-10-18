@@ -60,7 +60,7 @@ int UserLoginDeviceManager::recordLogin(const LoginParam& param)
     info->setIsActive(1);
     info->setLoginTime(time(0));
     info->setLastActiveTime(time(0));
-    info->setLogoutTime(EmptyTimestamp());
+    info->setLogoutTime(0);
     if (data::UserLoginDeviceInfoDao::Insert(info, db)) {
         ERROR(logger) << "recordLogin: Insert failed"
                       << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();

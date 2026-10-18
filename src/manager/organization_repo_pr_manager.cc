@@ -208,13 +208,6 @@ int64_t OrganizationRepoPrManager::listByUserPages(
     return total;
 }
 
-/// MySQL TIMESTAMP 无法存储 0（1970-01-01），空时间统一写 DB 默认哨兵 '1980-01-01 00:00:00'
-static time_t emptyTimestamp()
-{
-    static time_t s_empty = chen::TimeUtil::Str2Time("1980-01-01 00:00:00");
-    return s_empty;
-}
-
 /// 从 GitHub URL 提取 owner/repo
 static std::string extractGithubRepo(const std::string& url)
 {
@@ -492,8 +485,8 @@ static int syncPage(
             auto it = reviewers_json.find(si.number);
             info->setReviewers(it != reviewers_json.end() ? it->second : "[]");
         }
-        info->setClosedAt(si.closed_at > 0 ? si.closed_at : emptyTimestamp());
-        info->setMergedAt(si.merged_at > 0 ? si.merged_at : emptyTimestamp());
+        info->setClosedAt(si.closed_at);
+        info->setMergedAt(si.merged_at);
         info->setUpdateTime(time(0));
 
         if (existing) {
@@ -733,8 +726,8 @@ OrganizationRepoPrManager::SyncPrStatus OrganizationRepoPrManager::SyncPrFromGit
     } else {
         pr->setState(detail_json["state"].asString());
     }
-    pr->setClosedAt(closed_at > 0 ? closed_at : emptyTimestamp());
-    pr->setMergedAt(merged_at > 0 ? merged_at : emptyTimestamp());
+    pr->setClosedAt(closed_at);
+    pr->setMergedAt(merged_at);
 
     // 3. 拉取 reviews；失败时保留原有评审字段，整体仍视为成功
     std::string reviews_url = detail_url + "/reviews";

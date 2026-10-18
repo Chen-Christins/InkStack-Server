@@ -9,12 +9,6 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static time_t emptyTimestamp()
-{
-    static time_t s_empty = chen::TimeUtil::Str2Time("1980-01-01 00:00:00");
-    return s_empty;
-}
-
 static int32_t HandlePRWebhook(const tagGithubPRInfo& info)
 {
     // 1. 查找本地仓库
@@ -82,8 +76,8 @@ static int32_t HandlePRWebhook(const tagGithubPRInfo& info)
         pr->setCommitSha(info.HeadSha);
     }
 
-    pr->setClosedAt(closed_at > 0 ? closed_at : emptyTimestamp());
-    pr->setMergedAt(merged_at > 0 ? merged_at : emptyTimestamp());
+    pr->setClosedAt(closed_at);
+    pr->setMergedAt(merged_at);
     pr->setUpdateTime(time(0));
 
     // 6. 写入 DB
