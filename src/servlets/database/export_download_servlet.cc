@@ -85,7 +85,6 @@ int32_t ExportDownloadServlet::handle(
             format = "json";
         response->setHeader("Content-Disposition", "attachment; filename=\"" + info->getName() + "." + format + "\"");
         response->setHeader("Content-Type", "application/octet-stream");
-        response->setHeader("Content-Length", std::to_string(fileSize));
         response->setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response->setHeader("Pragma", "no-cache");
         response->setHeader("Expires", "0");
@@ -107,8 +106,6 @@ int32_t ExportDownloadServlet::handle(
     } while (0);
     if (!success) {
         response->delHeader("Content-Disposition");
-        response->delHeader("Content-Length");
-        response->setHeader("Content-Type", "application/json");
         response->setBody(result->toJsonString());
     }
     return 0;
