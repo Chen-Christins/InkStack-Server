@@ -117,7 +117,8 @@ make dist ENV=prod      # 架构按当前机器自动识别（dependencies.json 
   `## v<版本>` 段落提取；确认 notes/资产后手动 publish，再按 tag 触发部署。
 
 > 发版前请先在 `CHANGELOG.md` 增加本次版本的段落；找不到对应版本时 Release notes 会回退为
-> `Release <tag>`。draft Release 默认不对外可见，部署前必须先 publish。
+> `Release <tag>`。draft Release 默认不对外可见，部署前必须先 publish。tag 名包含
+> `-rc` / `-beta` / `-alpha` 时会自动标记为 pre-release，正式版本会自动取消该标记。
 
 CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepare prod.env`），未配置时使用占位值，可在部署机再改。涉及的 Secrets/Variables：
 
