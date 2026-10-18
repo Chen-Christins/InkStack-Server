@@ -125,10 +125,6 @@ bool BlogServlet::handlePre(
     if (request->getPath() != "/user/login" && request->getPath() != "/user/logout") {
         initLogin(request, response, session);
     }
-    if (request->getMethod() != chen::http::HttpMethod::GET && request->getMethod() != chen::http::HttpMethod::POST) {
-        result->setErrno(errcode::INVALID_METHOD);
-        return false;
-    }
     return true;
 }
 
