@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate and compile gettext catalogs for TechHaven-Server error codes."""
+"""Generate and compile gettext catalogs for TechHaven-Server messages."""
 
 import argparse
 import json
@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,6 +17,9 @@ DOMAIN_PREFIX = "techhaven"
 LANGUAGES = {"en": "en", "zh_CN": "zh"}
 KEY_RE = re.compile(r"^[A-Z0-9_]+$")
 PRINTF_RE = re.compile(r"%(?:[-+ #0]*\d*(?:\.\d+)?[diouxXeEfFgGaAcspn%])")
+SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".h"}
+SOURCE_KEYWORDS = ("setErrno:2", "setErrnoFmt:2")
+IGNORED_MSGIDS = {"param "}
 
 
 class CatalogError(Exception):
@@ -117,9 +121,9 @@ def header(language):
         timestamp = datetime.now(tz=timezone.utc)
     date = timestamp.strftime("%Y-%m-%d %H:%M%z")
     plural = (
-        "nplurals=2; plural=(n != 1);"
-        if language == "en"
-        else "nplurals=1; plural=0;"
+        "nplurals=1; plural=0;"
+        if language.startswith("zh")
+        else "nplurals=2; plural=(n != 1);"
     )
     return [
         'msgid ""',
@@ -150,18 +154,6 @@ def render_pot(version, entries):
     return "\n".join(lines) + "\n"
 
 
-def render_po(version, language, entries):
-    source_field = LANGUAGES[language]
-    lines = header(language)
-    lines[2] = f'"Project-Id-Version: {PROJECT_NAME} {version}\\n"'
-    for entry in entries:
-        lines.append("")
-        lines.append(f"#. errno: {entry['errno']}")
-        lines.append(f'msgid "{po_escape(entry["key"])}"')
-        lines.append(f'msgstr "{po_escape(entry[source_field])}"')
-    return "\n".join(lines) + "\n"
-
-
 def parse_po(path):
     if not path.is_file():
         raise CatalogError(f"catalog not found: {path}")
@@ -169,14 +161,22 @@ def parse_po(path):
     entries = {}
     current = {}
     field = None
+
+    def store():
+        msgid = current.get("msgid")
+        if msgid is None:
+            return
+        if msgid in entries:
+            raise CatalogError(f"duplicate msgid in {path}: {msgid}")
+        entries[msgid] = current.get("msgstr", "")
+
     with path.open("r", encoding="utf-8") as stream:
         for raw_line in stream:
             line = raw_line.rstrip("\n")
             if line.startswith("#"):
                 continue
             if line.startswith("msgid "):
-                if current.get("msgid") is not None:
-                    entries[current["msgid"]] = current.get("msgstr", "")
+                store()
                 current = {"msgid": po_unescape(line[6:].strip()[1:-1]), "msgstr": ""}
                 field = "msgid"
                 continue
@@ -189,9 +189,7 @@ def parse_po(path):
                 current[field] += value
                 continue
 
-    if current.get("msgid") is not None:
-        entries[current["msgid"]] = current.get("msgstr", "")
-
+    store()
     entries.pop("", None)
     return entries
 
@@ -204,25 +202,156 @@ def placeholder_types(value):
     )
 
 
+def find_tool(name):
+    path = shutil.which(name)
+    if not path:
+        raise CatalogError(f"{name} not found; install gettext")
+    return path
+
+
+def run_tool(command, label, cwd=None):
+    result = subprocess.run(command, capture_output=True, text=True, cwd=cwd)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout).strip()
+        raise CatalogError(f"{label} failed: {message}")
+    return result
+
+
+def collect_sources(project_dir):
+    root = project_dir / "src"
+    if not root.is_dir():
+        raise CatalogError(f"source directory not found: {root}")
+    return sorted(
+        path.relative_to(project_dir)
+        for path in root.rglob("*")
+        if path.is_file() and path.suffix in SOURCE_SUFFIXES
+    )
+
+
+def filter_source_pot(path, ignored):
+    text = path.read_text(encoding="utf-8")
+    blocks = text.split("\n\n")
+    kept = []
+    for block in blocks:
+        if any(f'msgid "{po_escape(msgid)}"' in block for msgid in ignored):
+            continue
+        kept.append(block)
+    path.write_text("\n\n".join(kept), encoding="utf-8", newline="\n")
+
+
+def ensure_po(po_path, pot_path, language, msginit):
+    if po_path.is_file():
+        return
+    run_tool(
+        [
+            msginit,
+            "--no-translator",
+            "--locale",
+            language,
+            "--input",
+            str(pot_path),
+            "--output-file",
+            str(po_path),
+        ],
+        f"msginit {language}",
+    )
+
+
+def fill_error_translations(path, entries, language):
+    translations = {entry["key"]: entry[LANGUAGES[language]] for entry in entries}
+    text = path.read_text(encoding="utf-8")
+    blocks = text.split("\n\n")
+    output = []
+    for block in blocks:
+        lines = block.splitlines()
+        msgid = None
+        msgstr_index = None
+        for index, line in enumerate(lines):
+            if line.startswith("msgid "):
+                msgid = po_unescape(line[6:].strip()[1:-1])
+            elif line.startswith("msgstr "):
+                msgstr_index = index
+                break
+        if msgid in translations and msgstr_index is not None:
+            if lines[msgstr_index].strip() == 'msgstr ""':
+                lines[msgstr_index] = f'msgstr "{po_escape(translations[msgid])}"'
+        output.append("\n".join(lines))
+    path.write_text("\n\n".join(output), encoding="utf-8", newline="\n")
+
+
+def preview(values, limit=8):
+    values = sorted(values)
+    if len(values) <= limit:
+        return ", ".join(values)
+    return ", ".join(values[:limit]) + f", ... ({len(values)} total)"
+
+
 def sync(project_dir):
     version, entries = load_errors(project_dir)
     locale_dir = project_dir / "locale"
     po_dir = locale_dir / "po"
     po_dir.mkdir(parents=True, exist_ok=True)
+    pot_path = locale_dir / f"{DOMAIN_PREFIX}.pot"
+    xgettext = find_tool("xgettext")
+    msgcat = find_tool("msgcat")
+    msgmerge = find_tool("msgmerge")
+    msginit = find_tool("msginit")
 
-    (locale_dir / f"{DOMAIN_PREFIX}.pot").write_text(
-        render_pot(version, entries), encoding="utf-8", newline="\n"
-    )
+    with tempfile.TemporaryDirectory(prefix="techhaven-i18n-") as temp:
+        temp_dir = Path(temp)
+        errors_pot = temp_dir / "errors.pot"
+        source_pot = temp_dir / "source.pot"
+        errors_pot.write_text(
+            render_pot(version, entries), encoding="utf-8", newline="\n"
+        )
 
+        command = [
+            xgettext,
+            "--language=C++",
+            "--from-code=UTF-8",
+            "--add-comments=TRANSLATORS:",
+        ]
+        for keyword in SOURCE_KEYWORDS:
+            command.append(f"--keyword={keyword}")
+        command.extend(["-o", str(source_pot), *map(str, collect_sources(project_dir))])
+        run_tool(command, "xgettext", cwd=project_dir)
+        filter_source_pot(source_pot, IGNORED_MSGIDS)
+        run_tool(
+            [msgcat, "--use-first", str(errors_pot), str(source_pot), "-o", str(pot_path)],
+            "msgcat",
+        )
+
+    pot_entries = parse_po(pot_path)
     for language in LANGUAGES:
         path = po_dir / f"{language}.po"
-        path.write_text(
-            render_po(version, language, entries), encoding="utf-8", newline="\n"
+        ensure_po(path, pot_path, language, msginit)
+        run_tool(
+            [
+                msgmerge,
+                "--quiet",
+                "--update",
+                "--backup=none",
+                "--no-fuzzy-matching",
+                str(path),
+                str(pot_path),
+            ],
+            f"msgmerge {language}",
         )
-        print(f"generated {path.relative_to(project_dir)}")
+        fill_error_translations(path, entries, language)
+        catalog = parse_po(path)
+        missing = [msgid for msgid in pot_entries if not catalog.get(msgid)]
+        if missing:
+            print(
+                f"warning: {path.name} has {len(missing)} untranslated entries: "
+                f"{preview(missing)}"
+            )
+        print(f"updated {path.relative_to(project_dir)}")
 
-    print(f"generated {(locale_dir / f'{DOMAIN_PREFIX}.pot').relative_to(project_dir)}")
-    print(f"{len(entries)} error codes")
+    print(f"generated {pot_path.relative_to(project_dir)}")
+    print(
+        f"{len(entries)} error codes, "
+        f"{len(pot_entries) - len(entries)} custom messages"
+    )
 
 
 def check(project_dir):
@@ -237,30 +366,31 @@ def check(project_dir):
     pot_entries = parse_po(pot_path)
     expected_keys = {entry["key"] for entry in entries}
     missing_pot = expected_keys - set(pot_entries)
-    extra_pot = set(pot_entries) - expected_keys
     if missing_pot:
-        raise CatalogError(f"POT is missing keys: {', '.join(sorted(missing_pot))}")
-    if extra_pot:
-        print(f"warning: POT has unknown keys: {', '.join(sorted(extra_pot))}")
+        raise CatalogError(f"POT is missing keys: {preview(missing_pot)}")
+    custom = set(pot_entries) - expected_keys
+    if custom:
+        print(f"POT custom messages: {len(custom)}")
 
     for language in LANGUAGES:
         path = po_dir / f"{language}.po"
         catalog = parse_po(path)
-        missing = expected_keys - set(catalog)
+        missing = [msgid for msgid in pot_entries if msgid not in catalog]
         if missing:
             raise CatalogError(
-                f"{path.name} is missing keys: {', '.join(sorted(missing))}"
+                f"{path.name} is missing {len(missing)} entries: {preview(missing)}"
+            )
+        empty = [msgid for msgid in pot_entries if not catalog.get(msgid)]
+        if empty:
+            raise CatalogError(
+                f"{path.name} has {len(empty)} empty translations: {preview(empty)}"
             )
 
-        for entry in entries:
-            translated = catalog[entry["key"]]
-            if not translated:
+        for msgid in pot_entries:
+            translated = catalog[msgid]
+            if placeholder_types(msgid) != placeholder_types(translated):
                 raise CatalogError(
-                    f"{path.name}: empty translation for {entry['key']}"
-                )
-            if placeholder_types(entry["key"]) != placeholder_types(translated):
-                raise CatalogError(
-                    f"{path.name}: placeholder mismatch for {entry['key']}"
+                    f"{path.name}: placeholder mismatch for {msgid!r}"
                 )
 
         print(f"checked {path.relative_to(project_dir)} ({len(catalog)} entries)")
@@ -306,8 +436,8 @@ def main():
     parser.add_argument("--project-dir", type=Path, default=default_project)
     parser.add_argument("--msgfmt", default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("sync", help="regenerate locale/techhaven.pot and PO files")
-    subparsers.add_parser("check", help="validate errors.json and catalogs")
+    subparsers.add_parser("sync", help="regenerate locale/techhaven.pot and merge PO files")
+    subparsers.add_parser("check", help="validate errors.json, POT and PO catalogs")
     subparsers.add_parser("build", help="compile PO files into MO files")
     args = parser.parse_args()
 
