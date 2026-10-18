@@ -28,7 +28,10 @@ else()
     message(WARNING "deps/ 未就绪，运行 ./deps.py sync 下载三方依赖（头文件/静态库）")
 endif()
 
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 add_subdirectory(${CHEN_SDK_DIR})
+unset(CMAKE_FIND_PACKAGE_PREFER_CONFIG)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/dbproxy/data)
 
 # i18n: GNU gettext catalogs
