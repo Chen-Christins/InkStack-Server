@@ -93,8 +93,3 @@ redis:
       pool: 1
       timeout: 100
   desc: "type: redis,redis_cluster,fox_redis,fox_redis_cluster"
-
-# Redis object cache. Set enabled=false to bypass all entity caches and fall back to DB.
-cache:
-  obj:
-    enabled: true
