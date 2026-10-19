@@ -116,13 +116,20 @@ int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request, chen::http::Ht
     return 0;
 }
 
+/// 请求是否携带登录相关 cookie（有才需要初始化/恢复 session）
+static bool HasLoginCookie(chen::http::HttpRequest::ptr request)
+{
+    return !request->getCookie(CookieKey::SESSION_KEY).empty() || !request->getCookie(CookieKey::USER_ID).empty()
+        || !request->getCookie(CookieKey::TOKEN).empty();
+}
+
 bool BlogServlet::handlePre(
     chen::http::HttpRequest::ptr request,
     chen::http::HttpResponse::ptr response,
     chen::http::HttpSession::ptr session,
     Result::ptr result)
 {
-    if (request->getPath() != "/user/login" && request->getPath() != "/user/logout") {
+    if (request->getPath() != "/user/login" && request->getPath() != "/user/logout" && HasLoginCookie(request)) {
         initLogin(request, response, session);
     }
     return true;
@@ -248,6 +255,10 @@ bool BlogLoginedServlet::handlePre(
     chen::http::HttpSession::ptr session,
     Result::ptr result)
 {
+    if (!HasLoginCookie(request)) {
+        result->setErrno(errcode::NOT_LOGIN);
+        return false;
+    }
     if (!initLogin(request, response, session)) {
         result->setErrno(errcode::NOT_LOGIN);
         return false;

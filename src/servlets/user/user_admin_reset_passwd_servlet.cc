@@ -73,6 +73,7 @@ int32_t UserAdminResetPasswdServlet::handle(
             break;
         }
         trans->commit();
+        UserMgr::GetInstance()->update(info);
 
         // Notify affected user
         {

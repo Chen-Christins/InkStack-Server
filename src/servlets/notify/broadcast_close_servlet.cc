@@ -50,6 +50,7 @@ int32_t BroadcastCloseServlet::handle(
             result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
+        NotificationMgr::GetInstance()->update(info);
 
         result->setErrno(errcode::SUCCESS);
         result->set("msg", "已关闭");

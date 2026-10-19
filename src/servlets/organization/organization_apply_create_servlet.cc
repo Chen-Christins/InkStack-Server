@@ -61,8 +61,6 @@ int32_t OrganizationApplyCreateServlet::handle(
             break;
         }
 
-        OrganizationApplyMgr::GetInstance()->add(info);
-
         result->set("apply_id", info->getId());
 
         // Notify all ADMIN users about new org application

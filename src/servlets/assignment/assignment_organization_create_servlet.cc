@@ -112,9 +112,9 @@ int32_t AssignmentOrganizationCreateServlet::handle(
             break;
         }
 
-        if (new_assignment) {
-            AssignmentMgr::GetInstance()->add(assign_info);
+        AssignmentMgr::GetInstance()->add(assign_info);
 
+        if (new_assignment) {
             // create organization assignment relation
             auto org_assign_rel = AssignmentOrganizationRelMgr::GetInstance()->getByOrgAndAssign(org_id, assign_info->getId());
             if (!org_assign_rel) {
@@ -132,8 +132,6 @@ int32_t AssignmentOrganizationCreateServlet::handle(
                 ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
-
-            AssignmentOrganizationRelMgr::GetInstance()->add(org_assign_rel);
 
             result->set("assign_id", assign_info->getId());
             result->set("assigned_by", org_assign_rel->getAssignedBy());

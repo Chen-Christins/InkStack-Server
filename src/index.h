@@ -21,7 +21,7 @@
 #include "blog/data/article_info.h"
 
 namespace cppjieba {
-class Jieba;
+class MixSegment;
 }
 
 namespace blog {
@@ -126,8 +126,8 @@ private:
     std::unordered_map<uint64_t, std::string> m_strings;
     /// 索引是否已就绪
     std::atomic<bool> m_isReady{false};
-    /// jieba 分词器（PIMPL，避免头文件污染）
-    std::unique_ptr<cppjieba::Jieba> m_jieba;
+    /// 分词器（PIMPL，避免头文件污染）。只加载分词所需词典，不加载未使用的 IDF
+    std::unique_ptr<cppjieba::MixSegment> m_jieba;
 };
 
 typedef chen::Singleton<Index> IndexMgr;

@@ -3,15 +3,12 @@
 #include "blog/data/user_follow_rel_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
 
 class UserFollowRelManager {
 public:
-    UserFollowRelManager();
-
     void add(data::UserFollowRelInfo::ptr info);
 
     data::UserFollowRelInfo::ptr get(int64_t id);
@@ -39,8 +36,6 @@ public:
 
 private:
     static data::UserFollowRelInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::UserFollowRelInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<UserFollowRelManager> UserFollowRelMgr;

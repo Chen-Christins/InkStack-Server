@@ -7,13 +7,13 @@
  */
 #pragma once
 
-#include <chen/ds/lru_cache.h>
 #include <chen/http/ws_session.h>
 #include <chen/util/singleton.h>
 
 #include "blog/data/conversation_info.h"
 #include "blog/data/conversation_message_info.h"
 
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #include <vector>
@@ -24,8 +24,6 @@ class MessageManager {
 public:
     /// 单条消息最大长度
     static const size_t kMaxMessageLen = 2000;
-
-    MessageManager();
 
     /// 会话相关
     data::ConversationInfo::ptr get(int64_t id);
@@ -66,8 +64,8 @@ public:
     static int64_t NormalizeUserB(int64_t uid_a, int64_t uid_b) { return uid_a < uid_b ? uid_b : uid_a; }
 
 private:
-    /// 会话缓存
-    chen::ds::HashLruCache<int64_t, data::ConversationInfo::ptr> m_cache;
+    /// 会话状态读改写锁（未读数、隐藏标志），避免 Redis 反序列化后并发丢更新
+    std::mutex m_convMutex;
 
     /// 聊天 WS 连接: user_id -> 该用户的所有在线连接
     std::unordered_map<int64_t, std::vector<chen::http::WSSession::ptr>> m_chatConnections;

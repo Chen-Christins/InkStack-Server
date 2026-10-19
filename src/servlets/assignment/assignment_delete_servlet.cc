@@ -88,6 +88,9 @@ int32_t AssignmentDeleteServlet::handle(
             }
             break;
         }
+        for (auto& i : del_assignments) {
+            AssignmentMgr::GetInstance()->add(i);
+        }
         if (!del_assignments.empty()) {
             auto& jids = result->jsondata["ids"];
             for (auto& i : del_assignments) {

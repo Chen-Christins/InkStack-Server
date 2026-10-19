@@ -8,23 +8,65 @@
 #include "user_ai_config_manager.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 #include "../util.h"
+#include "cache_util.h"
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 200;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:ai_cfg:";
 
-UserAIConfigManager::UserAIConfigManager()
-    : m_cache(32, kCacheMaxSize, 0)
+static std::string aiConfigCacheKey(int64_t user_id)
 {
+    return std::string(kCachePrefix) + std::to_string(user_id);
+}
+
+static data::UserAiConfigInfo::ptr parseAiConfigCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::UserAiConfigInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setType(cacheJsonString(v, "type"));
+    info->setUrl(cacheJsonString(v, "url"));
+    info->setApiKey(cacheJsonString(v, "api_key"));
+    info->setModel(cacheJsonString(v, "model"));
+    info->setMaxTokens(cacheJsonInt32(v, "max_tokens"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::UserAiConfigInfo::ptr getAiConfigCache(int64_t user_id)
+{
+    std::string key = aiConfigCacheKey(user_id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseAiConfigCache(v);
+}
+
+static void setAiConfigCache(const data::UserAiConfigInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(aiConfigCacheKey(info->getUserId()), info->toJsonString(), kCacheTTL);
 }
 
 blog::data::UserAiConfigInfo::ptr UserAIConfigManager::getByUserId(int64_t user_id)
 {
-    auto v = m_cache.get(user_id);
+    auto v = getAiConfigCache(user_id);
     if (v) {
         return v;
     }
@@ -37,7 +79,7 @@ blog::data::UserAiConfigInfo::ptr UserAIConfigManager::getByUserId(int64_t user_
 
     v = data::UserAiConfigInfoDao::QueryByUserId(user_id, db);
     if (v) {
-        m_cache.set(user_id, v);
+        setAiConfigCache(v);
     }
     return v;
 }
@@ -63,7 +105,7 @@ bool UserAIConfigManager::save(blog::data::UserAiConfigInfo::ptr info)
     // save 之后需要重新查询以获取 DB 生成的 id
     auto saved = data::UserAiConfigInfoDao::QueryByUserId(info->getUserId(), db);
     if (saved) {
-        m_cache.set(saved->getUserId(), saved);
+        setAiConfigCache(saved);
     }
     return true;
 }

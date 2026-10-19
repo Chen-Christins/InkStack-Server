@@ -3,7 +3,6 @@
 #include "blog/data/organization_user_rel_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -16,8 +15,6 @@ public:
         REJECTED = 2,
         EXITED = 3
     };
-
-    OrganizationUserRelManager();
 
     void add(data::OrganizationUserRelInfo::ptr info);
 
@@ -48,8 +45,6 @@ public:
 
 private:
     static data::OrganizationUserRelInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::OrganizationUserRelInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationUserRelManager> OrganizationUserRelMgr;

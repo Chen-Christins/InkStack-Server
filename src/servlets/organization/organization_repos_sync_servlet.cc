@@ -79,6 +79,8 @@ int32_t OrganizationReposSyncServlet::handle(
             break;
         }
 
+        OrganizationRepoMgr::GetInstance()->add(repo);
+
         // 异步调度 GitHub 同步
         chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
             OrganizationRepoManager::SyncFromGitHub(repo_id, url, token);

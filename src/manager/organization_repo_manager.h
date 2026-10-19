@@ -3,15 +3,12 @@
 #include "blog/data/organization_repos_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
 
 class OrganizationRepoManager {
 public:
-    OrganizationRepoManager();
-
     void add(data::OrganizationReposInfo::ptr info);
 
     void del(int64_t id);
@@ -38,7 +35,6 @@ private:
     void invalidateCountCache(int64_t org_id);
 
 private:
-    chen::ds::HashLruCache<int64_t, data::OrganizationReposInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationRepoManager> OrganizationRepoMgr;

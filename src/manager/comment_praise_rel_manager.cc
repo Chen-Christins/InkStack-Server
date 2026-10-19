@@ -4,16 +4,54 @@
 #include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:cpra:";
 
-CommentPraiseRelManager::CommentPraiseRelManager()
-    : m_cache(8, kCacheMaxSize, 0)
+static std::string commentPraiseRelCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::CommentPraiseRelInfo::ptr parseCommentPraiseRelCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::CommentPraiseRelInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setCommentId(cacheJsonInt64(v, "comment_id"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::CommentPraiseRelInfo::ptr getCommentPraiseRelCache(int64_t id)
+{
+    std::string key = commentPraiseRelCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseCommentPraiseRelCache(v);
+}
+
+static void setCommentPraiseRelCache(const data::CommentPraiseRelInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(commentPraiseRelCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData::ptr rt)
@@ -23,12 +61,12 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData
 
 void CommentPraiseRelManager::add(data::CommentPraiseRelInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setCommentPraiseRelCache(info);
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getCommentPraiseRelCache(id);
     if (v) {
         return v;
     }
@@ -39,7 +77,7 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::get(int64_t id)
     }
     v = data::CommentPraiseRelInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setCommentPraiseRelCache(v);
     }
     return v;
 }
@@ -58,7 +96,7 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::getByUserAndComment(int
     }
     auto info = data::CommentPraiseRelInfoDao::QueryByUserIdCommentId(user_id, comment_id, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setCommentPraiseRelCache(info);
         cacheIdMapping(ck, info->getId());
     }
     return info;
@@ -82,7 +120,7 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::praise(int64_t user_id,
             ERROR(logger) << "CommentPraiseRelManager praise Update fail";
             return nullptr;
         }
-        m_cache.set(existing->getId(), existing);
+        setCommentPraiseRelCache(existing);
         return existing;
     }
 
@@ -104,7 +142,7 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::praise(int64_t user_id,
         return nullptr;
     }
 
-    m_cache.set(info->getId(), info);
+    setCommentPraiseRelCache(info);
     return info;
 }
 
@@ -127,7 +165,7 @@ bool CommentPraiseRelManager::unpraise(int64_t user_id, int64_t comment_id)
         ERROR(logger) << "CommentPraiseRelManager unpraise Update fail";
         return false;
     }
-    m_cache.set(info->getId(), info);
+    setCommentPraiseRelCache(info);
     return true;
 }
 

@@ -110,7 +110,6 @@ int32_t FileUploadServlet::handle(
                 break;
             }
         }
-        AssignmentUserRelMgr::GetInstance()->add(info);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

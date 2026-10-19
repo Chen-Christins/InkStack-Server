@@ -32,3 +32,8 @@ server:
   work_path: ${WORK_PATH}
   data_path: ${DATA_PATH}
   pid_file: server.pid
+
+# Redis object cache. Set enabled=false to bypass all entity caches and fall back to DB.
+cache:
+  obj:
+    enabled: true

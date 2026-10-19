@@ -93,6 +93,8 @@ int32_t OrganizationJoinCheckServlet::handle(
             break;
         }
 
+        OrganizationUserRelMgr::GetInstance()->add(rel);
+
         // Notify applicant + mark other admins' notifications as read
         {
             EventOrgMemberData data = {};

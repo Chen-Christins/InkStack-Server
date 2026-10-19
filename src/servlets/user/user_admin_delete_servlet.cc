@@ -73,6 +73,7 @@ int32_t UserAdminDeleteServlet::handle(
             result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
         }
+        UserMgr::GetInstance()->update(info);
         result->set("user_id", user_id);
 
         // Notify affected user

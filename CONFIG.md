@@ -111,7 +111,22 @@ uint64_t id = g_upload_dir->addListener([](const std::string& old_val, const std
 });
 ```
 
-## 5. 注意事项
+## 5. Redis 对象缓存
+
+高频按 id 查询的实体（用户、文章、评论、通知、组织等）使用 Redis 作为共享缓存，key 形如 `cache:obj:v1:<entity>:<id>`；
+每个 Manager 自己维护 key、TTL 和 JSON 反序列化逻辑。点赞、关注、关联表等低频实体已移除进程内 LRU，直接查 DB。
+
+对象缓存默认开启，可通过 `system.yml` 关闭（关闭后所有实体回源 DB）：
+
+```yaml
+cache:
+  obj:
+    enabled: true
+```
+
+> 该配置项有代码默认值 `true`，不写也能正常工作；Redis 异常时缓存操作会静默降级为 DB 查询。
+
+## 6. 注意事项
 
 1. **占位符命名**：统一用大写 snake_case（如 `MYSQL_HOST`、`UPLOAD_DIR`），并在 `dev.env` 与 `prod.env.example` 中保持一致。
 2. **密钥不入库**：生产密码、密钥只写在 `bin/conf/prod.env`（已被 `.gitignore` 忽略），不要写进 `prod.env.example` 或提交。

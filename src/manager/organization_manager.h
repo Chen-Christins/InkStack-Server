@@ -3,7 +3,6 @@
 #include "blog/data/organization_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -21,8 +20,6 @@ public:
         INACTIVE = 0,
         ACTIVE = 1,
     };
-
-    OrganizationManager();
 
     void add(data::OrganizationInfo::ptr info);
 
@@ -42,8 +39,6 @@ public:
 
 private:
     static data::OrganizationInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::OrganizationInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationManager> OrganizationMgr;

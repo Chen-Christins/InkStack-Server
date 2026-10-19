@@ -3,7 +3,6 @@
 #include "blog/data/organization_apply_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -16,12 +15,6 @@ public:
         REJECTED = 2
     };
 
-    OrganizationApplyManager();
-
-    void add(data::OrganizationApplyInfo::ptr info);
-
-    void update(data::OrganizationApplyInfo::ptr info);
-
     data::OrganizationApplyInfo::ptr get(int64_t id);
 
     int64_t listByPages(std::vector<data::OrganizationApplyInfo::ptr>& results, uint64_t offset, uint64_t limit, int32_t status, bool isValid);
@@ -30,8 +23,6 @@ public:
 
 private:
     static data::OrganizationApplyInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::OrganizationApplyInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationApplyManager> OrganizationApplyMgr;

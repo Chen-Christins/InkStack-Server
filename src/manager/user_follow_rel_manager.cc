@@ -4,6 +4,7 @@
 #include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 #include <algorithm>
 #include <unordered_set>
@@ -12,11 +13,48 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:flw:";
 
-UserFollowRelManager::UserFollowRelManager()
-    : m_cache(8, kCacheMaxSize, 0)
+static std::string userFollowRelCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::UserFollowRelInfo::ptr parseUserFollowRelCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::UserFollowRelInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setFollowerId(cacheJsonInt64(v, "follower_id"));
+    info->setFollowingId(cacheJsonInt64(v, "following_id"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::UserFollowRelInfo::ptr getUserFollowRelCache(int64_t id)
+{
+    std::string key = userFollowRelCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseUserFollowRelCache(v);
+}
+
+static void setUserFollowRelCache(const data::UserFollowRelInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(userFollowRelCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr rt)
@@ -26,12 +64,12 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr 
 
 void UserFollowRelManager::add(data::UserFollowRelInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setUserFollowRelCache(info);
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getUserFollowRelCache(id);
     if (v) {
         return v;
     }
@@ -42,7 +80,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id)
     }
     v = data::UserFollowRelInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setUserFollowRelCache(v);
     }
     return v;
 }
@@ -61,7 +99,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(int
     }
     auto info = data::UserFollowRelInfoDao::QueryByFollowerIdFollowingId(follower_id, following_id, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setUserFollowRelCache(info);
         cacheIdMapping(ck, info->getId());
     }
     return info;
@@ -85,7 +123,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, i
             ERROR(logger) << "UserFollowRelManager follow Update fail";
             return nullptr;
         }
-        m_cache.set(existing->getId(), existing);
+        setUserFollowRelCache(existing);
         return existing;
     }
 
@@ -107,7 +145,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, i
         return nullptr;
     }
 
-    m_cache.set(info->getId(), info);
+    setUserFollowRelCache(info);
     return info;
 }
 
@@ -130,7 +168,7 @@ bool UserFollowRelManager::unfollow(int64_t follower_id, int64_t following_id)
         ERROR(logger) << "UserFollowRelManager unfollow Update fail";
         return false;
     }
-    m_cache.set(info->getId(), info);
+    setUserFollowRelCache(info);
     return true;
 }
 
@@ -157,11 +195,6 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
         ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
 }
 
 void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results, int64_t following_id, uint64_t offset, uint64_t size)
@@ -180,11 +213,6 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
     if (data::UserFollowRelInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
 }
 

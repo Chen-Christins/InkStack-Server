@@ -78,6 +78,8 @@ int32_t ArticleVerifyServlet::handle(
             break;
         }
 
+        ArticleMgr::GetInstance()->add(info);
+
         // 审核通过或拒绝后，从定时发布调度中移除
         ArticleMgr::GetInstance()->unscheduleArticle(id);
 

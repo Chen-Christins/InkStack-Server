@@ -3,7 +3,6 @@
 #include "blog/data/user_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -21,8 +20,6 @@ public:
         ACTIVE = 1,
         BANNED = 2
     };
-
-    UserManager();
 
     void add(blog::data::UserInfo::ptr info);
 
@@ -58,8 +55,6 @@ public:
 
 private:
     static data::UserInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::UserInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<UserManager> UserMgr;

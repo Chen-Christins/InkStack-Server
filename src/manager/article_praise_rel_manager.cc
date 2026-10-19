@@ -4,16 +4,54 @@
 #include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:apra:";
 
-ArticlePraiseRelManager::ArticlePraiseRelManager()
-    : m_cache(8, kCacheMaxSize, 0)
+static std::string articlePraiseRelCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::ArticlePraiseRelInfo::ptr parseArticlePraiseRelCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::ArticlePraiseRelInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setArticleId(cacheJsonInt64(v, "article_id"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::ArticlePraiseRelInfo::ptr getArticlePraiseRelCache(int64_t id)
+{
+    std::string key = articlePraiseRelCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseArticlePraiseRelCache(v);
+}
+
+static void setArticlePraiseRelCache(const data::ArticlePraiseRelInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(articlePraiseRelCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData::ptr rt)
@@ -23,12 +61,12 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData
 
 void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setArticlePraiseRelCache(info);
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getArticlePraiseRelCache(id);
     if (v) {
         return v;
     }
@@ -39,7 +77,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id)
     }
     v = data::ArticlePraiseRelInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setArticlePraiseRelCache(v);
     }
     return v;
 }
@@ -58,7 +96,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(int
     }
     auto info = data::ArticlePraiseRelInfoDao::QueryByUserIdArticleId(user_id, article_id, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setArticlePraiseRelCache(info);
         cacheIdMapping(ck, info->getId());
     }
     return info;
@@ -82,7 +120,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id,
             ERROR(logger) << "ArticlePraiseRelManager praise Update fail";
             return nullptr;
         }
-        m_cache.set(existing->getId(), existing);
+        setArticlePraiseRelCache(existing);
         return existing;
     }
 
@@ -104,7 +142,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id,
         return nullptr;
     }
 
-    m_cache.set(info->getId(), info);
+    setArticlePraiseRelCache(info);
     return info;
 }
 
@@ -127,7 +165,7 @@ bool ArticlePraiseRelManager::unpraise(int64_t user_id, int64_t article_id)
         ERROR(logger) << "ArticlePraiseRelManager unpraise Update fail";
         return false;
     }
-    m_cache.set(info->getId(), info);
+    setArticlePraiseRelCache(info);
     return true;
 }
 
@@ -154,11 +192,6 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
         ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
 }
 
 void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t user_id, uint64_t offset, uint64_t size)
@@ -177,11 +210,6 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
     if (data::ArticlePraiseRelInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
 }
 

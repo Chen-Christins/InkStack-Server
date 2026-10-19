@@ -5,6 +5,7 @@
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 #include <json/json.h>
 
 #include "../util.h"
@@ -14,14 +15,65 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:org_repo:";
+
+static std::string orgRepoCacheKey(int64_t id)
+{
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::OrganizationReposInfo::ptr parseOrgRepoCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::OrganizationReposInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setOrgId(cacheJsonInt64(v, "org_id"));
+    info->setName(cacheJsonString(v, "name"));
+    info->setDescription(cacheJsonString(v, "description"));
+    info->setUrl(cacheJsonString(v, "url"));
+    info->setLanguage(cacheJsonString(v, "language"));
+    info->setStarsCount(cacheJsonInt32(v, "stars_count"));
+    info->setSortOrder(cacheJsonInt32(v, "sort_order"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->setToken(cacheJsonString(v, "token"));
+    info->setSyncStatus(cacheJsonString(v, "sync_status"));
+    info->setPrSyncStatus(cacheJsonString(v, "pr_sync_status"));
+    info->setPrSyncedAt(cacheJsonInt64(v, "pr_synced_at"));
+    info->setGithubFullName(cacheJsonString(v, "github_full_name"));
+    info->markClean();
+    return info;
+}
+
+static data::OrganizationReposInfo::ptr getOrgRepoCache(int64_t id)
+{
+    std::string key = orgRepoCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseOrgRepoCache(v);
+}
+
+static void setOrgRepoCache(const data::OrganizationReposInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(orgRepoCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
+}
+
+static void delOrgRepoCache(int64_t id)
+{
+    redisCacheDel(orgRepoCacheKey(id));
+}
 
 static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
-
-OrganizationRepoManager::OrganizationRepoManager()
-    : m_cache(4, kCacheMaxSize, 30)
-{
-}
 
 data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLData::ptr rt)
 {
@@ -30,17 +82,17 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
 
 void OrganizationRepoManager::add(data::OrganizationReposInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setOrgRepoCache(info);
     invalidateCountCache(info->getOrgId());
 }
 
 void OrganizationRepoManager::del(int64_t id)
 {
-    auto info = m_cache.get(id);
+    auto info = getOrgRepoCache(id);
     if (info) {
         invalidateCountCache(info->getOrgId());
     }
-    m_cache.del(id);
+    delOrgRepoCache(id);
 }
 
 void OrganizationRepoManager::onTick()
@@ -62,7 +114,7 @@ void OrganizationRepoManager::onTick()
 
 data::OrganizationReposInfo::ptr OrganizationRepoManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getOrgRepoCache(id);
     if (v) {
         return v;
     }
@@ -73,7 +125,7 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::get(int64_t id)
     }
     v = data::OrganizationReposInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setOrgRepoCache(v);
     }
     return v;
 }
@@ -87,7 +139,7 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::getByOrgAndName(int64_
     }
     auto info = data::OrganizationReposInfoDao::QueryByOrgIdName(org_id, name, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setOrgRepoCache(info);
     }
     return info;
 }
@@ -108,11 +160,6 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     if (data::OrganizationReposInfoDao::QueryByBuilderPages(repos, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         ERROR(logger) << "QueryByBuilderPages failed";
         return 0;
-    }
-    for (auto& info : repos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

@@ -8,44 +8,19 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
-
-OrganizationApplyManager::OrganizationApplyManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::OrganizationApplyInfo::ptr OrganizationApplyManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::OrganizationApplyInfoDao::ParseRow(rt);
 }
 
-void OrganizationApplyManager::add(data::OrganizationApplyInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
-void OrganizationApplyManager::update(data::OrganizationApplyInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 data::OrganizationApplyInfo::ptr OrganizationApplyManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::OrganizationApplyInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::OrganizationApplyInfoDao::Query(id, db);
 }
 
 int64_t OrganizationApplyManager::listByPages(
@@ -68,11 +43,6 @@ int64_t OrganizationApplyManager::listByPages(
     int64_t total = 0;
     if (data::OrganizationApplyInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         return 0;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }
@@ -97,11 +67,6 @@ int64_t OrganizationApplyManager::listByUserId(
     int64_t total = 0;
     if (data::OrganizationApplyInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         return 0;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

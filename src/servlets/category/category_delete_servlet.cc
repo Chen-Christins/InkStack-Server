@@ -95,6 +95,9 @@ int32_t CategoryDeleteServlet::handle(
             }
             break;
         }
+        for (auto& i : del_cats) {
+            CategoryMgr::GetInstance()->add(i);
+        }
         if (!del_cats.empty()) {
             result->set("total", del_cats.size());
             auto& jids = result->jsondata["list"];

@@ -78,6 +78,7 @@ int32_t User2faConfirmServlet::handle(
                           << " errstr=" << db->getErrStr() << " errno=" << db->getErrno();
             break;
         }
+        UserMgr::GetInstance()->update(info);
 
         // 清除session中的待确认密钥
         sdata->setData("totp_pending_secret", std::string(""));

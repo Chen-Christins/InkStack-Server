@@ -102,6 +102,12 @@ int32_t OrganizationDeleteServlet::handle(
             }
             break;
         }
+        for (auto& i : del_organizations) {
+            OrganizationMgr::GetInstance()->add(i);
+        }
+        for (auto& rel : all_rels) {
+            OrganizationUserRelMgr::GetInstance()->add(rel);
+        }
         if (!del_organizations.empty()) {
             auto& jids = result->jsondata["ids"];
             for (auto& i : del_organizations) {

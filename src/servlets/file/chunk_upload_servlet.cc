@@ -245,8 +245,6 @@ int32_t ChunkUploadServlet::handleComplete(
                 break;
             }
         }
-        AssignmentUserRelMgr::GetInstance()->add(info);
-
         // Notify org admins about assignment submission
         {
             int64_t assign_id = upload_session->biz_id;

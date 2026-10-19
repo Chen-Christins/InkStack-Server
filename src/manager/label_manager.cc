@@ -4,16 +4,56 @@
 #include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:lbl:";
 
-LabelManager::LabelManager()
-    : m_cache(8, kCacheMaxSize, 50)
+static std::string labelCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::LabelInfo::ptr parseLabelCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::LabelInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setName(cacheJsonString(v, "name"));
+    info->setColor(cacheJsonString(v, "color"));
+    info->setDescription(cacheJsonString(v, "description"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::LabelInfo::ptr getLabelCache(int64_t id)
+{
+    std::string key = labelCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseLabelCache(v);
+}
+
+static void setLabelCache(const data::LabelInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(labelCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt)
@@ -23,12 +63,12 @@ data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt)
 
 void LabelManager::add(data::LabelInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setLabelCache(info);
 }
 
 data::LabelInfo::ptr LabelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getLabelCache(id);
     if (v) {
         return v;
     }
@@ -39,7 +79,7 @@ data::LabelInfo::ptr LabelManager::get(int64_t id)
     }
     v = data::LabelInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setLabelCache(v);
     }
     return v;
 }
@@ -57,7 +97,7 @@ data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string
     }
     auto info = data::LabelInfoDao::QueryByUserIdName(id, name, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setLabelCache(info);
         cacheIdMapping("lbl:uid_name:" + std::to_string(id) + ":" + name, info->getId());
     }
     return info;
@@ -77,11 +117,6 @@ bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_
     if (data::LabelInfoDao::QueryByBuilder(infos, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return false;
-    }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return true;
 }

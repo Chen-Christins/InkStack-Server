@@ -9,6 +9,8 @@
 
 #include <chen/db/query_builder.h>
 
+#include <json/json.h>
+
 namespace blog {
 
 /// COUNT 缓存 TTL（秒）
@@ -76,5 +78,57 @@ void cacheIdMapping(const std::string& cacheKey, int64_t id, int ttlSec = kIdMap
  * @return ID，未命中返回 0
  */
 int64_t getCachedIdMapping(const std::string& cacheKey);
+
+/**
+ * @brief Redis 对象缓存是否开启（cache.obj.enabled）
+ */
+bool isObjectCacheEnabled();
+
+/**
+ * @brief 读取 Redis 字符串（各 Manager 对象缓存的基础操作）
+ * @param key 完整 key
+ * @return 值，未命中/失败/缓存关闭时返回空串
+ */
+std::string redisCacheGet(const std::string& key);
+
+/**
+ * @brief 写入 Redis 字符串并设置 TTL（各 Manager 对象缓存的基础操作）
+ * @param key 完整 key
+ * @param value 值
+ * @param ttlSec TTL 秒数，<= 0 表示不设置过期
+ * @return true 成功
+ */
+bool redisCacheSetex(const std::string& key, const std::string& value, int ttlSec);
+
+/**
+ * @brief 删除 Redis key（各 Manager 对象缓存的基础操作）
+ * @return true 删除成功（key 存在）
+ */
+bool redisCacheDel(const std::string& key);
+
+/**
+ * @brief 判断 Redis key 是否存在（各 Manager 对象缓存的基础操作）
+ */
+bool redisCacheExists(const std::string& key);
+
+/**
+ * @brief 从缓存 JSON 中读取 int64（兼容字符串/数字）
+ */
+int64_t cacheJsonInt64(const Json::Value& v, const char* key);
+
+/**
+ * @brief 从缓存 JSON 中读取 int32
+ */
+int32_t cacheJsonInt32(const Json::Value& v, const char* key);
+
+/**
+ * @brief 从缓存 JSON 中读取 string
+ */
+std::string cacheJsonString(const Json::Value& v, const char* key);
+
+/**
+ * @brief 从缓存 JSON 中读取时间戳（兼容 "YYYY-MM-DD HH:MM:SS" 与数字）
+ */
+int64_t cacheJsonTime(const Json::Value& v, const char* key);
 
 } // namespace blog

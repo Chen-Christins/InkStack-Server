@@ -8,6 +8,7 @@
 #include <chen/db/redis.h>
 #include <chen/iomanager/iomanager.h>
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 #include <ctime>
 #include <set>
@@ -16,13 +17,66 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:art:";
+/// 浏览去重窗口（秒）
+static const int kViewDedupTTL = 10 * 60;
 
 static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
-ArticleManager::ArticleManager()
-    : m_cache(32, kCacheMaxSize, 0)
+static std::string articleCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::ArticleInfo::ptr parseArticleCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::ArticleInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setTitle(cacheJsonString(v, "title"));
+    info->setContent(cacheJsonString(v, "content"));
+    info->setType(cacheJsonInt32(v, "type"));
+    info->setState(cacheJsonInt32(v, "state"));
+    info->setChannel(cacheJsonInt64(v, "channel"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setPublishTime(cacheJsonTime(v, "publish_time"));
+    info->setWeight(cacheJsonInt64(v, "weight"));
+    info->setViews(cacheJsonInt64(v, "views"));
+    info->setPraise(cacheJsonInt64(v, "praise"));
+    info->setFavorites(cacheJsonInt64(v, "favorites"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::ArticleInfo::ptr getArticleCache(int64_t id)
+{
+    std::string key = articleCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseArticleCache(v);
+}
+
+static void setArticleCache(const data::ArticleInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(articleCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
+}
+
+static void delArticleCache(int64_t id)
+{
+    redisCacheDel(articleCacheKey(id));
 }
 
 data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt)
@@ -32,12 +86,17 @@ data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt)
 
 void ArticleManager::add(blog::data::ArticleInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setArticleCache(info);
+}
+
+void ArticleManager::del(int64_t id)
+{
+    delArticleCache(id);
 }
 
 blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getArticleCache(id);
     if (v) {
         return v;
     }
@@ -48,7 +107,7 @@ blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id)
     }
     v = data::ArticleInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setArticleCache(v);
     }
     return v;
 }
@@ -67,14 +126,6 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
     if (data::ArticleInfoDao::QueryByBuilder(infos, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return false;
-    }
-    for (auto& info : infos) {
-        auto cached = m_cache.get(info->getId());
-        if (cached) {
-            info = cached;
-        } else {
-            m_cache.set(info->getId(), info);
-        }
     }
     return true;
 }
@@ -95,14 +146,6 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
     int64_t total = 0;
     if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
         return 0;
-    }
-    for (auto& info : infos) {
-        auto cached = m_cache.get(info->getId());
-        if (cached) {
-            info = cached;
-        } else {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }
@@ -241,26 +284,18 @@ int64_t ArticleManager::listByPages(
         if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
             return 0;
         }
-        for (auto& info : infos) {
-            auto cached = m_cache.get(info->getId());
-            if (cached) {
-                info = cached;
-            } else {
-                m_cache.set(info->getId(), info);
-            }
-        }
         return total;
     }
 }
 
 void ArticleManager::delVerify(int64_t id)
 {
-    m_cache.del(id);
+    delArticleCache(id);
 }
 
 void ArticleManager::addVerify(data::ArticleInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setArticleCache(info);
 }
 
 int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int32_t size)
@@ -280,7 +315,7 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
     }
     for (auto& info : infos) {
         if (info->getIsDeleted()) {
-            m_cache.del(info->getId());
+            delArticleCache(info->getId());
             continue;
         }
     }
@@ -307,12 +342,6 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
         std::vector<data::ArticleInfo::ptr> results;
         if (data::ArticleInfoDao::QueryByBuilder(results, qb, db) == 0 && !results.empty()) {
             prev = results[0];
-            auto cached = m_cache.get(prev->getId());
-            if (cached) {
-                prev = cached;
-            } else {
-                m_cache.set(prev->getId(), prev);
-            }
         }
     }
 
@@ -328,12 +357,6 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
         std::vector<data::ArticleInfo::ptr> results;
         if (data::ArticleInfoDao::QueryByBuilder(results, qb, db) == 0 && !results.empty()) {
             next = results[0];
-            auto cached = m_cache.get(next->getId());
-            if (cached) {
-                next = cached;
-            } else {
-                m_cache.set(next->getId(), next);
-            }
         }
     }
 
@@ -426,7 +449,7 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
 std::string ArticleManager::statusString()
 {
     std::stringstream ss;
-    ss << "ArticleManager cache=" << m_cache.toStatusString();
+    ss << "ArticleManager cache=redis prefix=" << kCachePrefix << " ttl=" << kCacheTTL;
     return ss.str();
 }
 
@@ -445,7 +468,7 @@ void ArticleManager::flushDirty()
 {
     std::set<int64_t> updates;
     {
-        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
         updates.swap(m_updates);
     }
 
@@ -456,7 +479,7 @@ void ArticleManager::flushDirty()
     if (!conn) {
         ERROR(logger) << "flushDirty: get db connect fail";
 
-        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
         for (auto& i : updates) {
             m_updates.insert(i);
         }
@@ -465,10 +488,17 @@ void ArticleManager::flushDirty()
     auto trans = conn->openTransaction();
     for (auto& i : updates) {
         auto info = get(i);
-        if (info) {
-            if (data::ArticleInfoDao::Update(info, conn)) {
-                addUpdate(i);
-            }
+        if (!info) {
+            continue;
+        }
+        // Redis 反序列化后对象是 clean 的，这里显式标记计数字段，确保能写回 DB
+        info->setViews(info->getViews());
+        info->setPraise(info->getPraise());
+        info->setFavorites(info->getFavorites());
+        if (data::ArticleInfoDao::Update(info, conn)) {
+            addUpdate(i);
+        } else {
+            setArticleCache(info);
         }
     }
     trans->commit();
@@ -477,6 +507,7 @@ void ArticleManager::flushDirty()
 
 bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return false;
@@ -484,6 +515,7 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
     bool v = addViews(id, cookie_id);
     if (v) {
         info->setViews(info->getViews() + 1);
+        setArticleCache(info);
         addUpdate(id);
         chen::IOManager::GetThis()->schedule([user_id]() {
             chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:total_visits");
@@ -501,6 +533,7 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
 
 bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return false;
@@ -522,6 +555,7 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
         chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
     });
     info->setPraise(info->getPraise() + 1);
+    setArticleCache(info);
     addUpdate(id);
 
     return true;
@@ -529,6 +563,7 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
 
 bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return false;
@@ -550,6 +585,7 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
         chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
     });
     info->setFavorites(info->getFavorites() + 1);
+    setArticleCache(info);
     addUpdate(id);
 
     return true;
@@ -557,6 +593,7 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
 
 bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return false;
@@ -580,6 +617,7 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
     }
     if (v) {
         info->setPraise(info->getPraise() - 1);
+        setArticleCache(info);
         addUpdate(id);
     }
 
@@ -588,6 +626,7 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
 
 bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return false;
@@ -611,6 +650,7 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
     }
     if (v) {
         info->setFavorites(info->getFavorites() - 1);
+        setArticleCache(info);
         addUpdate(id);
     }
 
@@ -670,43 +710,45 @@ void ArticleManager::onTick()
 
 bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id)
 {
-    time_t now = time(0);
-    std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
-    auto it = m_viewsCache.find(id);
-    if (it != m_viewsCache.end()) {
-        auto iit = it->second.find(cookie_id);
-        if (iit != it->second.end() && (now - iit->second) < 10 * 60) {
-            return false;
-        }
+    // 用 Redis SET NX EX 做 10 分钟去重，避免进程内 m_viewsCache 无界增长
+    std::string key = "art:view:" + std::to_string(id) + ":" + cookie_id;
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "set %s 1 ex %d nx", key.c_str(), kViewDedupTTL);
+    if (!rpy) {
+        // Redis 异常时不去重，避免丢掉有效浏览
+        return true;
     }
-    m_viewsCache[id][cookie_id] = now;
-    return true;
+    // NX 未命中返回 nil，说明该用户 10 分钟内已经浏览过
+    return rpy->type != REDIS_REPLY_NIL;
 }
 
 void ArticleManager::addUpdate(int64_t id)
 {
-    std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+    std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
     m_updates.insert(id);
 }
 
 void ArticleManager::incPraiseCount(int64_t id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return;
     }
     info->setPraise(info->getPraise() + 1);
+    setArticleCache(info);
     addUpdate(id);
 }
 
 void ArticleManager::decPraiseCount(int64_t id)
 {
+    std::lock_guard<std::mutex> lock(m_counterMutex);
     auto info = get(id);
     if (!info) {
         return;
     }
     if (info->getPraise() > 0) {
         info->setPraise(info->getPraise() - 1);
+        setArticleCache(info);
         addUpdate(id);
     }
 }
@@ -871,11 +913,6 @@ void ArticleManager::doArticlePublishSchedule()
             continue;
         }
 
-        // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数）
-        auto cached = m_cache.get(id);
-        if (cached) {
-            info = cached;
-        }
         info->setState(PUBLISHED);
         info->setUpdateTime(now);
 
@@ -883,7 +920,7 @@ void ArticleManager::doArticlePublishSchedule()
             ERROR(logger) << "Update error errno=" << db->getErrno() << " errstr=" << db->getErrStr() << " data=" << info->toJsonString();
             continue;
         }
-        m_cache.set(id, info);
+        setArticleCache(info);
 
         clearCalendarCache(info->getUserId(), info->getPublishTime());
 

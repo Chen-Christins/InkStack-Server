@@ -95,6 +95,7 @@ int32_t UserUpdateServlet::handle(
             ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
+        UserMgr::GetInstance()->update(info);
         result->setErrno(errcode::SUCCESS);
 
         if (!passwd.empty()) {

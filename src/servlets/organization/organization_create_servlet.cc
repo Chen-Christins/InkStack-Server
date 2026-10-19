@@ -87,9 +87,9 @@ int32_t OrganizationCreateServlet::handle(
             break;
         }
 
-        if (new_org) {
-            OrganizationMgr::GetInstance()->add(info);
+        OrganizationMgr::GetInstance()->add(info);
 
+        if (new_org) {
             auto rel = std::make_shared<data::OrganizationUserRelInfo>();
             rel->setOrgId(info->getId());
             rel->setUserId(user_id);

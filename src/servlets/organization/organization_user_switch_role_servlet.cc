@@ -86,6 +86,8 @@ int32_t OrganizationUserSwitchRoleServlet::handle(
             break;
         }
 
+        OrganizationUserRelMgr::GetInstance()->add(rel);
+
         // Notify user about role change
         {
             auto org = OrganizationMgr::GetInstance()->get(org_id);

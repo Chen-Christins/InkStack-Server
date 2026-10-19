@@ -17,8 +17,10 @@
 #include "blog/data/task_info.h"
 
 #include <chen/http/http.h>
+#include <chen/util/time_util.h>
 #include <json/json.h>
 
+#include <ctime>
 #include <string>
 
 namespace blog {
@@ -35,6 +37,30 @@ inline void ParsePagination(uint64_t page, uint64_t page_size, uint64_t& offset,
     }
     offset = (page - 1) * page_size;
     size = page_size;
+}
+
+// ============================================================================
+// 日期/时间桶
+// ============================================================================
+inline time_t ParseDate(const std::string& date_str)
+{
+    return chen::TimeUtil::Str2Time(date_str.c_str(), "%Y-%m-%d");
+}
+
+inline std::string FormatDate(time_t t)
+{
+    return chen::TimeUtil::Time2Str(t, "%Y-%m-%d");
+}
+
+inline std::string FormatGroupKey(time_t t, const std::string& granularity)
+{
+    if (granularity == "week") {
+        return FormatDate(chen::TimeUtil::GetWeekStart(t));
+    }
+    if (granularity == "month") {
+        return chen::TimeUtil::Time2Str(chen::TimeUtil::GetMonthStart(t), "%Y-%m");
+    }
+    return FormatDate(t);
 }
 
 // ============================================================================

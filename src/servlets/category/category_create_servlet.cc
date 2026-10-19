@@ -46,7 +46,6 @@ int32_t CategoryCreateServlet::handle(
             }
         }
 
-        bool new_cat = false;
         data::CategoryInfo::ptr info;
         if (cid) {
             info = CategoryMgr::GetInstance()->get(cid);
@@ -61,7 +60,6 @@ int32_t CategoryCreateServlet::handle(
                 info.reset(new data::CategoryInfo);
                 info->setName(name);
                 info->setCreateTime(time(0));
-                new_cat = true;
             } else if (info->getIsDeleted()) {
                 info->setIsDeleted(0);
             }
@@ -87,9 +85,7 @@ int32_t CategoryCreateServlet::handle(
             break;
         }
 
-        if (new_cat) {
-            CategoryMgr::GetInstance()->add(info);
-        }
+        CategoryMgr::GetInstance()->add(info);
 
         result->set("id", info->getId());
         result->set("name", info->getName());

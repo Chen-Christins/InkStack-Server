@@ -5,6 +5,7 @@
 
 #include <chen/config/config.h>
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 #include <chen/util/util.h>
 
 namespace blog {
@@ -12,11 +13,55 @@ namespace blog {
 static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
-static const size_t kCacheMaxSize = 500;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:res:";
 
-ResourceManager::ResourceManager()
-    : m_cache(8, kCacheMaxSize, 0)
+static std::string resourceCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::ResourceInfo::ptr parseResourceCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::ResourceInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setName(cacheJsonString(v, "name"));
+    info->setPath(cacheJsonString(v, "path"));
+    info->setType(cacheJsonInt32(v, "type"));
+    info->setSize(cacheJsonInt64(v, "size"));
+    info->setHash(cacheJsonString(v, "hash"));
+    info->setOwnerId(cacheJsonInt64(v, "owner_id"));
+    info->setBizType(cacheJsonString(v, "biz_type"));
+    info->setBizId(cacheJsonInt64(v, "biz_id"));
+    info->setStatus(cacheJsonInt32(v, "status"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::ResourceInfo::ptr getResourceCache(int64_t id)
+{
+    std::string key = resourceCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseResourceCache(v);
+}
+
+static void setResourceCache(const data::ResourceInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(resourceCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string& filename)
@@ -51,12 +96,12 @@ data::ResourceInfo::ptr ResourceManager::parseRow(chen::ISQLData::ptr rt)
 
 void ResourceManager::add(blog::data::ResourceInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setResourceCache(info);
 }
 
 data::ResourceInfo::ptr ResourceManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getResourceCache(id);
     if (v) {
         return v;
     }
@@ -67,7 +112,7 @@ data::ResourceInfo::ptr ResourceManager::get(int64_t id)
     }
     v = data::ResourceInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setResourceCache(v);
     }
     return v;
 }
@@ -89,11 +134,6 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results,
         ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
 }
 
 data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_type, int64_t biz_id, int64_t uid, const std::string& filename)
@@ -114,7 +154,7 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
         return nullptr;
     }
     auto info = results[0];
-    m_cache.set(info->getId(), info);
+    setResourceCache(info);
     return info;
 }
 
@@ -138,7 +178,7 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path)
         return nullptr;
     }
     auto info = results[0];
-    m_cache.set(info->getId(), info);
+    setResourceCache(info);
     cacheIdMapping(ck, info->getId());
     return info;
 }

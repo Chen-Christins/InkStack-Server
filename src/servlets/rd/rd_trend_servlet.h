@@ -50,10 +50,6 @@ protected:
         Result::ptr result) override;
 
 private:
-    static time_t parseDate(const std::string& date_str);
-    static std::string formatDate(time_t t);
-    static std::string formatGroupKey(time_t t, const std::string& granularity);
-
     int64_t countBySql(const TrendContext& ctx, const std::string& table, int32_t min_status = -1);
     double avgCycleTime(const TrendContext& ctx, const std::string& table, int32_t min_status);
     void addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name);

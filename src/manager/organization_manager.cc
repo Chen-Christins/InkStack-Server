@@ -4,16 +4,57 @@
 #include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 300;
+static const int kCacheTTL = 120;
+static const char* kCachePrefix = "cache:obj:org:";
 
-OrganizationManager::OrganizationManager()
-    : m_cache(4, kCacheMaxSize, 30)
+static std::string organizationCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::OrganizationInfo::ptr parseOrganizationCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::OrganizationInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setName(cacheJsonString(v, "name"));
+    info->setType(cacheJsonString(v, "type"));
+    info->setDescription(cacheJsonString(v, "description"));
+    info->setOwnerId(cacheJsonInt64(v, "owner_id"));
+    info->setStatus(cacheJsonInt32(v, "status"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::OrganizationInfo::ptr getOrganizationCache(int64_t id)
+{
+    std::string key = organizationCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseOrganizationCache(v);
+}
+
+static void setOrganizationCache(const data::OrganizationInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(organizationCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt)
@@ -23,12 +64,12 @@ data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt
 
 void OrganizationManager::add(data::OrganizationInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setOrganizationCache(info);
 }
 
 data::OrganizationInfo::ptr OrganizationManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getOrganizationCache(id);
     if (v) {
         return v;
     }
@@ -39,7 +80,7 @@ data::OrganizationInfo::ptr OrganizationManager::get(int64_t id)
     }
     v = data::OrganizationInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setOrganizationCache(v);
     }
     return v;
 }
@@ -57,7 +98,7 @@ data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& na
     }
     auto info = data::OrganizationInfoDao::QueryByName(name, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setOrganizationCache(info);
         cacheIdMapping("org:name:" + name, info->getId());
     }
     return info;
@@ -83,11 +124,6 @@ int64_t OrganizationManager::listByPages(
     int64_t total = 0;
     if (data::OrganizationInfoDao::QueryByBuilderPages(orgs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         return 0;
-    }
-    for (auto& info : orgs) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

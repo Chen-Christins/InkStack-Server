@@ -7,6 +7,7 @@
 #include <chen/db/redis.h>
 #include <chen/ds/event_bus.h>
 #include <chen/http/http_server.h>
+#include <chen/http/session_data.h>
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
 #include <chen/log/log.h>
@@ -103,6 +104,10 @@ void BlogModule::onTick()
     NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
 
     ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
+
+    if (s_pr_sync_tick % 5 == 0) {
+        chen::http::SessionDataMgr::GetInstance()->check(3600);
+    }
 
     if (s_pr_sync_tick % 60 == 0) {
         INFO(logger) << "module status: \n" << Module::statusString();
@@ -486,6 +491,7 @@ void BlogModule::registerServlets()
         dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskDeleteServlet));
         dp->addServlet("/api/v1/rd/trends", XX(RdTrendServlet));
         dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));
+        dp->addServlet("/api/v1/rd/pr-distribution", XX(RdPrDistributionServlet));
         dp->addServlet("/api/v1/rd/my-tickets", XX(RdMyTicketsServlet));
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
         dp->addServlet("/api/v1/rd/organizations/members", XX(RdOrganizationMembersServlet));

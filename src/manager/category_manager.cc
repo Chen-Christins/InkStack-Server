@@ -1,6 +1,7 @@
 #include "category_manager.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 #include "../util.h"
 #include "cache_util.h"
@@ -9,11 +10,54 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 300;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:cat:";
 
-CategoryManager::CategoryManager()
-    : m_cache(4, kCacheMaxSize, 30)
+static std::string categoryCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::CategoryInfo::ptr parseCategoryCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::CategoryInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setName(cacheJsonString(v, "name"));
+    info->setColor(cacheJsonString(v, "color"));
+    info->setDescription(cacheJsonString(v, "description"));
+    info->setUrl(cacheJsonString(v, "url"));
+    info->setIcon(cacheJsonString(v, "icon"));
+    info->setParentId(cacheJsonInt64(v, "parent_id"));
+    info->setStatus(cacheJsonInt32(v, "status"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    // 缓存中的数据视为与 DB 一致，避免写回时全字段 UPDATE
+    info->markClean();
+    return info;
+}
+
+static data::CategoryInfo::ptr getCategoryCache(int64_t id)
+{
+    std::string key = categoryCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseCategoryCache(v);
+}
+
+static void setCategoryCache(const data::CategoryInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(categoryCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt)
@@ -23,12 +67,12 @@ data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt)
 
 void CategoryManager::add(blog::data::CategoryInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setCategoryCache(info);
 }
 
 blog::data::CategoryInfo::ptr CategoryManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getCategoryCache(id);
     if (v) {
         return v;
     }
@@ -39,7 +83,7 @@ blog::data::CategoryInfo::ptr CategoryManager::get(int64_t id)
     }
     v = data::CategoryInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setCategoryCache(v);
     }
     return v;
 }
@@ -58,11 +102,6 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
         ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
 }
 
 blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name)
@@ -71,8 +110,6 @@ blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name
     if (cachedId > 0) {
         return get(cachedId);
     }
-    // 先扫缓存
-    // LRU 缓存只支持按 id 查找，所以直接用 DAO 查 DB
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -80,7 +117,7 @@ blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name
     }
     auto info = data::CategoryInfoDao::QueryByName(name, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setCategoryCache(info);
         cacheIdMapping("cat:name:" + name, info->getId());
     }
     return info;

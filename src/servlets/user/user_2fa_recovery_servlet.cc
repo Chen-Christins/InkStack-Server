@@ -143,7 +143,9 @@ int32_t User2faRecoveryServlet::handle(
         UserLoginDeviceMgr::GetInstance()->recordLogin(param);
 
         info->setLoginTime(now);
-        data::UserInfoDao::Update(info, db);
+        if (data::UserInfoDao::Update(info, db) == 0) {
+            UserMgr::GetInstance()->update(info);
+        }
         INFO(logger) << "2fa recovery login user=" << info->getId() << " platform=" << platform << " device=" << device_name;
 
         auto sdata = getSessionData(request, response);
