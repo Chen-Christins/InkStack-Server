@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/http/ws_session.h>
 #include <chen/util/singleton.h>
 
@@ -28,8 +27,6 @@ struct NotificationData {
 
 class NotificationManager {
 public:
-    NotificationManager();
-
     // WS connection management
     void addConnection(int64_t user_id, chen::http::WSSession::ptr session);
 
@@ -61,6 +58,8 @@ public:
 
     data::NotificationInfo::ptr addNotification(const NotificationData& data);
 
+    void update(data::NotificationInfo::ptr info);
+
     void listByUser(std::vector<data::NotificationInfo::ptr>& results, int64_t user_id, uint64_t offset, uint64_t size, const std::string& type = "");
 
     int64_t countByUser(int64_t user_id, const std::string& type = "");
@@ -87,9 +86,6 @@ private:
     // WS connections (presence)
     std::unordered_map<int64_t, chen::http::WSSession::ptr> m_presenceConnections;
     std::shared_mutex m_presenceMutex;
-
-    // notification cache
-    chen::ds::HashLruCache<int64_t, data::NotificationInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<NotificationManager> NotificationMgr;

@@ -4,16 +4,65 @@
 #include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 2000;
+static const int kCacheTTL = 120;
+static const char* kCachePrefix = "cache:obj:notif:";
 
-NotificationManager::NotificationManager()
-    : m_cache(16, kCacheMaxSize, 0)
+static std::string notificationCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::NotificationInfo::ptr parseNotificationCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::NotificationInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setTitle(cacheJsonString(v, "title"));
+    info->setContent(cacheJsonString(v, "content"));
+    info->setType(cacheJsonString(v, "type"));
+    info->setSenderId(cacheJsonInt64(v, "sender_id"));
+    info->setArticleId(cacheJsonInt64(v, "article_id"));
+    info->setCommentId(cacheJsonInt64(v, "comment_id"));
+    info->setIsRead(cacheJsonInt32(v, "is_read"));
+    info->setReadTime(cacheJsonTime(v, "read_time"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->setIsBroadcast(cacheJsonInt32(v, "is_broadcast"));
+    info->setLevel(cacheJsonString(v, "level"));
+    info->setStartTime(cacheJsonInt64(v, "start_time"));
+    info->setEndTime(cacheJsonInt64(v, "end_time"));
+    info->markClean();
+    return info;
+}
+
+static data::NotificationInfo::ptr getNotificationCache(int64_t id)
+{
+    std::string key = notificationCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseNotificationCache(v);
+}
+
+static void setNotificationCache(const data::NotificationInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(notificationCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt)
@@ -158,8 +207,13 @@ data::NotificationInfo::ptr NotificationManager::addNotification(const Notificat
         return nullptr;
     }
 
-    m_cache.set(info->getId(), info);
+    setNotificationCache(info);
     return info;
+}
+
+void NotificationManager::update(data::NotificationInfo::ptr info)
+{
+    setNotificationCache(info);
 }
 
 void NotificationManager::listByUser(
@@ -202,9 +256,6 @@ void NotificationManager::listByUser(
     std::vector<int64_t> ids;
     for (auto& info : results) {
         ids.push_back(info->getId());
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     cacheListResult(listKey, ids);
 }
@@ -255,6 +306,7 @@ bool NotificationManager::markRead(int64_t notification_id)
     if (data::NotificationInfoDao::Update(info, db)) {
         return false;
     }
+    setNotificationCache(info);
     return true;
 }
 
@@ -273,7 +325,9 @@ bool NotificationManager::markRead(const std::vector<int64_t>& ids)
         }
         info->setIsRead(1);
         info->setReadTime(time(0));
-        data::NotificationInfoDao::Update(info, db);
+        if (data::NotificationInfoDao::Update(info, db) == 0) {
+            setNotificationCache(info);
+        }
     }
     return true;
 }
@@ -302,7 +356,7 @@ int64_t NotificationManager::markAllRead(int64_t user_id)
         info->setIsRead(1);
         info->setReadTime(time(0));
         if (data::NotificationInfoDao::Update(info, db) == 0) {
-            m_cache.set(info->getId(), info);
+            setNotificationCache(info);
             count++;
         }
     }
@@ -333,7 +387,7 @@ int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& 
         info->setIsRead(1);
         info->setReadTime(time(0));
         if (data::NotificationInfoDao::Update(info, db) == 0) {
-            m_cache.set(info->getId(), info);
+            setNotificationCache(info);
             count++;
         }
     }
@@ -342,7 +396,7 @@ int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& 
 
 data::NotificationInfo::ptr NotificationManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getNotificationCache(id);
     if (v) {
         return v;
     }
@@ -353,7 +407,7 @@ data::NotificationInfo::ptr NotificationManager::get(int64_t id)
     }
     v = data::NotificationInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setNotificationCache(v);
     }
     return v;
 }

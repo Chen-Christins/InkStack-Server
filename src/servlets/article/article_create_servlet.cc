@@ -74,8 +74,6 @@ int32_t ArticleCreateServlet::handle(
 
         // 处理分类关联
         time_t now = time(0);
-        std::vector<data::ArticleCategoryRelInfo::ptr> new_cat_rels;
-        std::vector<data::ArticleLabelRelInfo::ptr> new_label_rels;
         if (!category.empty()) {
             auto cat_ids = chen::StringUtil::Split(category, ',');
             for (auto& s : cat_ids) {
@@ -92,7 +90,6 @@ int32_t ArticleCreateServlet::handle(
                     ERROR(logger) << "insert article_category_rel fail article_id=" << info->getId() << " category_id=" << cid
                                   << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                new_cat_rels.push_back(rel);
             }
         }
 
@@ -113,7 +110,6 @@ int32_t ArticleCreateServlet::handle(
                     ERROR(logger) << "insert article_label_rel fail article_id=" << info->getId() << " label_id=" << lid
                                   << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                new_label_rels.push_back(rel);
             }
         }
 
@@ -123,12 +119,6 @@ int32_t ArticleCreateServlet::handle(
         }
 
         ArticleMgr::GetInstance()->add(info);
-        for (auto& rel : new_cat_rels) {
-            ArticleCategoryRelMgr::GetInstance()->add(rel);
-        }
-        for (auto& rel : new_label_rels) {
-            ArticleLabelRelMgr::GetInstance()->add(rel);
-        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

@@ -1,6 +1,7 @@
 #include "organization_repo_pr_manager.h"
 
 #include "../util.h"
+#include "cache_util.h"
 #include "organization_repo_manager.h"
 #include "organization_user_rel_manager.h"
 #include "protocol_ss_github.h"
@@ -9,6 +10,7 @@
 #include <chen/http/uri.h>
 #include <chen/iomanager/worker.h>
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 #include <json/json.h>
 #include <json/reader.h>
 #include <json/writer.h>
@@ -20,16 +22,72 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:org_pr:";
+
+static std::string orgRepoPrCacheKey(int64_t id)
+{
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::OrganizationRepoPrsInfo::ptr parseOrgRepoPrCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::OrganizationRepoPrsInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setRepoId(cacheJsonInt64(v, "repo_id"));
+    info->setGithubPrId(cacheJsonInt32(v, "github_pr_id"));
+    info->setTitle(cacheJsonString(v, "title"));
+    info->setDescription(cacheJsonString(v, "description"));
+    info->setState(cacheJsonString(v, "state"));
+    info->setPriority(cacheJsonString(v, "priority"));
+    info->setAuthor(cacheJsonString(v, "author"));
+    info->setHeadBranch(cacheJsonString(v, "head_branch"));
+    info->setBaseBranch(cacheJsonString(v, "base_branch"));
+    info->setCommitSha(cacheJsonString(v, "commit_sha"));
+    info->setChangedFiles(cacheJsonInt32(v, "changed_files"));
+    info->setAdditions(cacheJsonInt32(v, "additions"));
+    info->setDeletions(cacheJsonInt32(v, "deletions"));
+    info->setReviewers(cacheJsonString(v, "reviewers"));
+    info->setReviewStatus(cacheJsonString(v, "review_status"));
+    info->setClosedAt(cacheJsonTime(v, "closed_at"));
+    info->setMergedAt(cacheJsonTime(v, "merged_at"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::OrganizationRepoPrsInfo::ptr getOrgRepoPrCache(int64_t id)
+{
+    std::string key = orgRepoPrCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseOrgRepoPrCache(v);
+}
+
+static void setOrgRepoPrCache(const data::OrganizationRepoPrsInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(orgRepoPrCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
+}
+
+static void delOrgRepoPrCache(int64_t id)
+{
+    redisCacheDel(orgRepoPrCacheKey(id));
+}
 
 /// 单条 PR 同步互斥锁与进行中集合，避免同一 PR 并发重复请求 GitHub
 static std::mutex s_sync_pr_mutex;
 static std::set<int64_t> s_syncing_pr_ids;
-
-OrganizationRepoPrManager::OrganizationRepoPrManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
 
 data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::parseRow(chen::ISQLData::ptr rt)
 {
@@ -38,12 +96,12 @@ data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::parseRow(chen::ISQ
 
 void OrganizationRepoPrManager::add(data::OrganizationRepoPrsInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setOrgRepoPrCache(info);
 }
 
 void OrganizationRepoPrManager::del(int64_t id)
 {
-    m_cache.del(id);
+    delOrgRepoPrCache(id);
 }
 
 void OrganizationRepoPrManager::onTick()
@@ -66,7 +124,7 @@ void OrganizationRepoPrManager::onTick()
 
 data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getOrgRepoPrCache(id);
     if (v) {
         return v;
     }
@@ -77,7 +135,7 @@ data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::get(int64_t id)
     }
     v = data::OrganizationRepoPrsInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setOrgRepoPrCache(v);
     }
     return v;
 }
@@ -114,11 +172,6 @@ int64_t OrganizationRepoPrManager::listByRepoPages(
     if (data::OrganizationRepoPrsInfoDao::QueryByBuilderPages(prs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         ERROR(logger) << "listByRepoPages QueryByBuilderPages failed";
         return 0;
-    }
-    for (auto& info : prs) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }
@@ -164,11 +217,6 @@ int64_t OrganizationRepoPrManager::listByOrgPages(
         ERROR(logger) << "listByOrgPages QueryByBuilderPages failed";
         return 0;
     }
-    for (auto& info : prs) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
     return total;
 }
 
@@ -199,11 +247,6 @@ int64_t OrganizationRepoPrManager::listByUserPages(
     if (data::OrganizationRepoPrsInfoDao::QueryByBuilderPages(prs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         ERROR(logger) << "listByUserPages QueryByBuilderPages failed";
         return 0;
-    }
-    for (auto& info : prs) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

@@ -11,7 +11,6 @@
 #include "blog/data/organization_repos_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 // 前置声明 RPC 协议结构体，避免在 header 中引入 protocol 头文件
@@ -45,8 +44,6 @@ public:
         /// 数据库操作失败
         DB_ERROR,
     };
-
-    OrganizationRepoPrManager();
 
     void add(data::OrganizationRepoPrsInfo::ptr info);
 
@@ -95,8 +92,6 @@ public:
 
 private:
     static data::OrganizationRepoPrsInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::OrganizationRepoPrsInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationRepoPrManager> OrganizationRepoPrMgr;

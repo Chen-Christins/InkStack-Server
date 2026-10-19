@@ -1,6 +1,7 @@
 #include "comment_manager.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 #include "../util.h"
 #include "cache_util.h"
@@ -9,11 +10,55 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:cmt:";
 
-CommentManager::CommentManager()
-    : m_cache(16, kCacheMaxSize, 0)
+static std::string commentCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::CommentInfo::ptr parseCommentCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::CommentInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setArticleId(cacheJsonInt64(v, "article_id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setParentId(cacheJsonInt64(v, "parent_id"));
+    info->setContent(cacheJsonString(v, "content"));
+    info->setIp(cacheJsonString(v, "ip"));
+    info->setUserAgent(cacheJsonString(v, "user_agent"));
+    info->setStatus(cacheJsonInt32(v, "status"));
+    info->setIsReported(cacheJsonInt32(v, "is_reported"));
+    info->setReportCount(cacheJsonInt32(v, "report_count"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::CommentInfo::ptr getCommentCache(int64_t id)
+{
+    std::string key = commentCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseCommentCache(v);
+}
+
+static void setCommentCache(const data::CommentInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(commentCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt)
@@ -23,12 +68,12 @@ data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt)
 
 void CommentManager::add(data::CommentInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setCommentCache(info);
 }
 
 data::CommentInfo::ptr CommentManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getCommentCache(id);
     if (v) {
         return v;
     }
@@ -39,7 +84,7 @@ data::CommentInfo::ptr CommentManager::get(int64_t id)
     }
     v = data::CommentInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setCommentCache(v);
     }
     return v;
 }
@@ -77,7 +122,7 @@ data::CommentInfo::ptr CommentManager::create(
         return nullptr;
     }
 
-    m_cache.set(info->getId(), info);
+    setCommentCache(info);
     return info;
 }
 
@@ -100,6 +145,7 @@ bool CommentManager::update(int64_t id, const std::string& content)
         ERROR(logger) << "CommentManager update fail";
         return false;
     }
+    setCommentCache(info);
     return true;
 }
 
@@ -122,6 +168,7 @@ bool CommentManager::del(int64_t id)
         ERROR(logger) << "CommentManager del Update fail";
         return false;
     }
+    setCommentCache(info);
     return true;
 }
 
@@ -140,11 +187,6 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
     if (data::CommentInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
 }
 
@@ -184,9 +226,6 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     std::vector<int64_t> ids;
     for (auto& info : results) {
         ids.push_back(info->getId());
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     cacheListResult(listKey, ids);
 }
@@ -208,11 +247,6 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, i
     if (data::CommentInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
 }
 
@@ -273,11 +307,6 @@ int64_t CommentManager::listByAdmin(
         ERROR(logger) << "listByAdmin QueryByBuilderPages failed";
         return 0;
     }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
     return total;
 }
 
@@ -305,6 +334,7 @@ int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32
         if (info) {
             info->setStatus(status);
             info->setUpdateTime(time(0));
+            setCommentCache(info);
         }
     }
     return ids.size();
@@ -334,6 +364,7 @@ int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids)
         if (info) {
             info->setIsDeleted(1);
             info->setUpdateTime(time(0));
+            setCommentCache(info);
         }
     }
     return ids.size();

@@ -5,16 +5,56 @@
 #include "organization_manager.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 120;
+static const char* kCachePrefix = "cache:obj:org_usr:";
 
-OrganizationUserRelManager::OrganizationUserRelManager()
-    : m_cache(8, kCacheMaxSize, 0)
+static std::string orgUserRelCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::OrganizationUserRelInfo::ptr parseOrgUserRelCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::OrganizationUserRelInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setOrgId(cacheJsonInt64(v, "org_id"));
+    info->setUserId(cacheJsonInt64(v, "user_id"));
+    info->setRole(cacheJsonInt32(v, "role"));
+    info->setStatus(cacheJsonInt32(v, "status"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->markClean();
+    return info;
+}
+
+static data::OrganizationUserRelInfo::ptr getOrgUserRelCache(int64_t id)
+{
+    std::string key = orgUserRelCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseOrgUserRelCache(v);
+}
+
+static void setOrgUserRelCache(const data::OrganizationUserRelInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(orgUserRelCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::ISQLData::ptr rt)
@@ -24,12 +64,12 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::IS
 
 void OrganizationUserRelManager::add(data::OrganizationUserRelInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setOrgUserRelCache(info);
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getOrgUserRelCache(id);
     if (v) {
         return v;
     }
@@ -40,7 +80,7 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id)
     }
     v = data::OrganizationUserRelInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setOrgUserRelCache(v);
     }
     return v;
 }
@@ -58,7 +98,7 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(i
     }
     auto info = data::OrganizationUserRelInfoDao::QueryByOrgIdUserId(o_id, u_id, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setOrgUserRelCache(info);
         cacheIdMapping("org_usr:" + std::to_string(o_id) + ":" + std::to_string(u_id), info->getId());
     }
     return info;
@@ -87,11 +127,6 @@ int64_t OrganizationUserRelManager::getByPages(
     if (data::OrganizationUserRelInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
     }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
     return total;
 }
 
@@ -117,11 +152,6 @@ int64_t OrganizationUserRelManager::getOrgByUserId(
     if (data::OrganizationUserRelInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return 0;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return results.size();
 }

@@ -75,6 +75,9 @@ int32_t LabelDeleteServlet::handle(
             }
             break;
         }
+        for (auto& i : del_labels) {
+            LabelMgr::GetInstance()->add(i);
+        }
         if (!del_labels.empty()) {
             auto& jids = result->jsondata["ids"];
             for (auto& i : del_labels) {

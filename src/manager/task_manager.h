@@ -3,7 +3,6 @@
 #include "blog/data/task_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -23,10 +22,6 @@ public:
         STATUS_CLOSED = 3
     };
 
-    TaskManager();
-
-    void add(data::TaskInfo::ptr info);
-
     data::TaskInfo::ptr get(int64_t id);
 
     uint64_t listByPages(std::vector<data::TaskInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid);
@@ -35,8 +30,6 @@ public:
 
 private:
     static data::TaskInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::TaskInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<TaskManager> TaskMgr;

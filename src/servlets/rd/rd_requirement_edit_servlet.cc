@@ -38,7 +38,6 @@ int32_t RdRequirementEditServlet::handle(
         }
         int32_t org_role = rel->getRole();
 
-        bool is_new = false;
         data::RequirementInfo::ptr info;
 
         if (id) {
@@ -60,7 +59,6 @@ int32_t RdRequirementEditServlet::handle(
             info->setOrgId(org_id);
             info->setCreatorId(uid);
             info->setCreateTime(time(0));
-            is_new = true;
         }
 
         DEFINE_AND_CHECK_STRING(result, title, "title");
@@ -126,10 +124,6 @@ int32_t RdRequirementEditServlet::handle(
         if (data::RequirementInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::RD_UPDATE_FAILED);
             break;
-        }
-
-        if (is_new) {
-            RequirementMgr::GetInstance()->add(info);
         }
 
         rd::BuildRequirementJson(result->jsondata, info);

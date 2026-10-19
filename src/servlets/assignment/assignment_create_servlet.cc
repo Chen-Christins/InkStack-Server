@@ -53,7 +53,6 @@ int32_t AssignmentCreateServlet::handle(
             break;
         }
 
-        bool new_assignment = false;
         data::AssignmentInfo::ptr info;
         if (aid) {
             info = AssignmentMgr::GetInstance()->get(aid);
@@ -70,7 +69,6 @@ int32_t AssignmentCreateServlet::handle(
                 info->setName(name);
                 info->setSubjectName(subject_name);
                 info->setCreateTime(time(0));
-                new_assignment = true;
             } else if (info->getIsDeleted()) {
                 info->setCreateTime(time(0));
             }
@@ -96,9 +94,7 @@ int32_t AssignmentCreateServlet::handle(
             break;
         }
 
-        if (new_assignment) {
-            AssignmentMgr::GetInstance()->add(info);
-        }
+        AssignmentMgr::GetInstance()->add(info);
 
         result->set("id", info->getId());
         result->set("name", info->getName());

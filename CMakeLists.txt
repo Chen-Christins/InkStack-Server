@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(TechHaven-Server)
+project(InkStackServer)
 
 include(cmake/common.cmake)
 include(cmake/utils.cmake)

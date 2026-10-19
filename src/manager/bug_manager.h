@@ -3,7 +3,6 @@
 #include "blog/data/bug_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -30,10 +29,6 @@ public:
         STATUS_REOPENED = 4
     };
 
-    BugManager();
-
-    void add(data::BugInfo::ptr info);
-
     data::BugInfo::ptr get(int64_t id);
 
     uint64_t listByPages(std::vector<data::BugInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid);
@@ -42,8 +37,6 @@ public:
 
 private:
     static data::BugInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::BugInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<BugManager> BugMgr;

@@ -38,7 +38,6 @@ int32_t RdTaskEditServlet::handle(
         }
         int32_t org_role = rel->getRole();
 
-        bool is_new = false;
         data::TaskInfo::ptr info;
         if (id) {
             info = TaskMgr::GetInstance()->get(id);
@@ -59,7 +58,6 @@ int32_t RdTaskEditServlet::handle(
             info->setOrgId(org_id);
             info->setCreatorId(uid);
             info->setCreateTime(time(0));
-            is_new = true;
         }
 
         DEFINE_AND_CHECK_STRING(result, title, "title");
@@ -124,9 +122,6 @@ int32_t RdTaskEditServlet::handle(
         if (data::TaskInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::RD_UPDATE_FAILED);
             break;
-        }
-        if (is_new) {
-            TaskMgr::GetInstance()->add(info);
         }
         rd::BuildTaskJson(result->jsondata, info);
 

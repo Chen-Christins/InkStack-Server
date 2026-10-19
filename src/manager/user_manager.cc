@@ -5,23 +5,75 @@
 
 #include <chen/config/config.h>
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 1000;
+static const int kCacheTTL = 120;
+static const char* kCachePrefix = "cache:obj:usr:";
+
+static std::string userCacheKey(int64_t id)
+{
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::UserInfo::ptr parseUserCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::UserInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setName(cacheJsonString(v, "name"));
+    info->setAccount(cacheJsonString(v, "account"));
+    info->setAvatar(cacheJsonString(v, "avatar"));
+    info->setEmail(cacheJsonString(v, "email"));
+    info->setRole(cacheJsonInt32(v, "role"));
+    info->setPasswd(cacheJsonString(v, "passwd"));
+    info->setState(cacheJsonInt32(v, "state"));
+    info->setBio(cacheJsonString(v, "bio"));
+    info->setWebsite(cacheJsonString(v, "website"));
+    info->setGithub(cacheJsonString(v, "github"));
+    info->setLocation(cacheJsonString(v, "location"));
+    info->setToken(cacheJsonString(v, "token"));
+    info->setTokenTime(cacheJsonInt64(v, "token_time"));
+    info->setLoginTime(cacheJsonTime(v, "login_time"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->setTotpSecret(cacheJsonString(v, "totp_secret"));
+    info->setTotpEnabled(cacheJsonInt32(v, "totp_enabled"));
+    info->markClean();
+    return info;
+}
+
+static data::UserInfo::ptr getUserCache(int64_t id)
+{
+    std::string key = userCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseUserCache(v);
+}
+
+static void setUserCache(const data::UserInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(userCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
+}
 
 static chen::ConfigVar<std::string>::ptr g_admin_account = chen::Config::Lookup("admin.account", std::string("admin"), "default super admin account");
 static chen::ConfigVar<std::string>::ptr g_admin_passwd =
     chen::Config::Lookup("admin.passwd", std::string("admin123456"), "default super admin password");
 static chen::ConfigVar<std::string>::ptr g_admin_email =
     chen::Config::Lookup("admin.email", std::string("admin@example.com"), "default super admin email");
-
-UserManager::UserManager()
-    : m_cache(32, kCacheMaxSize, 0)
-{
-}
 
 data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt)
 {
@@ -30,12 +82,12 @@ data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt)
 
 void UserManager::add(blog::data::UserInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setUserCache(info);
 }
 
 void UserManager::update(blog::data::UserInfo::ptr info)
 {
-    m_cache.set(info->getId(), info);
+    setUserCache(info);
 }
 
 void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid)
@@ -82,17 +134,12 @@ uint64_t UserManager::listByPages(
     if (data::UserInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
     }
-    for (auto& info : infos) {
-        if (info && !m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
     return total;
 }
 
 blog::data::UserInfo::ptr UserManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getUserCache(id);
     if (v) {
         return v;
     }
@@ -103,7 +150,7 @@ blog::data::UserInfo::ptr UserManager::get(int64_t id)
     }
     v = data::UserInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setUserCache(v);
     }
     return v;
 }
@@ -123,7 +170,7 @@ blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v)
     }
     auto info = data::UserInfoDao::QueryByAccount(v, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setUserCache(info);
         cacheIdMapping("usr:acct:" + v, info->getId());
     }
     return info;
@@ -142,7 +189,7 @@ blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v)
     }
     auto info = data::UserInfoDao::QueryByEmail(v, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setUserCache(info);
         cacheIdMapping("usr:eml:" + v, info->getId());
     }
     return info;
@@ -181,7 +228,7 @@ void UserManager::ensureSuperAdmin()
         ERROR(logger) << "insert super admin failed: errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
-    m_cache.set(info->getId(), info);
+    setUserCache(info);
 
     INFO(logger) << "seeded super admin account=" << account << " email=" << email;
 }
@@ -199,7 +246,7 @@ blog::data::UserInfo::ptr UserManager::getByName(const std::string& v)
     }
     auto info = data::UserInfoDao::QueryByName(v, db);
     if (info) {
-        m_cache.set(info->getId(), info);
+        setUserCache(info);
         cacheIdMapping("usr:name:" + v, info->getId());
     }
     return info;

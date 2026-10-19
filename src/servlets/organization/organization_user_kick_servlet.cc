@@ -78,6 +78,8 @@ int32_t OrganizationUserKickServlet::handle(
             break;
         }
 
+        OrganizationUserRelMgr::GetInstance()->add(rel);
+
         // Notify org admins and kicked user
         {
             auto org = OrganizationMgr::GetInstance()->get(org_id);

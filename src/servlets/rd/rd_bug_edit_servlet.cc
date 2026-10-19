@@ -38,7 +38,6 @@ int32_t RdBugEditServlet::handle(
         }
         int32_t org_role = rel->getRole();
 
-        bool is_new = false;
         data::BugInfo::ptr info;
         if (id) {
             info = BugMgr::GetInstance()->get(id);
@@ -59,7 +58,6 @@ int32_t RdBugEditServlet::handle(
             info->setOrgId(org_id);
             info->setCreatorId(uid);
             info->setCreateTime(time(0));
-            is_new = true;
         }
 
         DEFINE_AND_CHECK_STRING(result, title, "title");
@@ -132,9 +130,6 @@ int32_t RdBugEditServlet::handle(
         if (data::BugInfoDao::InsertOrUpdate(info, db)) {
             result->setErrno(errcode::RD_UPDATE_FAILED);
             break;
-        }
-        if (is_new) {
-            BugMgr::GetInstance()->add(info);
         }
         rd::BuildBugJson(result->jsondata, info);
 

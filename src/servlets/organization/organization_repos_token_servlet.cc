@@ -75,6 +75,7 @@ int32_t OrganizationReposTokenServlet::handle(
             ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             break;
         }
+        OrganizationRepoMgr::GetInstance()->add(repo);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

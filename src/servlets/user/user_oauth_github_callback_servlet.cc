@@ -465,7 +465,9 @@ int32_t UserOauthGithubCallbackServlet::handle(
         UserLoginDeviceMgr::GetInstance()->recordLogin(param);
 
         user->setLoginTime(now);
-        data::UserInfoDao::Update(user, db);
+        if (data::UserInfoDao::Update(user, db) == 0) {
+            UserMgr::GetInstance()->update(user);
+        }
         INFO(logger) << "github oauth login user=" << user->getId() << " login=" << profile.login << " platform=" << platform;
 
         auto sdata = getSessionData(request, response);

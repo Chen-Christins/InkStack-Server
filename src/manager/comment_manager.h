@@ -3,7 +3,6 @@
 #include "blog/data/comment_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -16,8 +15,6 @@ public:
         REJECTED = 3,
         SPAM = 4
     };
-
-    CommentManager();
 
     void add(data::CommentInfo::ptr info);
 
@@ -71,8 +68,6 @@ public:
 
 private:
     static data::CommentInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::CommentInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<CommentManager> CommentMgr;

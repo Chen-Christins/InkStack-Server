@@ -65,6 +65,7 @@ int32_t User2faDisableServlet::handle(
                           << " errstr=" << db->getErrStr() << " errno=" << db->getErrno();
             break;
         }
+        UserMgr::GetInstance()->update(info);
 
         // 删除该用户所有恢复码
         auto qb = data::UserRecoveryCodeInfoDao::newQuery();

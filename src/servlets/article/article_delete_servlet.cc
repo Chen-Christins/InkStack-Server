@@ -69,6 +69,7 @@ int32_t ArticleDeleteServlet::handle(
             auto& jids = result->jsondata["ids"];
             for (auto& i : infos) {
                 jids.append(i->getId());
+                ArticleMgr::GetInstance()->del(i->getId());
                 // 从搜索索引中移除
                 IndexMgr::GetInstance()->removeArticle(i->getId());
                 // 从定时发布调度中移除

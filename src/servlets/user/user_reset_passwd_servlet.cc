@@ -64,6 +64,7 @@ int32_t UserResetPasswdServlet::handle(
             break;
         }
         trans->commit();
+        UserMgr::GetInstance()->update(info);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

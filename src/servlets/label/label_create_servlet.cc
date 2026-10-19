@@ -33,7 +33,6 @@ int32_t LabelCreateServlet::handle(
             break;
         }
 
-        bool new_label = false;
         data::LabelInfo::ptr info;
         if (lid) {
             info = LabelMgr::GetInstance()->get(lid);
@@ -53,7 +52,6 @@ int32_t LabelCreateServlet::handle(
                 info->setUserId(uid);
                 info->setName(name);
                 info->setCreateTime(time(0));
-                new_label = true;
             } else if (info->getIsDeleted()) {
                 info->setIsDeleted(0);
             }
@@ -75,9 +73,7 @@ int32_t LabelCreateServlet::handle(
             break;
         }
 
-        if (new_label) {
-            LabelMgr::GetInstance()->add(info);
-        }
+        LabelMgr::GetInstance()->add(info);
 
         result->set("id", info->getId());
         result->set("name", info->getName());

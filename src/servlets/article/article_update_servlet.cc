@@ -107,6 +107,8 @@ int32_t ArticleUpdateServlet::handle(
             break;
         }
 
+        ArticleMgr::GetInstance()->add(info);
+
         // 更新定时发布调度：先移除旧的，再按需添加新的
         ArticleMgr::GetInstance()->unscheduleArticle(id);
         time_t now_publish = chen::TimeUtil::GetCurrentSec();
@@ -180,7 +182,6 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
                 if (data::ArticleCategoryRelInfoDao::Update(existing, db)) {
                     ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                ArticleCategoryRelMgr::GetInstance()->add(existing);
             } else if (!existing) {
                 data::ArticleCategoryRelInfo::ptr rel(new data::ArticleCategoryRelInfo);
                 rel->setArticleId(id);
@@ -189,7 +190,6 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
                 if (data::ArticleCategoryRelInfoDao::Insert(rel, db)) {
                     ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                ArticleCategoryRelMgr::GetInstance()->add(rel);
             }
         }
     }
@@ -203,7 +203,6 @@ int32_t ArticleUpdateServlet::syncCategoryRels(chen::http::HttpRequest::ptr requ
                 if (data::ArticleCategoryRelInfoDao::Update(existing, db)) {
                     ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                ArticleCategoryRelMgr::GetInstance()->add(existing);
             }
         }
     }
@@ -245,7 +244,6 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
                 if (data::ArticleLabelRelInfoDao::Update(existing, db)) {
                     ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                ArticleLabelRelMgr::GetInstance()->add(existing);
             } else if (!existing) {
                 data::ArticleLabelRelInfo::ptr rel(new data::ArticleLabelRelInfo);
                 rel->setArticleId(id);
@@ -254,7 +252,6 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
                 if (data::ArticleLabelRelInfoDao::Insert(rel, db)) {
                     ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                ArticleLabelRelMgr::GetInstance()->add(rel);
             }
         }
     }
@@ -268,7 +265,6 @@ int32_t ArticleUpdateServlet::syncLabelRels(chen::http::HttpRequest::ptr request
                 if (data::ArticleLabelRelInfoDao::Update(existing, db)) {
                     ERROR(logger) << "db error errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
-                ArticleLabelRelMgr::GetInstance()->add(existing);
             }
         }
     }

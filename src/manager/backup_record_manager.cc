@@ -7,39 +7,19 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static const size_t kCacheMaxSize = 200;
-
-BackupRecordManager::BackupRecordManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::BackupRecordInfo::ptr BackupRecordManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::BackupRecordInfoDao::ParseRow(rt);
 }
 
-void BackupRecordManager::add(data::BackupRecordInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 data::BackupRecordInfo::ptr BackupRecordManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::BackupRecordInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::BackupRecordInfoDao::Query(id, db);
 }
 
 bool BackupRecordManager::list(
@@ -96,7 +76,6 @@ data::BackupRecordInfo::ptr BackupRecordManager::create(int64_t uid, const std::
         ERROR(logger) << "Insert backup_record failed";
         return nullptr;
     }
-    m_cache.set(info->getId(), info);
     return info;
 }
 
@@ -116,7 +95,6 @@ bool BackupRecordManager::remove(int64_t id)
         ERROR(logger) << "Delete backup_record failed";
         return false;
     }
-    m_cache.del(id);
     return true;
 }
 

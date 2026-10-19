@@ -9,39 +9,19 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
-
-AssignmentOrganizationRelManager::AssignmentOrganizationRelManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::AssignmentOrganizationRelInfoDao::ParseRow(rt);
 }
 
-void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::AssignmentOrganizationRelInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::AssignmentOrganizationRelInfoDao::Query(id, db);
 }
 
 blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::getByOrgAndAssign(int64_t org_id, int64_t assign_id)
@@ -57,7 +37,6 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
     }
     auto info = data::AssignmentOrganizationRelInfoDao::QueryByAssignmentIdOrganizationId(assign_id, org_id, db);
     if (info) {
-        m_cache.set(info->getId(), info);
         cacheIdMapping("assign_org:" + std::to_string(org_id) + ":" + std::to_string(assign_id), info->getId());
     }
     return info;
@@ -76,11 +55,6 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
     if (data::AssignmentOrganizationRelInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return 0;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return results.size();
 }
@@ -108,11 +82,6 @@ int64_t AssignmentOrganizationRelManager::getByPages(
     if (data::AssignmentOrganizationRelInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)size, db)) {
         ERROR(logger) << "QueryByBuilderPages failed";
         return 0;
-    }
-    for (auto& info : results) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

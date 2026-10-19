@@ -8,39 +8,19 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
-
-TaskManager::TaskManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::TaskInfo::ptr TaskManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::TaskInfoDao::ParseRow(rt);
 }
 
-void TaskManager::add(data::TaskInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 data::TaskInfo::ptr TaskManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::TaskInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::TaskInfoDao::Query(id, db);
 }
 
 uint64_t TaskManager::listByPages(std::vector<data::TaskInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid)
@@ -58,11 +38,6 @@ uint64_t TaskManager::listByPages(std::vector<data::TaskInfo::ptr>& infos, uint6
     int64_t total = 0;
     if (data::TaskInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
-    }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }
@@ -83,11 +58,6 @@ uint64_t TaskManager::listByOrg(std::vector<data::TaskInfo::ptr>& infos, int64_t
     int64_t total = 0;
     if (data::TaskInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
-    }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

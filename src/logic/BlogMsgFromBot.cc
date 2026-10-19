@@ -86,6 +86,7 @@ static int32_t HandlePRWebhook(const tagGithubPRInfo& info)
                       << ", errno=" << db->getErrno();
         return GITHUB_DB_OPERATION_FAILED;
     }
+    OrganizationRepoPrMgr::GetInstance()->add(pr);
     DEBUG(logger) << "HandlePRWebhook: updated PR #" << info.Number << " state=" << pr->getState() << " action=" << info.Action;
 
     return 0;
@@ -181,6 +182,7 @@ static int32_t HandlePRReviewWebhook(const tagGithubPRReviewInfo& info)
                       << ", errno=" << db->getErrno();
         return GITHUB_DB_OPERATION_FAILED;
     }
+    OrganizationRepoPrMgr::GetInstance()->add(pr);
 
     DEBUG(logger) << "HandlePRReviewWebhook: updated review for PR #" << info.PRNumber << " reviewer=" << info.Reviewer << " state=" << info.State;
     return 0;

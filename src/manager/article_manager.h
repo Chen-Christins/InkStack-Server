@@ -3,10 +3,10 @@
 #include "blog/data/article_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 #include <map>
+#include <mutex>
 #include <set>
 #include <shared_mutex>
 
@@ -26,9 +26,9 @@ public:
         REPRINT = 2
     };
 
-    ArticleManager();
-
     void add(blog::data::ArticleInfo::ptr info);
+
+    void del(int64_t id);
 
     blog::data::ArticleInfo::ptr get(int64_t id);
 
@@ -157,8 +157,8 @@ private:
 private:
     /// 文章浏览数锁
     std::shared_mutex m_viewsMutex;
-    /// LRU 文章缓存（最多 1000 条）
-    chen::ds::HashLruCache<int64_t, data::ArticleInfo::ptr> m_cache;
+    /// 文章计数（浏览/点赞/收藏）读改写锁，避免 Redis 缓存下的并发丢更新
+    std::mutex m_counterMutex;
     /// 文章浏览数
     std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
     /// 待更新到 DB 的文章 ID 集合

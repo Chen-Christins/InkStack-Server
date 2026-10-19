@@ -81,6 +81,9 @@ int32_t UserAdminRecoverServlet::handle(
             }
             break;
         }
+        for (auto& i : infos) {
+            UserMgr::GetInstance()->update(i);
+        }
         if (!infos.empty()) {
             auto& jids = result->jsondata["ids"];
             for (auto& i : infos) {

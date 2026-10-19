@@ -5,7 +5,6 @@
 #include "blog/data/assignment_info.h"
 
 #include <chen/db/query_builder.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/util/singleton.h>
 
 namespace blog {
@@ -19,8 +18,6 @@ public:
         ACTIVE = 1,
         INACTIVE = 2,
     };
-
-    AssignmentManager();
 
     void add(data::AssignmentInfo::ptr info);
 
@@ -41,8 +38,6 @@ public:
 
 private:
     static data::AssignmentInfo::ptr parseRow(chen::ISQLData::ptr rt);
-
-    chen::ds::HashLruCache<int64_t, data::AssignmentInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<AssignmentManager> AssignmentMgr;

@@ -136,7 +136,9 @@ int32_t UserLoginServlet::handle(
         UserLoginDeviceMgr::GetInstance()->recordLogin(param);
 
         info->setLoginTime(now);
-        data::UserInfoDao::Update(info, db);
+        if (data::UserInfoDao::Update(info, db) == 0) {
+            UserMgr::GetInstance()->update(info);
+        }
         INFO(logger) << "login user=" << info->getId() << " platform=" << platform << " device=" << device_name;
 
         response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");

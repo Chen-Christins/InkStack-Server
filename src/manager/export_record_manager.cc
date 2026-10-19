@@ -7,39 +7,19 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static const size_t kCacheMaxSize = 200;
-
-ExportRecordManager::ExportRecordManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::ExportRecordInfo::ptr ExportRecordManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::ExportRecordInfoDao::ParseRow(rt);
 }
 
-void ExportRecordManager::add(data::ExportRecordInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 data::ExportRecordInfo::ptr ExportRecordManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::ExportRecordInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::ExportRecordInfoDao::Query(id, db);
 }
 
 bool ExportRecordManager::list(
@@ -95,7 +75,6 @@ data::ExportRecordInfo::ptr ExportRecordManager::create(int64_t uid, const std::
         ERROR(logger) << "Insert export_record failed";
         return nullptr;
     }
-    m_cache.set(info->getId(), info);
     return info;
 }
 
@@ -115,7 +94,6 @@ bool ExportRecordManager::remove(int64_t id)
         ERROR(logger) << "Delete export_record failed";
         return false;
     }
-    m_cache.del(id);
     return true;
 }
 

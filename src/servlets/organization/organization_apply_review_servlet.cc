@@ -120,8 +120,6 @@ int32_t OrganizationApplyReviewServlet::handle(
                 break;
             }
 
-            OrganizationApplyMgr::GetInstance()->update(apply);
-
             result->set("org_id", org->getId());
 
             // Notify applicant
@@ -145,8 +143,6 @@ int32_t OrganizationApplyReviewServlet::handle(
                 ERROR(logger) << "db error, errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 break;
             }
-
-            OrganizationApplyMgr::GetInstance()->update(apply);
 
             // Notify applicant
             {

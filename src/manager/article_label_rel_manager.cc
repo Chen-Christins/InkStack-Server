@@ -9,39 +9,19 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
-
-ArticleLabelRelManager::ArticleLabelRelManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::ArticleLabelRelInfoDao::ParseRow(rt);
 }
 
-void ArticleLabelRelManager::add(data::ArticleLabelRelInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::ArticleLabelRelInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::ArticleLabelRelInfoDao::Query(id, db);
 }
 
 bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelInfo::ptr>& infos, int64_t id, bool valid)
@@ -58,11 +38,6 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
     if (data::ArticleLabelRelInfoDao::QueryByBuilder(infos, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return false;
-    }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return true;
 }
@@ -82,11 +57,6 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
         ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
-    }
     return true;
 }
 
@@ -104,7 +74,6 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int
     }
     auto info = data::ArticleLabelRelInfoDao::QueryByArticleIdLabelId(article_id, label_id, db);
     if (info) {
-        m_cache.set(info->getId(), info);
         cacheIdMapping(ck, info->getId());
     }
     return info;

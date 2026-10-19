@@ -1,8 +1,10 @@
 #include "message_manager.h"
 
 #include "../util.h"
+#include "cache_util.h"
 
 #include <chen/log/log.h>
+#include <chen/util/json_util.h>
 
 #include <algorithm>
 
@@ -10,16 +12,61 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 2000;
+static const int kCacheTTL = 300;
+static const char* kCachePrefix = "cache:obj:conv:";
 
-MessageManager::MessageManager()
-    : m_cache(16, kCacheMaxSize, 0)
+static std::string conversationCacheKey(int64_t id)
 {
+    return std::string(kCachePrefix) + std::to_string(id);
+}
+
+static data::ConversationInfo::ptr parseConversationCache(const Json::Value& v)
+{
+    auto info = std::make_shared<data::ConversationInfo>();
+    info->setId(cacheJsonInt64(v, "id"));
+    info->setUserAId(cacheJsonInt64(v, "user_a_id"));
+    info->setUserBId(cacheJsonInt64(v, "user_b_id"));
+    info->setLastMessageId(cacheJsonInt64(v, "last_message_id"));
+    info->setLastSenderId(cacheJsonInt64(v, "last_sender_id"));
+    info->setLastMessage(cacheJsonString(v, "last_message"));
+    info->setLastMessageTime(cacheJsonInt64(v, "last_message_time"));
+    info->setUnreadA(cacheJsonInt32(v, "unread_a"));
+    info->setUnreadB(cacheJsonInt32(v, "unread_b"));
+    info->setIsDeleted(cacheJsonInt32(v, "is_deleted"));
+    info->setCreateTime(cacheJsonTime(v, "create_time"));
+    info->setUpdateTime(cacheJsonTime(v, "update_time"));
+    info->setUserADeleted(cacheJsonInt32(v, "user_a_deleted"));
+    info->setUserBDeleted(cacheJsonInt32(v, "user_b_deleted"));
+    info->markClean();
+    return info;
+}
+
+static data::ConversationInfo::ptr getConversationCache(int64_t id)
+{
+    std::string key = conversationCacheKey(id);
+    std::string data = redisCacheGet(key);
+    if (data.empty()) {
+        return nullptr;
+    }
+    Json::Value v;
+    if (!chen::JsonUtil::FromString(v, data) || !v.isObject()) {
+        redisCacheDel(key);
+        return nullptr;
+    }
+    return parseConversationCache(v);
+}
+
+static void setConversationCache(const data::ConversationInfo::ptr& info)
+{
+    if (!info) {
+        return;
+    }
+    redisCacheSetex(conversationCacheKey(info->getId()), info->toJsonString(), kCacheTTL);
 }
 
 data::ConversationInfo::ptr MessageManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
+    auto v = getConversationCache(id);
     if (v) {
         return v;
     }
@@ -30,7 +77,7 @@ data::ConversationInfo::ptr MessageManager::get(int64_t id)
     }
     v = data::ConversationInfoDao::Query(id, db);
     if (v) {
-        m_cache.set(id, v);
+        setConversationCache(v);
     }
     return v;
 }
@@ -54,12 +101,13 @@ data::ConversationInfo::ptr MessageManager::getByUsers(int64_t uid_a, int64_t ui
     if (results.empty()) {
         return nullptr;
     }
-    m_cache.set(results[0]->getId(), results[0]);
+    setConversationCache(results[0]);
     return results[0];
 }
 
 data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t uid_b)
 {
+    std::lock_guard<std::mutex> lock(m_convMutex);
     auto conv = getByUsers(uid_a, uid_b);
     if (conv) {
         // 本端曾隐藏过该会话，重新发起时复活
@@ -79,7 +127,7 @@ data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t u
         if (need_update) {
             conv->setUpdateTime(time(0));
             if (data::ConversationInfoDao::Update(conv, db) == 0) {
-                m_cache.set(conv->getId(), conv);
+                setConversationCache(conv);
             }
         }
         return conv;
@@ -116,7 +164,7 @@ data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t u
         return nullptr;
     }
 
-    m_cache.set(info->getId(), info);
+    setConversationCache(info);
     return info;
 }
 
@@ -152,12 +200,6 @@ void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>&
     std::sort(results.begin(), results.end(), [](const auto& a, const auto& b) {
         return a->getLastMessageTime() > b->getLastMessageTime();
     });
-
-    for (auto& c : results) {
-        if (!m_cache.exists(c->getId())) {
-            m_cache.set(c->getId(), c);
-        }
-    }
 }
 
 void MessageManager::listMessages(std::vector<data::ConversationMessageInfo::ptr>& results, int64_t conversation_id, int32_t offset, int32_t limit)
@@ -186,6 +228,7 @@ void MessageManager::listMessages(std::vector<data::ConversationMessageInfo::ptr
 
 data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversation_id, int64_t sender_id, const std::string& text)
 {
+    std::lock_guard<std::mutex> lock(m_convMutex);
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -228,7 +271,7 @@ data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversat
             }
         }
         if (data::ConversationInfoDao::Update(conv, db) == 0) {
-            m_cache.set(conv->getId(), conv);
+            setConversationCache(conv);
         }
     }
 
@@ -237,6 +280,7 @@ data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversat
 
 bool MessageManager::markRead(int64_t conversation_id, int64_t uid)
 {
+    std::lock_guard<std::mutex> lock(m_convMutex);
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -262,7 +306,7 @@ bool MessageManager::markRead(int64_t conversation_id, int64_t uid)
     if (data::ConversationInfoDao::Update(conv, db)) {
         return false;
     }
-    m_cache.set(conv->getId(), conv);
+    setConversationCache(conv);
 
     // 将该会话内对方发来的未读消息置为已读
     auto qb = data::ConversationMessageInfoDao::newQuery();
@@ -284,6 +328,7 @@ bool MessageManager::markRead(int64_t conversation_id, int64_t uid)
 
 bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid)
 {
+    std::lock_guard<std::mutex> lock(m_convMutex);
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -311,7 +356,7 @@ bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid)
     if (data::ConversationInfoDao::Update(conv, db)) {
         return false;
     }
-    m_cache.set(conv->getId(), conv);
+    setConversationCache(conv);
     return true;
 }
 

@@ -8,39 +8,19 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 500;
-
-RequirementManager::RequirementManager()
-    : m_cache(8, kCacheMaxSize, 0)
-{
-}
-
 data::RequirementInfo::ptr RequirementManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::RequirementInfoDao::ParseRow(rt);
 }
 
-void RequirementManager::add(data::RequirementInfo::ptr info)
-{
-    m_cache.set(info->getId(), info);
-}
-
 data::RequirementInfo::ptr RequirementManager::get(int64_t id)
 {
-    auto v = m_cache.get(id);
-    if (v) {
-        return v;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    v = data::RequirementInfoDao::Query(id, db);
-    if (v) {
-        m_cache.set(id, v);
-    }
-    return v;
+    return data::RequirementInfoDao::Query(id, db);
 }
 
 uint64_t RequirementManager::listByPages(std::vector<data::RequirementInfo::ptr>& infos, uint64_t offset, uint64_t size, int32_t status, bool isValid)
@@ -58,11 +38,6 @@ uint64_t RequirementManager::listByPages(std::vector<data::RequirementInfo::ptr>
     int64_t total = 0;
     if (data::RequirementInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
-    }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }
@@ -89,11 +64,6 @@ uint64_t RequirementManager::listByOrg(
     int64_t total = 0;
     if (data::RequirementInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
-    }
-    for (auto& info : infos) {
-        if (!m_cache.exists(info->getId())) {
-            m_cache.set(info->getId(), info);
-        }
     }
     return total;
 }

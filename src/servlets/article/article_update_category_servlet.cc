@@ -132,9 +132,6 @@ int32_t ArticleUpdateCategoryServlet::handle(
             break;
         }
 
-        for (auto& i : new_infos) {
-            ArticleCategoryRelMgr::GetInstance()->add(i);
-        }
         if (!update_add_infos.empty()) {
             auto& v = result->jsondata["add_category_ids"];
             for (auto& i : update_add_infos) {
