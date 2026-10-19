@@ -155,12 +155,10 @@ private:
     void doArticlePublishSchedule();
 
 private:
-    /// 文章浏览数锁
-    std::shared_mutex m_viewsMutex;
+    /// 待更新到 DB 的文章 ID 集合锁
+    std::shared_mutex m_updatesMutex;
     /// 文章计数（浏览/点赞/收藏）读改写锁，避免 Redis 缓存下的并发丢更新
     std::mutex m_counterMutex;
-    /// 文章浏览数
-    std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
     /// 待更新到 DB 的文章 ID 集合
     std::set<int64_t> m_updates;
 };

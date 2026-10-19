@@ -19,6 +19,8 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static const int kCacheTTL = 300;
 static const char* kCachePrefix = "cache:obj:art:";
+/// 浏览去重窗口（秒）
+static const int kViewDedupTTL = 10 * 60;
 
 static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
@@ -466,7 +468,7 @@ void ArticleManager::flushDirty()
 {
     std::set<int64_t> updates;
     {
-        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
         updates.swap(m_updates);
     }
 
@@ -477,7 +479,7 @@ void ArticleManager::flushDirty()
     if (!conn) {
         ERROR(logger) << "flushDirty: get db connect fail";
 
-        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
         for (auto& i : updates) {
             m_updates.insert(i);
         }
@@ -708,22 +710,20 @@ void ArticleManager::onTick()
 
 bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id)
 {
-    time_t now = time(0);
-    std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
-    auto it = m_viewsCache.find(id);
-    if (it != m_viewsCache.end()) {
-        auto iit = it->second.find(cookie_id);
-        if (iit != it->second.end() && (now - iit->second) < 10 * 60) {
-            return false;
-        }
+    // 用 Redis SET NX EX 做 10 分钟去重，避免进程内 m_viewsCache 无界增长
+    std::string key = "art:view:" + std::to_string(id) + ":" + cookie_id;
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "set %s 1 ex %d nx", key.c_str(), kViewDedupTTL);
+    if (!rpy) {
+        // Redis 异常时不去重，避免丢掉有效浏览
+        return true;
     }
-    m_viewsCache[id][cookie_id] = now;
-    return true;
+    // NX 未命中返回 nil，说明该用户 10 分钟内已经浏览过
+    return rpy->type != REDIS_REPLY_NIL;
 }
 
 void ArticleManager::addUpdate(int64_t id)
 {
-    std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+    std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
     m_updates.insert(id);
 }
 
