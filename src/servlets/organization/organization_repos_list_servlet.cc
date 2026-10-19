@@ -64,20 +64,20 @@ int32_t OrganizationReposListServlet::handle(
         auto& list = result->jsondata["list"];
         for (const auto& repo : repos) {
             Json::Value item;
-            item["id"] = (Json::Int64)repo->getId();
-            item["org_id"] = (Json::Int64)repo->getOrgId();
+            item["id"] = repo->getId();
+            item["org_id"] = repo->getOrgId();
             item["name"] = repo->getName();
             item["description"] = repo->getDescription();
             item["url"] = repo->getUrl();
             item["language"] = repo->getLanguage();
             item["stars_count"] = repo->getStarsCount();
             item["sort_order"] = repo->getSortOrder();
-            item["created_at"] = (Json::Int64)repo->getCreateTime();
-            item["updated_at"] = (Json::Int64)repo->getUpdateTime();
+            item["created_at"] = repo->getCreateTime();
+            item["updated_at"] = repo->getUpdateTime();
             item["has_token"] = !repo->getToken().empty();
             item["sync_status"] = repo->getSyncStatus();
             item["pr_sync_status"] = repo->getPrSyncStatus();
-            item["pr_synced_at"] = (Json::Int64)repo->getPrSyncedAt();
+            item["pr_synced_at"] = repo->getPrSyncedAt();
             list.append(item);
         }
     } while (0);

@@ -28,16 +28,58 @@ else()
     message(WARNING "deps/ 未就绪，运行 ./deps.py sync 下载三方依赖（头文件/静态库）")
 endif()
 
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 add_subdirectory(${CHEN_SDK_DIR})
+unset(CMAKE_FIND_PACKAGE_PREFER_CONFIG)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/dbproxy/data)
 
-# cppjieba — 中文分词（全文搜索）
-include(FetchContent)
-FetchContent_Declare(cppjieba
-    GIT_REPOSITORY https://github.com/yanyiwu/cppjieba.git
-    GIT_TAG v5.1.0
+# i18n: GNU gettext catalogs
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+find_program(MSGFMT_EXECUTABLE msgfmt)
+if(NOT MSGFMT_EXECUTABLE)
+    message(WARNING "msgfmt not found; install gettext to compile locale catalogs")
+endif()
+
+set(I18N_MSGFMT_ARG "")
+if(MSGFMT_EXECUTABLE)
+    set(I18N_MSGFMT_ARG --msgfmt "${MSGFMT_EXECUTABLE}")
+endif()
+
+set(I18N_SCRIPT ${PROJECT_SOURCE_DIR}/scripts/i18n.py)
+set(I18N_PO_DIR ${PROJECT_SOURCE_DIR}/locale/po)
+set(I18N_MO_DIR ${PROJECT_SOURCE_DIR}/locale/C/LC_MESSAGES)
+set(I18N_PO_FILES ${I18N_PO_DIR}/en.po ${I18N_PO_DIR}/zh_CN.po)
+set(I18N_MO_FILES ${I18N_MO_DIR}/techhaven_en.mo ${I18N_MO_DIR}/techhaven_zh_CN.mo)
+
+add_custom_command(
+    OUTPUT ${I18N_MO_FILES}
+    COMMAND ${Python3_EXECUTABLE} ${I18N_SCRIPT}
+            --project-dir ${PROJECT_SOURCE_DIR} ${I18N_MSGFMT_ARG} check
+    COMMAND ${Python3_EXECUTABLE} ${I18N_SCRIPT}
+            --project-dir ${PROJECT_SOURCE_DIR} ${I18N_MSGFMT_ARG} build
+    DEPENDS ${I18N_PO_FILES} ${I18N_SCRIPT}
+            ${PROJECT_SOURCE_DIR}/errors.json
+            ${PROJECT_SOURCE_DIR}/locale/techhaven.pot
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Checking and building gettext catalogs"
+    VERBATIM
 )
-FetchContent_MakeAvailable(cppjieba)
-include_directories(${cppjieba_SOURCE_DIR}/include)
-include_directories(${cppjieba_SOURCE_DIR}/deps/limonp/include)
-add_compile_definitions(CPPJIEBA_DICT_PATH="${cppjieba_SOURCE_DIR}/dict")
+
+add_custom_target(i18n DEPENDS ${I18N_MO_FILES})
+
+add_custom_target(i18n-check
+    COMMAND ${Python3_EXECUTABLE} ${I18N_SCRIPT}
+            --project-dir ${PROJECT_SOURCE_DIR} ${I18N_MSGFMT_ARG} check
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Checking gettext catalogs"
+    VERBATIM
+)
+
+add_custom_target(i18n-sync
+    COMMAND ${Python3_EXECUTABLE} ${I18N_SCRIPT}
+            --project-dir ${PROJECT_SOURCE_DIR} sync
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Syncing gettext catalogs"
+    VERBATIM
+)

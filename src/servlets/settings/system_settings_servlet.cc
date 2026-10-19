@@ -16,7 +16,7 @@ SystemSettingsServlet::SystemSettingsServlet()
 
 static void BuildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr info)
 {
-    json["id"] = (Json::Int64)info->getId();
+    json["id"] = info->getId();
     json["siteName"] = info->getSiteName();
     json["siteDescription"] = info->getSiteDescription();
     json["siteKeywords"] = info->getSiteKeywords();
@@ -49,8 +49,8 @@ static void BuildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr i
     json["sessionTimeout"] = info->getSessionTimeout();
     json["maintenanceMode"] = info->getMaintenanceMode() ? true : false;
     json["backupSchedule"] = info->getBackupSchedule();
-    json["createdAt"] = (Json::Int64)info->getCreatedAt();
-    json["updatedAt"] = (Json::Int64)info->getUpdatedAt();
+    json["createdAt"] = info->getCreatedAt();
+    json["updatedAt"] = info->getUpdatedAt();
 }
 
 int32_t SystemSettingsServlet::handle(
@@ -81,7 +81,6 @@ int32_t SystemSettingsServlet::handle(
             }
             BuildSettingsJson(result->jsondata, settings);
         } else if (method == chen::http::HttpMethod::PUT) {
-            INFO(logger) << "req: \n" << request->toString();
             auto info = SystemSettingsMgr::GetInstance()->get();
             if (!info) {
                 result->setErrno(errcode::SETTINGS_NOT_LOADED);

@@ -147,7 +147,7 @@ int32_t DashboardTrendServlet::handle(
                 item["label"] = "第" + std::to_string(i + 1) + "周";
                 item["date"] = FormatDate(bucket_ts) + " ~ " + FormatDate(week_end);
             }
-            item["visits"] = (Json::Int64)visits;
+            item["visits"] = visits;
             list.append(item);
         }
 

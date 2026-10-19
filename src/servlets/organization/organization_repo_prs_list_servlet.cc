@@ -92,8 +92,8 @@ int32_t OrganizationRepoPrsListServlet::handle(
         auto& list = result->jsondata["list"];
         for (const auto& pr : prs) {
             Json::Value item;
-            item["id"] = (Json::Int64)pr->getId();
-            item["repo_id"] = (Json::Int64)pr->getRepoId();
+            item["id"] = pr->getId();
+            item["repo_id"] = pr->getRepoId();
             item["github_pr_id"] = pr->getGithubPrId();
             item["title"] = pr->getTitle();
             item["description"] = pr->getDescription();
@@ -108,10 +108,10 @@ int32_t OrganizationRepoPrsListServlet::handle(
             item["deletions"] = pr->getDeletions();
             item["reviewers"] = pr->getReviewers();
             item["review_status"] = pr->getReviewStatus();
-            item["closed_at"] = (Json::Int64)pr->getClosedAt();
-            item["merged_at"] = (Json::Int64)pr->getMergedAt();
-            item["created_at"] = (Json::Int64)pr->getCreateTime();
-            item["updated_at"] = (Json::Int64)pr->getUpdateTime();
+            item["closed_at"] = pr->getClosedAt();
+            item["merged_at"] = pr->getMergedAt();
+            item["created_at"] = pr->getCreateTime();
+            item["updated_at"] = pr->getUpdateTime();
             list.append(item);
         }
     } while (0);

@@ -17,6 +17,7 @@
 
 #include "./chunk_upload.h"
 #include "./event/events.h"
+#include "./i18n/i18n.h"
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./include/tables.h"
@@ -44,6 +45,10 @@ bool BlogModule::onLoad()
     if (g_work_path->getValue().empty()) {
         ERROR(logger) << "work path is empty";
         return false;
+    }
+
+    if (!I18n::Init(g_work_path->getValue() + "/locale")) {
+        WARN(logger) << "i18n unavailable, error messages will fall back to errors.json";
     }
 
     chen::FoxThreadMgr::GetInstance()->init();

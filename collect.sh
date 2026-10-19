@@ -45,6 +45,8 @@ if [ -z "$CHEN_SDK_LIB" ]; then
 fi
 check_file "$ROOT_DIR/errors.json"
 check_file "$ROOT_DIR/dict"
+check_file "$ROOT_DIR/locale/C/LC_MESSAGES/techhaven_en.mo"
+check_file "$ROOT_DIR/locale/C/LC_MESSAGES/techhaven_zh_CN.mo"
 
 shopt -s nullglob
 module_sos=("$ROOT_DIR"/bin/module/*.so)
@@ -92,9 +94,12 @@ for so in "${module_sos[@]}"; do
 done
 cp "$CHEN_SDK_LIB" "$STAGE_DIR/lib/"
 
-# 4. 拷贝字典与错误码
+# 4. 拷贝字典、错误码与国际化目录
 #cp -R "$ROOT_DIR/dict" "$STAGE_DIR/dict"
 cp "$ROOT_DIR/errors.json" "$STAGE_DIR/errors.json"
+mkdir -p "$STAGE_DIR/locale/C/LC_MESSAGES"
+cp "$ROOT_DIR/locale/C/LC_MESSAGES/"*.mo "$STAGE_DIR/locale/C/LC_MESSAGES/"
+echo "  复制国际化目录 locale/"
 
 # 5. 打包
 tar czf "$PKG_NAME" -C "$STAGE_DIR" .

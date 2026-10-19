@@ -1,0 +1,912 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: TechHaven-Server 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-18 07:06+0000\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: scripts/i18n.py\n"
+
+#. errno: 0
+msgid "SUCCESS"
+msgstr ""
+
+#. errno: 1001
+msgid "PARAM_MISSING"
+msgstr ""
+
+#. errno: 1002
+msgid "PARAM_INVALID"
+msgstr ""
+
+#. errno: 1003
+msgid "INVALID_METHOD"
+msgstr ""
+
+#. errno: 1101
+msgid "NOT_LOGIN"
+msgstr ""
+
+#. errno: 1102
+msgid "ACCESS_DENIED"
+msgstr ""
+
+#. errno: 1103
+msgid "ACCOUNT_INVALID"
+msgstr ""
+
+#. errno: 1104
+msgid "AUTH_CODE_INVALID"
+msgstr ""
+
+#. errno: 2001
+msgid "USER_NOT_FOUND"
+msgstr ""
+
+#. errno: 2002
+msgid "USER_ACCOUNT_EXISTS"
+msgstr ""
+
+#. errno: 2003
+msgid "USER_EMAIL_EXISTS"
+msgstr ""
+
+#. errno: 2004
+msgid "USER_INVALID_ACCOUNT"
+msgstr ""
+
+#. errno: 2005
+msgid "USER_INVALID_EMAIL"
+msgstr ""
+
+#. errno: 2006
+msgid "USER_INVALID_PASSWORD"
+msgstr ""
+
+#. errno: 2007
+msgid "USER_PASSWORD_WRONG"
+msgstr ""
+
+#. errno: 2008
+msgid "USER_OLD_PASSWORD_WRONG"
+msgstr ""
+
+#. errno: 2009
+msgid "USER_ALREADY_DELETED"
+msgstr ""
+
+#. errno: 2010
+msgid "USER_ALREADY_LOGIN"
+msgstr ""
+
+#. errno: 2011
+msgid "USER_EMAIL_NOT_REGISTER"
+msgstr ""
+
+#. errno: 2012
+msgid "USER_NO_PARAM"
+msgstr ""
+
+#. errno: 2013
+msgid "USER_PASSWORDS_DIFFER"
+msgstr ""
+
+#. errno: 2014
+msgid "USER_CANNOT_FOLLOW_SELF"
+msgstr ""
+
+#. errno: 2015
+msgid "USER_NOT_FOLLOWING"
+msgstr ""
+
+#. errno: 2016
+msgid "USER_FOLLOW_FAILED"
+msgstr ""
+
+#. errno: 2017
+msgid "SEND_CODE_FREQUENT"
+msgstr ""
+
+#. errno: 2018
+msgid "DEVICE_NOT_FOUND"
+msgstr ""
+
+#. errno: 2019
+msgid "DEVICE_KICK_FAILED"
+msgstr ""
+
+#. errno: 2020
+msgid "TOTP_INVALID_CODE"
+msgstr ""
+
+#. errno: 2021
+msgid "TOTP_NOT_ENABLED"
+msgstr ""
+
+#. errno: 2022
+msgid "TOTP_ALREADY_ENABLED"
+msgstr ""
+
+#. errno: 2023
+msgid "TOTP_ENABLE_FAILED"
+msgstr ""
+
+#. errno: 2024
+msgid "TOTP_CONFIRM_FAILED"
+msgstr ""
+
+#. errno: 2025
+msgid "RECOVERY_CODE_INVALID"
+msgstr ""
+
+#. errno: 2026
+msgid "TEMP_TOKEN_INVALID"
+msgstr ""
+
+#. errno: 2027
+msgid "GITHUB_OAUTH_FAILED"
+msgstr ""
+
+#. errno: 2028
+msgid "GITHUB_STATE_INVALID"
+msgstr ""
+
+#. errno: 3001
+msgid "ARTICLE_NOT_FOUND"
+msgstr ""
+
+#. errno: 3002
+msgid "ARTICLE_INVALID_TYPE"
+msgstr ""
+
+#. errno: 3003
+msgid "ARTICLE_INVALID_STATE"
+msgstr ""
+
+#. errno: 3004
+msgid "ARTICLE_INVALID_ID"
+msgstr ""
+
+#. errno: 3005
+msgid "ARTICLE_INSERT_FAILED"
+msgstr ""
+
+#. errno: 3006
+msgid "ARTICLE_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 3007
+msgid "ARTICLE_DELETE_FAILED"
+msgstr ""
+
+#. errno: 3008
+msgid "ARTICLE_PUBLISH_FAILED"
+msgstr ""
+
+#. errno: 3009
+msgid "ARTICLE_CATEGORY_EMPTY"
+msgstr ""
+
+#. errno: 4001
+msgid "FILE_NOT_FOUND"
+msgstr ""
+
+#. errno: 4002
+msgid "FILE_TOO_LARGE"
+msgstr ""
+
+#. errno: 4003
+msgid "FILE_INVALID_NAME"
+msgstr ""
+
+#. errno: 4004
+msgid "FILE_INVALID_PATH"
+msgstr ""
+
+#. errno: 4005
+msgid "FILE_READ_ERROR"
+msgstr ""
+
+#. errno: 4006
+msgid "FILE_UPLOAD_FAILED"
+msgstr ""
+
+#. errno: 4007
+msgid "FILE_SAVE_FAILED"
+msgstr ""
+
+#. errno: 4008
+msgid "FILE_PROTOCOL_ERROR"
+msgstr ""
+
+#. errno: 4009
+msgid "FILE_DUMP_FAILED"
+msgstr ""
+
+#. errno: 4010
+msgid "UPLOAD_SESSION_NOT_FOUND"
+msgstr ""
+
+#. errno: 4011
+msgid "UPLOAD_INVALID_TYPE"
+msgstr ""
+
+#. errno: 4012
+msgid "UPLOAD_INVALID_PARAMS"
+msgstr ""
+
+#. errno: 4013
+msgid "UPLOAD_CHUNK_INVALID"
+msgstr ""
+
+#. errno: 4014
+msgid "UPLOAD_CHUNK_ALREADY_DONE"
+msgstr ""
+
+#. errno: 4015
+msgid "UPLOAD_CHUNK_INCOMPLETE"
+msgstr ""
+
+#. errno: 4016
+msgid "UPLOAD_FILE_CREATE_FAILED"
+msgstr ""
+
+#. errno: 4017
+msgid "UPLOAD_FILE_ASSEMBLE_FAILED"
+msgstr ""
+
+#. errno: 4018
+msgid "UPLOAD_FILE_HASH_FAILED"
+msgstr ""
+
+#. errno: 4019
+msgid "UPLOAD_TEMP_DIR_FAILED"
+msgstr ""
+
+#. errno: 4020
+msgid "UPLOAD_TEMP_FILE_FAILED"
+msgstr ""
+
+#. errno: 4021
+msgid "UPLOAD_CHUNK_SIZE_EXCEED"
+msgstr ""
+
+#. errno: 4022
+msgid "UPLOAD_TYPE_INVALID_TYPE"
+msgstr ""
+
+#. errno: 4023
+msgid "UPLOAD_FILE_EMPTY"
+msgstr ""
+
+#. errno: 5001
+msgid "ORG_NOT_FOUND"
+msgstr ""
+
+#. errno: 5002
+msgid "ORG_DISABLED"
+msgstr ""
+
+#. errno: 5003
+msgid "ORG_ALREADY_JOINED"
+msgstr ""
+
+#. errno: 5004
+msgid "ORG_ALREADY_APPLIED"
+msgstr ""
+
+#. errno: 5005
+msgid "ORG_APPLY_NOT_FOUND"
+msgstr ""
+
+#. errno: 5006
+msgid "ORG_APPLY_ALREADY_REVIEWED"
+msgstr ""
+
+#. errno: 5007
+msgid "ORG_INVALID_ROLE"
+msgstr ""
+
+#. errno: 5008
+msgid "ORG_INVALID_STATE"
+msgstr ""
+
+#. errno: 5009
+msgid "ORG_NOT_MEMBER"
+msgstr ""
+
+#. errno: 5010
+msgid "ORG_INVALID_ID"
+msgstr ""
+
+#. errno: 5011
+msgid "ORG_INSERT_FAILED"
+msgstr ""
+
+#. errno: 5012
+msgid "ORG_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 5013
+msgid "ORG_DELETE_FAILED"
+msgstr ""
+
+#. errno: 5014
+msgid "ORG_NO_VALID_ORGS"
+msgstr ""
+
+#. errno: 5015
+msgid "ORG_APPLY_INSERT_FAILED"
+msgstr ""
+
+#. errno: 5016
+msgid "ORG_APPLY_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 5017
+msgid "ORG_USER_REL_FAILED"
+msgstr ""
+
+#. errno: 5018
+msgid "ORG_REPO_NOT_FOUND"
+msgstr ""
+
+#. errno: 5019
+msgid "ORG_REPO_NAME_EXISTS"
+msgstr ""
+
+#. errno: 5020
+msgid "ORG_PR_NOT_FOUND"
+msgstr ""
+
+#. errno: 5021
+msgid "ORG_REPO_TOKEN_MISSING"
+msgstr ""
+
+#. errno: 5022
+msgid "GITHUB_PR_NOT_FOUND"
+msgstr ""
+
+#. errno: 5023
+msgid "GITHUB_RATE_LIMITED"
+msgstr ""
+
+#. errno: 5024
+msgid "GITHUB_API_FAILED"
+msgstr ""
+
+#. errno: 5025
+msgid "ORG_PR_SYNC_IN_PROGRESS"
+msgstr ""
+
+#. errno: 6001
+msgid "ASSIGNMENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 6002
+msgid "ASSIGNMENT_INVALID_ID"
+msgstr ""
+
+#. errno: 6003
+msgid "ASSIGNMENT_SIZE_EXCEED"
+msgstr ""
+
+#. errno: 6004
+msgid "ASSIGNMENT_MAX_SIZE_EXCEED"
+msgstr ""
+
+#. errno: 6005
+msgid "ASSIGNMENT_INSERT_FAILED"
+msgstr ""
+
+#. errno: 6006
+msgid "ASSIGNMENT_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 6007
+msgid "ASSIGNMENT_DELETE_FAILED"
+msgstr ""
+
+#. errno: 7001
+msgid "COMMENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 7002
+msgid "COMMENT_PERMISSION_DENIED"
+msgstr ""
+
+#. errno: 7003
+msgid "COMMENT_CREATE_FAILED"
+msgstr ""
+
+#. errno: 7004
+msgid "COMMENT_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 7005
+msgid "COMMENT_DELETE_FAILED"
+msgstr ""
+
+#. errno: 7006
+msgid "COMMENT_PRAISE_FAILED"
+msgstr ""
+
+#. errno: 7007
+msgid "COMMENT_UNPRAISE_FAILED"
+msgstr ""
+
+#. errno: 7008
+msgid "COMMENT_PARENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 8001
+msgid "BUG_NOT_FOUND"
+msgstr ""
+
+#. errno: 8002
+msgid "REQUIREMENT_NOT_FOUND"
+msgstr ""
+
+#. errno: 8003
+msgid "TASK_NOT_FOUND"
+msgstr ""
+
+#. errno: 8004
+msgid "RD_INVALID_TYPE"
+msgstr ""
+
+#. errno: 8005
+msgid "RD_NOT_ORG_MEMBER"
+msgstr ""
+
+#. errno: 8006
+msgid "RD_INSERT_FAILED"
+msgstr ""
+
+#. errno: 8007
+msgid "RD_UPDATE_FAILED"
+msgstr ""
+
+#. errno: 8008
+msgid "RD_DELETE_FAILED"
+msgstr ""
+
+#. errno: 8009
+msgid "RD_INVALID_USER"
+msgstr ""
+
+#. errno: 9001
+msgid "DB_CONNECTION_FAILED"
+msgstr ""
+
+#. errno: 9002
+msgid "DB_OPERATION_FAILED"
+msgstr ""
+
+#. errno: 9003
+msgid "DB_TRANSACTION_FAILED"
+msgstr ""
+
+#. errno: 9004
+msgid "DB_COMMIT_FAILED"
+msgstr ""
+
+#. errno: 9005
+msgid "INTERNAL_ERROR"
+msgstr ""
+
+#. errno: 9006
+msgid "SETTINGS_NOT_LOADED"
+msgstr ""
+
+#. errno: 9007
+msgid "SETTINGS_SAVE_FAILED"
+msgstr ""
+
+#. errno: 9008
+msgid "SMTP_NOT_CONFIGURED"
+msgstr ""
+
+#. errno: 9009
+msgid "REDIS_OPERATION_FAILED"
+msgstr ""
+
+#. errno: 9010
+msgid "METHOD_NOT_ALLOWED"
+msgstr ""
+
+#. errno: 9011
+msgid "NOTIFICATION_SEND_FAILED"
+msgstr ""
+
+#. errno: 9012
+msgid "AI_CONFIG_SAVE_FAILED"
+msgstr ""
+
+#. errno: 9013
+msgid "ARTICLE_PRAISE_FAILED"
+msgstr ""
+
+#. errno: 9014
+msgid "ARTICLE_UNPRAISE_FAILED"
+msgstr ""
+
+#. errno: 9015
+msgid "NOTIFICATION_TITLE_TOO_LONG"
+msgstr ""
+
+#. errno: 9016
+msgid "NOTIFICATION_CONTENT_TOO_LONG"
+msgstr ""
+
+#. errno: 9017
+msgid "NOTIFICATION_USERS_REQUIRED"
+msgstr ""
+
+#. errno: 9018
+msgid "NOTIFICATION_INVALID_TARGET"
+msgstr ""
+
+#. errno: 12001
+msgid "MESSAGE_CONVERSATION_NOT_FOUND"
+msgstr ""
+
+#. errno: 12002
+msgid "MESSAGE_SEND_FAILED"
+msgstr ""
+
+#. errno: 12003
+msgid "MESSAGE_TEXT_TOO_LONG"
+msgstr ""
+
+#. errno: 12004
+msgid "MESSAGE_PEER_NOT_FOUND"
+msgstr ""
+
+#. errno: 12005
+msgid "MESSAGE_CANNOT_SELF"
+msgstr ""
+
+#: src/servlets/article/article_calendar_servlet.cc:36
+msgid "invalid year or month"
+msgstr ""
+
+#: src/servlets/category/category_create_servlet.cc:44
+msgid "invalid parent_id"
+msgstr ""
+
+#: src/servlets/category/category_create_servlet.cc:54
+msgid "invalid cid"
+msgstr ""
+
+#: src/servlets/category/category_create_servlet.cc:85
+msgid "category operation failed"
+msgstr ""
+
+#: src/servlets/category/category_delete_servlet.cc:61
+msgid "no categories"
+msgstr ""
+
+#: src/servlets/database/backup_create_servlet.cc:55
+#: src/servlets/database/export_create_servlet.cc:38
+msgid "param type is required"
+msgstr ""
+
+#: src/servlets/database/backup_create_servlet.cc:59
+msgid "type must be full or incremental"
+msgstr ""
+
+#: src/servlets/database/backup_create_servlet.cc:68
+msgid "create backup failed"
+msgstr ""
+
+#: src/servlets/database/backup_delete_servlet.cc:38
+#: src/servlets/database/backup_download_servlet.cc:48
+#: src/servlets/database/export_delete_servlet.cc:38
+#: src/servlets/database/export_download_servlet.cc:48
+#: src/servlets/message/conversation_delete_servlet.cc:32
+#: src/servlets/message/conversation_message_servlet.cc:35
+#: src/servlets/message/conversation_read_servlet.cc:32
+msgid "param id is required"
+msgstr ""
+
+#: src/servlets/database/backup_delete_servlet.cc:43
+#: src/servlets/database/backup_download_servlet.cc:53
+#: src/servlets/database/export_delete_servlet.cc:43
+#: src/servlets/database/export_download_servlet.cc:53
+#: src/servlets/help/admin_faq_delete_servlet.cc:56
+#: src/servlets/help/admin_faq_edit_servlet.cc:56
+#: src/servlets/help/admin_feedback_convert_servlet.cc:57
+#: src/servlets/help/admin_feedback_delete_servlet.cc:49
+#: src/servlets/message/conversation_delete_servlet.cc:37
+#: src/servlets/message/conversation_message_servlet.cc:40
+#: src/servlets/message/conversation_read_servlet.cc:37
+msgid "invalid id"
+msgstr ""
+
+#: src/servlets/database/backup_delete_servlet.cc:49
+#: src/servlets/database/backup_download_servlet.cc:59
+msgid "backup record not found"
+msgstr ""
+
+#: src/servlets/database/backup_delete_servlet.cc:54
+msgid "delete backup failed"
+msgstr ""
+
+#: src/servlets/database/export_create_servlet.cc:42
+msgid "type must be articles/users/comments/full"
+msgstr ""
+
+#: src/servlets/database/export_create_servlet.cc:51
+msgid "create export failed"
+msgstr ""
+
+#: src/servlets/database/export_delete_servlet.cc:49
+#: src/servlets/database/export_download_servlet.cc:59
+msgid "export record not found"
+msgstr ""
+
+#: src/servlets/database/export_delete_servlet.cc:54
+msgid "delete export failed"
+msgstr ""
+
+#: src/servlets/help/admin_feedback_convert_servlet.cc:49
+msgid "target must be faq, requirement or bug"
+msgstr ""
+
+#: src/servlets/help/admin_feedback_convert_servlet.cc:96
+msgid "insert faq failed"
+msgstr ""
+
+#: src/servlets/help/admin_feedback_convert_servlet.cc:110
+#: src/servlets/help/admin_feedback_convert_servlet.cc:142
+msgid "invalid orgId"
+msgstr ""
+
+#: src/servlets/help/admin_feedback_convert_servlet.cc:128
+msgid "insert requirement failed"
+msgstr ""
+
+#: src/servlets/help/admin_feedback_convert_servlet.cc:161
+msgid "insert bug failed"
+msgstr ""
+
+#: src/servlets/help/admin_feedback_list_servlet.cc:50
+msgid "query feedbacks failed"
+msgstr ""
+
+#: src/servlets/help/feedback_servlet.cc:46
+msgid "feedback insert failed"
+msgstr ""
+
+#: src/servlets/label/label_create_servlet.cc:41
+msgid "invalid lid"
+msgstr ""
+
+#: src/servlets/label/label_create_servlet.cc:73
+msgid "label operation failed"
+msgstr ""
+
+#: src/servlets/message/conversation_delete_servlet.cc:52
+msgid "delete conversation failed"
+msgstr ""
+
+#: src/servlets/message/conversation_message_servlet.cc:79
+msgid "param text is required"
+msgstr ""
+
+#: src/servlets/message/conversation_read_servlet.cc:52
+msgid "mark read failed"
+msgstr ""
+
+#: src/servlets/message/conversation_servlet.cc:54
+msgid "param peer_id is required"
+msgstr ""
+
+#: src/servlets/message/conversation_servlet.cc:59
+msgid "invalid peer_id"
+msgstr ""
+
+#: src/servlets/message/message_json.cc:52
+msgid "私信仅对内部成员开放"
+msgstr ""
+
+#: src/servlets/notify/notification_read_servlet.cc:41
+msgid "id or ids is required"
+msgstr ""
+
+#: src/servlets/organization/organization_apply_review_servlet.cc:37
+msgid "invalid apply_id"
+msgstr ""
+
+#: src/servlets/organization/organization_apply_review_servlet.cc:42
+msgid "action must be approve or reject"
+msgstr ""
+
+#: src/servlets/organization/organization_join_check_servlet.cc:35
+#: src/servlets/user/user_admin_create_servlet.cc:77
+#: src/servlets/user/user_admin_update_servlet.cc:103
+msgid "invalid state"
+msgstr ""
+
+#: src/servlets/organization/organization_repo_prs_delete_servlet.cc:46
+msgid "PR 记录不存在"
+msgstr ""
+
+#: src/servlets/organization/organization_repo_prs_delete_servlet.cc:72
+msgid "仅研发主管及以上角色可删除审查记录"
+msgstr ""
+
+#: src/servlets/organization/organization_repo_prs_delete_servlet.cc:84
+msgid "删除审查记录失败"
+msgstr ""
+
+#: src/servlets/organization/organization_repo_prs_list_servlet.cc:67
+#: src/servlets/organization/organization_repo_prs_list_servlet.cc:80
+#: src/servlets/organization/organization_repos_add_servlet.cc:81
+#: src/servlets/organization/organization_repos_delete_servlet.cc:56
+#: src/servlets/organization/organization_repos_list_servlet.cc:53
+msgid "无权访问该组织"
+msgstr ""
+
+#: src/servlets/organization/organization_repo_prs_sync_servlet.cc:74
+msgid "param id or repo_id is required"
+msgstr ""
+
+#: src/servlets/organization/organization_repo_prs_sync_servlet.cc:119
+msgid "仅研发主管及以上角色可同步 PR"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:37
+msgid "仓库名称最长128字符"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:42
+msgid "仓库地址最长512字符"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:47
+msgid "仅支持 GitHub 仓库"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:52
+msgid "编程语言最长64字符"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:86
+msgid "仅研发主管及以上角色可添加仓库"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:94
+msgid "该组织下已存在同名仓库"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_add_servlet.cc:143
+msgid "添加仓库失败"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_delete_servlet.cc:40
+msgid "仓库不存在"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_delete_servlet.cc:61
+msgid "仅研发主管及以上角色可删除仓库"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_delete_servlet.cc:73
+msgid "删除仓库失败"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_sync_servlet.cc:62
+msgid "仅研发主管及以上角色可触发仓库同步"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_sync_servlet.cc:77
+msgid "同步失败"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_token_servlet.cc:60
+msgid "仅研发主管及以上角色可管理仓库 Token"
+msgstr ""
+
+#: src/servlets/organization/organization_repos_token_servlet.cc:74
+msgid "保存 Token 失败"
+msgstr ""
+
+#: src/servlets/organization/organization_user_switch_role_servlet.cc:70
+#: src/servlets/user/user_admin_create_servlet.cc:73
+#: src/servlets/user/user_admin_update_servlet.cc:96
+msgid "invalid role"
+msgstr ""
+
+#: src/servlets/rd/rd_bug_detail_servlet.cc:26
+#: src/servlets/rd/rd_requirement_detail_servlet.cc:26
+#: src/servlets/rd/rd_task_detail_servlet.cc:26
+msgid "id is required"
+msgstr ""
+
+#: src/servlets/rd/rd_my_tickets_servlet.cc:26
+msgid "type is required"
+msgstr ""
+
+#: src/servlets/rd/rd_trend_servlet.cc:181
+msgid "日期范围不合法"
+msgstr ""
+
+#: src/servlets/rd/rd_trend_servlet.cc:195
+msgid "无权访问任何组织"
+msgstr ""
+
+#: src/servlets/user/user_2fa_confirm_servlet.cc:54
+msgid "please call /api/v1/user/2fa/enable first"
+msgstr ""
+
+#: src/servlets/user/user_2fa_disable_servlet.cc:63
+msgid "disable 2fa failed"
+msgstr ""
+
+#: src/servlets/user/user_2fa_reset_servlet.cc:81
+msgid "reset 2fa failed"
+msgstr ""
+
+#: src/servlets/user/user_admin_create_servlet.cc:49
+#: src/servlets/user/user_create_servlet.cc:36
+msgid "account and password required"
+msgstr ""
+
+#: src/servlets/user/user_admin_create_servlet.cc:96
+#: src/servlets/user/user_admin_reset_passwd_servlet.cc:72
+#: src/servlets/user/user_create_servlet.cc:86
+#: src/servlets/user/user_reset_passwd_servlet.cc:63
+msgid "insert user failed"
+msgstr ""
+
+#: src/servlets/user/user_admin_delete_servlet.cc:67
+msgid "delete user failed"
+msgstr ""
+
+#: src/servlets/user/user_admin_reset_passwd_servlet.cc:48
+#: src/servlets/user/user_reset_passwd_servlet.cc:34
+msgid "password required"
+msgstr ""
+
+#: src/servlets/user/user_admin_update_servlet.cc:117
+#: src/servlets/user/user_update_servlet.cc:94
+msgid "update user failed"
+msgstr ""
+
+#: src/servlets/user/user_ai_config_servlet.cc:60
+msgid "type must be openai, claude or glm"
+msgstr ""
+
+#: src/servlets/user/user_ai_config_servlet.cc:67
+msgid "max_tokens is required for claude"
+msgstr ""
+
+#: src/servlets/user/user_oauth_github_callback_servlet.cc:308
+#: src/servlets/user/user_oauth_github_servlet.cc:59
+msgid "GitHub OAuth 未配置"
+msgstr ""
+
+#: src/servlets/user/user_refresh_token_servlet.cc:52
+msgid "token is required"
+msgstr ""
+
+#: src/servlets/user/user_refresh_token_servlet.cc:58
+msgid "token mismatch, please re-login"
+msgstr ""
+
+#: src/servlets/user/user_update_servlet.cc:59
+msgid "old password required"
+msgstr ""
+
+#: src/util.h:128 src/util.h:137
+#, c-format
+msgid "param %s is required"
+msgstr ""

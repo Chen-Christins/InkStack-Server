@@ -135,7 +135,7 @@ function(create_server_module module_name source_dir module_output_dir server_ou
         ${CHEN_LIBRARY}
         ${CHEN_SDK_DEP_LIBS}
     )
-    message(STATUS "[DEBUG] create_server_module libs=${libs}")
+#    message(STATUS "[DEBUG] create_server_module libs=${libs}")
     set(${MODULE_UPPER}_LIBS ${libs} PARENT_SCOPE)
     
     force_redefine_file_macro_for_sources(${module_name})

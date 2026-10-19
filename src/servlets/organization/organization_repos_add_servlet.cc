@@ -147,7 +147,7 @@ int32_t OrganizationReposAddServlet::handle(
 
         OrganizationRepoMgr::GetInstance()->add(info);
 
-        result->set("id", (Json::Int64)info->getId());
+        result->set("id", info->getId());
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

@@ -408,6 +408,8 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
         case REJECTED:
             stats.rejected += cnt;
             break;
+        default:
+            break;
         }
     }
 

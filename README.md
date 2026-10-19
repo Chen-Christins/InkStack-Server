@@ -10,6 +10,7 @@
 - 自研 ORM（XML 配置，自动生成 C++ 数据访问层）
 - chen-sdk 基础库
 - 多线程/协程支持
+- GNU gettext 国际化
 - Docker 部署支持
 
 ## 主要功能
@@ -77,7 +78,7 @@ cp bin/conf/prod.env.example bin/conf/prod.env
 
 ## 部署打包
 
-`collect.sh` 会收集部署所需文件并打包为 tar.gz（结构与生产目录一致：`server` / `module` / `lib` / `conf` / `dict` / `errors.json`）：
+`collect.sh` 会收集部署所需文件并打包为 tar.gz（结构与生产目录一致：`server` / `module` / `lib` / `conf` / `dict` / `errors.json` / `locale`）：
 
 ```sh
 # 打包生产配置（配置值含部署路径 WORK_PATH 全部取自 bin/conf/prod.env）
@@ -159,18 +160,25 @@ CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepa
 ```json
 {
   "chen-sdk": { "repo": "Chen-Christins/chen", "version": "1.5.4", "arch": "arm64" },
-  "thirdparty": { "repo": "Chen-Christins/chen", "tag": "v1.0.0", "asset": "deps-{arch}.zip" }
+  "thirdparty": { "repo": "Chen-Christins/chen", "tag": "v1.0.0", "asset": "deps-{arch}.zip" },
+  "cppjieba": {
+    "repo": "yanyiwu/cppjieba",
+    "tag": "v5.1.0",
+    "limonp_repo": "yanyiwu/limonp",
+    "limonp_ref": "a269e34dc4948d5a9209e21a7887b52daa0d3e78"
+  }
 }
 ```
 
 - `chen-sdk`：框架 SDK（`chen-sdk-<version>-<arch>.zip`），解压为根目录 `chen-sdk-<version>/`。
 - `thirdparty`：三方依赖包（protobuf / yaml-cpp / tinyxml2 / jsoncpp / hiredis-vip 的头文件 + 静态库），解压到 `deps/`。
+- `cppjieba`：中文分词头文件（`deps/include/cppjieba`）及其 `limonp` 依赖（`deps/include/limonp`）。两者均为 header-only，编译时直接进入 `libblog.so`。
 
 | 命令 | 说明 |
 |------|------|
-| `./deps.py sync` | 下载 chen-sdk + thirdparty（默认全部） |
+| `./deps.py sync` | 下载 chen-sdk + thirdparty + cppjieba（默认全部） |
 | `./deps.py sync --sdk-only` | 只下载 chen-sdk |
-| `./deps.py thirdparty` | 只下载三方依赖到 `deps/` |
+| `./deps.py thirdparty` | 只下载三方依赖与 cppjieba 到 `deps/` |
 | `./deps.py use 1.5.4 --arch amd64` | 切换 SDK 版本/架构 |
 | `./deps.py use --archive /tmp/chen-sdk.zip` | 使用本地临时 SDK 包 |
 | `./deps.py current` | 查看已安装 SDK 与 `deps/` 状态 |
@@ -179,9 +187,40 @@ CI 生产配置由 **GitHub Secrets/Variables** 注入（见 workflow 的 `Prepa
 
 说明：
 
-- 资产缓存在 `.deps-cache/`，用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）。
-- 三方依赖只用于**编译**（`deps/include`）。模块**不**静态链接三方库，运行时符号由预编译 `bin/server` 提供，避免与 server 内的静态副本重复；部署机也无需安装这些库。
+- 资产缓存在 `.deps-cache/`，用 GitHub Release 的 `digest` 做 sha256 校验（离线时仅告警）；cppjieba/limonp 的源码包按 tag/commit 缓存。
+- 三方依赖与 cppjieba 头文件只用于**编译**（`deps/include`）。模块**不**静态链接三方库，运行时符号由预编译 `bin/server` 提供，避免与 server 内的静态副本重复；部署机也无需安装这些库。cppjieba 为 header-only，不存在需要额外链接的 `.a`。
 - 架构按主机自动识别（`dependencies.json` 的 `arch=auto`）：mac(arm64) / Linux(amd64) 各自 `./deps.py sync` 即可，无需软链；如需固定，用 `./deps.py use <version> --arch <arch>` 改配置。
+
+## 国际化（i18n）
+
+- 语言解析顺序：`?lang=` → `Accept-Language` → 系统设置 `language` → `zh_CN`。
+- 当前支持 `zh_CN`、`en`。
+- 错误码消息：`errors.json` 提供 errno/key 与兜底，`locale/po/*.po` 提供 gettext 翻译，运行时加载 `locale/C/LC_MESSAGES/techhaven_<lang>.mo`。
+- 自定义消息：`result->setErrno(ec, "literal")`；带参数使用 `result->setErrnoFmt(ec, "param %s is required", param)`。
+- 新增或修改消息后：
+
+```sh
+ninja i18n-sync    # 重新提取源码消息并合并 PO
+# 编辑 locale/po/en.po、locale/po/zh_CN.po
+ninja i18n-check   # 校验 POT/PO 完整性及占位符
+```
+
+- `.mo` 由构建自动生成到 `locale/C/LC_MESSAGES/`（已 gitignore）。
+- 构建依赖：Linux 安装 `gettext`（提供 `xgettext` / `msgfmt` / `msgmerge` / `msginit`）；运行时使用 glibc gettext，无需额外库。
+- 部署包会包含 `locale/C/LC_MESSAGES/*.mo`；热部署会同步 `locale/` 目录。
+
+服务启动后可验证：
+
+```sh
+curl -H 'Accept-Language: en-US' http://127.0.0.1:8090/api/v1/user/info
+# msg: Not logged in
+
+curl 'http://127.0.0.1:8090/api/v1/user/info?lang=zh-CN'
+# msg: 未登录
+
+curl 'http://127.0.0.1:8090/api/v1/error-codes?lang=en'
+# data: 英文错误码表
+```
 
 ## 相关文档
 - [API_DOCS.md](API_DOCS.md) 详细接口说明

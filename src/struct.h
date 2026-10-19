@@ -29,6 +29,7 @@ struct Result {
     int32_t errno_; // 统一业务错误码（默认 0 = 成功）
     int64_t used;
     std::string msg;
+    std::string lang;
     Json::Value jsondata;
 
     template <class T>
@@ -57,6 +58,8 @@ struct Result {
      * @param customMsg 自定义消息
      */
     void setErrno(int32_t ec, const std::string& customMsg);
+
+    void setErrnoFmt(int32_t ec, const char* fmt, ...);
 
     /**
      * @brief 设置 data 为原始 JSON 字符串（用于下发配置等场景）

@@ -13,7 +13,7 @@ namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
+static chen::ConfigVar<std::string>::ptr server_data_path = chen::Config::Lookup<std::string>("server.data_path");
 
 ExportDownloadServlet::ExportDownloadServlet()
     : BlogLoginedServlet("ExportDownloadServlet")
@@ -67,7 +67,7 @@ int32_t ExportDownloadServlet::handle(
         }
 
         if (filepath[0] != '/') {
-            filepath = server_work_path->getValue() + "/" + filepath;
+            filepath = server_data_path->getValue() + "/" + filepath;
         }
 
         std::ifstream ifs(filepath, std::ios::binary);
@@ -85,7 +85,6 @@ int32_t ExportDownloadServlet::handle(
             format = "json";
         response->setHeader("Content-Disposition", "attachment; filename=\"" + info->getName() + "." + format + "\"");
         response->setHeader("Content-Type", "application/octet-stream");
-        response->setHeader("Content-Length", std::to_string(fileSize));
         response->setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response->setHeader("Pragma", "no-cache");
         response->setHeader("Expires", "0");
@@ -107,8 +106,6 @@ int32_t ExportDownloadServlet::handle(
     } while (0);
     if (!success) {
         response->delHeader("Content-Disposition");
-        response->delHeader("Content-Length");
-        response->setHeader("Content-Type", "application/json");
         response->setBody(result->toJsonString());
     }
     return 0;

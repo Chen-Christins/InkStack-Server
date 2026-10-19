@@ -96,7 +96,7 @@ int32_t ConversationMessageServlet::handle(
             // HTTP 兜底发送也走聊天 WS 推送给接收方
             Json::Value frame;
             frame["type"] = "message";
-            frame["conversation_id"] = (Json::Int64)conversation_id;
+            frame["conversation_id"] = conversation_id;
             Json::Value msg_json;
             BuildMessageJson(msg_json, msg, peer_id);
             frame["message"] = msg_json;
