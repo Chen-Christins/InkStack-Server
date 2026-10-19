@@ -140,7 +140,8 @@ int32_t RdTrendServlet::handle(
         if (!end_date_str.empty()) {
             ctx.end_date = rd::ParseDate(end_date_str) + 86400;
         } else {
-            ctx.end_date = now;
+            // 左闭右开：结束点取明天 00:00，保证 series 包含今天
+            ctx.end_date = chen::TimeUtil::GetDayStart(now) + 86400;
         }
         if (!start_date_str.empty()) {
             ctx.start_date = rd::ParseDate(start_date_str);
