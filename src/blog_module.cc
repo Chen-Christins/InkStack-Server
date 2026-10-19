@@ -486,6 +486,7 @@ void BlogModule::registerServlets()
         dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskDeleteServlet));
         dp->addServlet("/api/v1/rd/trends", XX(RdTrendServlet));
         dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));
+        dp->addServlet("/api/v1/rd/pr-distribution", XX(RdPrDistributionServlet));
         dp->addServlet("/api/v1/rd/my-tickets", XX(RdMyTicketsServlet));
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
         dp->addServlet("/api/v1/rd/organizations/members", XX(RdOrganizationMembersServlet));

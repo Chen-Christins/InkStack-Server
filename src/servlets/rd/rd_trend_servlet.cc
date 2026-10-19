@@ -10,6 +10,7 @@
 #include "../../manager/user_manager.h"
 #include "blog/data/organization_repo_prs_info.h"
 #include "blog/data/task_info.h"
+#include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
@@ -19,36 +20,6 @@ static chen::Logger::ptr logger = LOG_ROOT();
 RdTrendServlet::RdTrendServlet()
     : BlogLoginedServlet("RdTrendServlet")
 {
-}
-
-// ==================== 静态工具函数 ====================
-
-time_t RdTrendServlet::parseDate(const std::string& date_str)
-{
-    return chen::TimeUtil::Str2Time(date_str.c_str(), "%Y-%m-%d");
-}
-
-std::string RdTrendServlet::formatDate(time_t t)
-{
-    return chen::TimeUtil::Time2Str(t, "%Y-%m-%d");
-}
-
-std::string RdTrendServlet::formatGroupKey(time_t t, const std::string& granularity)
-{
-    struct tm tm;
-    localtime_r(&t, &tm);
-    char buf[32];
-    if (granularity == "month") {
-        snprintf(buf, sizeof(buf), "%04d-%02d", tm.tm_year + 1900, tm.tm_mon + 1);
-    } else if (granularity == "week") {
-        int wday = tm.tm_wday;
-        int days_to_monday = (wday == 0 ? 6 : wday - 1);
-        time_t monday = t - days_to_monday * 86400;
-        return formatDate(monday);
-    } else {
-        return formatDate(t);
-    }
-    return buf;
 }
 
 // ==================== 查询辅助函数 ====================
@@ -119,7 +90,7 @@ void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table,
         for (auto& [d, cnt] : rows) {
             std::string key = d;
             if (ctx.granularity == "week") {
-                key = formatGroupKey(parseDate(d), "week");
+                key = rd::FormatGroupKey(rd::ParseDate(d), "week");
             } else if (ctx.granularity == "month") {
                 key = d.substr(0, 7);
             }
@@ -167,12 +138,12 @@ int32_t RdTrendServlet::handle(
 
         time_t now = time(0);
         if (!end_date_str.empty()) {
-            ctx.end_date = parseDate(end_date_str) + 86400;
+            ctx.end_date = rd::ParseDate(end_date_str) + 86400;
         } else {
             ctx.end_date = now;
         }
         if (!start_date_str.empty()) {
-            ctx.start_date = parseDate(start_date_str);
+            ctx.start_date = rd::ParseDate(start_date_str);
         } else {
             ctx.start_date = ctx.end_date - period_days * 86400;
         }
@@ -317,7 +288,7 @@ int32_t RdTrendServlet::handle(
             }
 
             for (auto& t : date_points) {
-                std::string key = formatGroupKey(t, ctx.granularity);
+                std::string key = rd::FormatGroupKey(t, ctx.granularity);
                 if (ctx.series_map.find(key) == ctx.series_map.end()) {
                     Json::Value pt;
                     pt["date"] = key;
@@ -340,7 +311,7 @@ int32_t RdTrendServlet::handle(
             addSeriesBySql(ctx, "task", 2, "completed");
 
             for (auto& t : date_points) {
-                std::string key = formatGroupKey(t, ctx.granularity);
+                std::string key = rd::FormatGroupKey(t, ctx.granularity);
                 auto it = ctx.series_map.find(key);
                 if (it != ctx.series_map.end()) {
                     series_arr.append(it->second);

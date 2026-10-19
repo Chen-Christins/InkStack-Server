@@ -115,6 +115,7 @@
 #include "../servlets/rd/rd_my_tickets_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/rd/rd_organization_members_servlet.h"                 // IWYU pragma: keep
 #include "../servlets/rd/rd_organizations_servlet.h"                        // IWYU pragma: keep
+#include "../servlets/rd/rd_pr_distribution_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/rd/rd_requirement_delete_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/rd/rd_requirement_detail_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/rd/rd_requirement_edit_servlet.h"                     // IWYU pragma: keep
