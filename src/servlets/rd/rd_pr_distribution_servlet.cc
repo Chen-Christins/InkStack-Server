@@ -135,8 +135,8 @@ int32_t RdPrDistributionServlet::handle(
             }
             if (!is_admin) {
                 auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
-                if (!rel || rel->getIsDeleted() || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED ||
-                    rel->getRole() < OrganizationManager::Role::REPORTER) {
+                if (!rel || rel->getIsDeleted() || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED
+                    || rel->getRole() < OrganizationManager::Role::REPORTER) {
                     result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
@@ -205,8 +205,8 @@ int32_t RdPrDistributionServlet::handle(
             series[key] = point;
         }
 
-        if (!AddPrSeries(db, target_orgs, start, end, granularity, false, "total", series) ||
-            !AddPrSeries(db, target_orgs, start, end, granularity, true, "merged", series)) {
+        if (!AddPrSeries(db, target_orgs, start, end, granularity, false, "total", series)
+            || !AddPrSeries(db, target_orgs, start, end, granularity, true, "merged", series)) {
             result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }

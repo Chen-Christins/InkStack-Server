@@ -82,8 +82,7 @@ void Index::initJieba()
         // Index 只使用 Cut，不需要 KeywordExtractor 的 idf/stop_words；
         // 直接使用 MixSegment 可避免加载 25 万条 IDF 词典。
         long rss_before = RssKb();
-        m_jieba.reset(new cppjieba::MixSegment(
-            dict_path + "/jieba.dict.utf8", dict_path + "/hmm_model.utf8", dict_path + "/user.dict.utf8"));
+        m_jieba.reset(new cppjieba::MixSegment(dict_path + "/jieba.dict.utf8", dict_path + "/hmm_model.utf8", dict_path + "/user.dict.utf8"));
         INFO(logger) << "jieba initialized (MixSegment), RSS " << rss_before << " -> " << RssKb() << " KB, dict_path=" << dict_path;
     } catch (const std::exception& e) {
         ERROR(logger) << "jieba init failed: " << e.what();
