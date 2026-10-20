@@ -121,7 +121,7 @@ int32_t NotificationSendServlet::handle(
             for (auto& s : chen::StringUtil::Split(user_ids_str, ',')) {
                 auto trimmed = chen::StringUtil::Trim(s);
                 if (!trimmed.empty()) {
-                    ids.push_back(std::stoll(trimmed));
+                    ids.push_back(chen::TypeUtil::Atoi(trimmed));
                 }
             }
 

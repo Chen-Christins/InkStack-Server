@@ -92,11 +92,7 @@ bool UserLoginDeviceManager::validateToken(int64_t uid, const std::string& token
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get %s", key.c_str());
     if (rpy && rpy->type == REDIS_REPLY_STRING && rpy->str) {
         std::string val(rpy->str, rpy->len);
-        try {
-            return std::stoll(val) == uid;
-        } catch (...) {
-            return false;
-        }
+        return chen::TypeUtil::Atoi(val) == uid;
     }
 
     // Redis 未命中，DB 兜底

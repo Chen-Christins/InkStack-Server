@@ -74,6 +74,10 @@ data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt
 
 void NotificationManager::addConnection(int64_t user_id, chen::http::WSSession::ptr session)
 {
+    if (!session) {
+        ERROR(logger) << "addConnection: session is null, user_id=" << user_id;
+        return;
+    }
     std::unique_lock lock(m_connMutex);
     m_connections[user_id] = session;
     INFO(logger) << "Notification WS connected: user_id=" << user_id;
@@ -91,7 +95,9 @@ void NotificationManager::closeAllConnections()
     {
         std::unique_lock lock(m_connMutex);
         for (auto& [user_id, session] : m_connections) {
-            session->close();
+            if (session) {
+                session->close();
+            }
             INFO(logger) << "Notification WS closed: user_id=" << user_id;
         }
         m_connections.clear();
@@ -100,7 +106,9 @@ void NotificationManager::closeAllConnections()
     {
         std::unique_lock lock(m_presenceMutex);
         for (auto& [user_id, session] : m_presenceConnections) {
-            session->close();
+            if (session) {
+                session->close();
+            }
             INFO(logger) << "Presence WS closed: user_id=" << user_id;
         }
         m_presenceConnections.clear();
@@ -112,7 +120,7 @@ int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& mess
 {
     std::shared_lock lock(m_connMutex);
     auto it = m_connections.find(user_id);
-    if (it == m_connections.end()) {
+    if (it == m_connections.end() || !it->second || !it->second->isConnected()) {
         return -1;
     }
     return it->second->sendMessage(message);
@@ -122,6 +130,9 @@ void NotificationManager::broadcast(const std::string& message)
 {
     std::shared_lock lock(m_connMutex);
     for (auto& [user_id, session] : m_connections) {
+        if (!session || !session->isConnected()) {
+            continue;
+        }
         session->sendMessage(message);
     }
 }
@@ -142,6 +153,10 @@ int32_t NotificationManager::getOnlineCount()
 
 void NotificationManager::addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session)
 {
+    if (!session) {
+        ERROR(logger) << "addPresenceConnection: session is null, user_id=" << user_id;
+        return;
+    }
     std::unique_lock lock(m_presenceMutex);
     m_presenceConnections[user_id] = session;
     INFO(logger) << "Presence WS connected: user_id=" << user_id;
@@ -158,6 +173,9 @@ void NotificationManager::broadcastPresence(const std::string& message)
 {
     std::shared_lock lock(m_presenceMutex);
     for (auto& [user_id, session] : m_presenceConnections) {
+        if (!session || !session->isConnected()) {
+            continue;
+        }
         session->sendMessage(message);
     }
 }

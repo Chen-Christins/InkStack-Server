@@ -1,5 +1,7 @@
 #include "notification_read_servlet.h"
 
+#include "../../util.h"
+
 #include "../../manager/notification_manager.h"
 
 #include <vector>
@@ -32,7 +34,7 @@ int32_t NotificationReadServlet::handle(
             for (auto& s : chen::StringUtil::Split(ids_str, ',')) {
                 auto trimmed = chen::StringUtil::Trim(s);
                 if (!trimmed.empty()) {
-                    ids.push_back(std::stoll(trimmed));
+                    ids.push_back(chen::TypeUtil::Atoi(trimmed));
                 }
             }
         } else {

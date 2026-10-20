@@ -13,7 +13,6 @@
 #include <chen/util/json_util.h>
 #include <json/json.h>
 #include <json/reader.h>
-#include <json/writer.h>
 
 #include <mutex>
 #include <set>

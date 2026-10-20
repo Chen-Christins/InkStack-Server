@@ -7,6 +7,7 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
+
 data::ExportRecordInfo::ptr ExportRecordManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::ExportRecordInfoDao::ParseRow(rt);

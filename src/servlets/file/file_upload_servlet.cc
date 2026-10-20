@@ -49,10 +49,20 @@ int32_t FileUploadServlet::handle(
         std::string biz_type = biz_info[0];
         int64_t biz_id = chen::TypeUtil::Atoi(biz_info[1]);
 
-        std::string subject_name = AssignmentMgr::GetInstance()->get(biz_id)->getSubjectName();
+        auto assignment = AssignmentMgr::GetInstance()->get(biz_id);
+        if (!assignment) {
+            result->setErrno(errcode::ASSIGNMENT_NOT_FOUND);
+            break;
+        }
 
         int64_t uid = getUserId(request);
-        std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
+        auto uploader = UserMgr::GetInstance()->get(uid);
+        if (!uploader) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        std::string subject_name = assignment->getSubjectName();
+        std::string user_name = uploader->getName();
         std::string dir_name = biz_type + "/" + subject_name + "/" + data[0].content + "/" + user_name;
         std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
 

@@ -67,7 +67,7 @@ int32_t AssignmentAdminListsServlet::handle(
             // organization info (负责人)
             std::vector<data::AssignmentOrganizationRelInfo::ptr> org_rels;
             AssignmentOrganizationRelMgr::GetInstance()->getByAssignmentId(org_rels, i->getId());
-            if (!org_rels.empty()) {
+            if (!org_rels.empty() && org_rels[0]) {
                 auto org = OrganizationMgr::GetInstance()->get(org_rels[0]->getOrganizationId());
                 if (org) {
                     item["organization_name"] = org->getName();

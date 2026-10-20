@@ -486,6 +486,14 @@ void ArticleManager::flushDirty()
         return;
     }
     auto trans = conn->openTransaction();
+    if (!trans) {
+        ERROR(logger) << "flushDirty: open transaction failed";
+        std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
+        for (auto& i : updates) {
+            m_updates.insert(i);
+        }
+        return;
+    }
     for (auto& i : updates) {
         auto info = get(i);
         if (!info) {
@@ -501,7 +509,14 @@ void ArticleManager::flushDirty()
             setArticleCache(info);
         }
     }
-    trans->commit();
+    if (!trans->commit()) {
+        ERROR(logger) << "flushDirty: commit failed";
+        std::unique_lock<std::shared_mutex> lock(m_updatesMutex);
+        for (auto& i : updates) {
+            m_updates.insert(i);
+        }
+        return;
+    }
     INFO(logger) << "flushDirty: flushed " << updates.size() << " articles";
 }
 

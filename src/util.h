@@ -9,7 +9,7 @@
 
 #include <chen/db/mysql.h>
 #include <chen/http/sse_session.h>
-#include <chen/util/time_util.h>
+#include <chen/util/type_util.h>
 #include <chen/util/util.h>
 
 #include <regex>
@@ -66,11 +66,7 @@ inline int64_t DecryptUserId(const std::string& encrypted)
     for (size_t i = 0; i < data.size(); i++) {
         data[i] ^= s_uid_secret[i % s_uid_secret.size()];
     }
-    try {
-        return std::stoll(data);
-    } catch (...) {
-        return 0;
-    }
+    return chen::TypeUtil::Atoi(data);
 }
 
 inline bool IsValidAccount(const std::string& str)

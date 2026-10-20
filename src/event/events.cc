@@ -756,11 +756,29 @@ static void EventDatabaseBackup(const std::any& d)
         if (info) {
             info->setStatus("failed");
             info->setDescription("mysql config not found");
-            data::BackupRecordInfoDao::Update(info, GetDB());
+            auto db = GetDB();
+            if (db) {
+                data::BackupRecordInfoDao::Update(info, db);
+            }
         }
         return;
     }
     auto& dbcfg = data.mysql_dbs.begin()->second;
+    for (const char* key : {"host", "port", "user", "passwd", "dbname"}) {
+        if (dbcfg.find(key) == dbcfg.end()) {
+            ERROR(logger) << "mysql config missing key=" << key << " for backup " << data.backup_id;
+            auto info = BackupRecordMgr::GetInstance()->get(data.backup_id);
+            if (info) {
+                info->setStatus("failed");
+                info->setDescription(std::string("mysql config missing: ") + key);
+                auto db = GetDB();
+                if (db) {
+                    data::BackupRecordInfoDao::Update(info, db);
+                }
+            }
+            return;
+        }
+    }
     std::string host = dbcfg.at("host");
     std::string port = dbcfg.at("port");
     std::string user = dbcfg.at("user");
@@ -785,11 +803,17 @@ static void EventDatabaseBackup(const std::any& d)
         return;
     }
 
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Backup " << data.backup_id << " failed: db is null";
+        return;
+    }
+
     if (rc != 0) {
         ERROR(logger) << "Backup " << data.backup_id << " failed, rc=" << rc;
         info->setStatus("failed");
         info->setDescription("mysqldump failed with exit code " + std::to_string(rc));
-        data::BackupRecordInfoDao::Update(info, GetDB());
+        data::BackupRecordInfoDao::Update(info, db);
         return;
     }
 
@@ -802,7 +826,7 @@ static void EventDatabaseBackup(const std::any& d)
     info->setFilePath("backups/" + filename);
     info->setCompletedAt(time(0));
     info->setDescription("completed in " + std::to_string(elapsed) + "s, size " + std::to_string(fileSize) + " bytes");
-    data::BackupRecordInfoDao::Update(info, GetDB());
+    data::BackupRecordInfoDao::Update(info, db);
 
     INFO(logger) << "Backup " << data.backup_id << " completed: " << filepath << " (" << fileSize << " bytes, " << elapsed << "s)";
 }

@@ -43,7 +43,7 @@ int32_t User2faRecoveryServlet::handle(
         int64_t uid = 0;
         if (rpy && rpy->type == REDIS_REPLY_STRING && rpy->str) {
             try {
-                uid = std::stoll(std::string(rpy->str, rpy->len));
+                uid = chen::TypeUtil::Atoi(std::string(rpy->str, rpy->len));
             } catch (...) {
                 uid = 0;
             }

@@ -59,7 +59,7 @@ bool getCachedListResult(const std::string& cacheKey, std::vector<int64_t>& ids)
         if (end == std::string::npos) {
             end = data.size();
         }
-        ids.push_back(std::stoll(data.substr(pos, end - pos)));
+        ids.push_back(chen::TypeUtil::Atoi(data.substr(pos, end - pos)));
         pos = end + 1;
     }
     return true;

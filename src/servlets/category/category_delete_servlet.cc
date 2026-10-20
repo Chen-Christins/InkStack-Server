@@ -75,6 +75,10 @@ int32_t CategoryDeleteServlet::handle(
         }
 
         auto db = getDB();
+        if (!db) {
+            result->setErrno(errcode::DB_OPERATION_FAILED);
+            break;
+        }
         auto trans = db->openTransaction();
         if (!trans) {
             result->setErrno(errcode::DB_TRANSACTION_FAILED);

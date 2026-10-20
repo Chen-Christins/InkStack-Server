@@ -47,7 +47,7 @@ int32_t AdminCommentApproveServlet::handle(
         std::string token;
         while (std::getline(ss, token, ',')) {
             try {
-                ids.push_back(std::stoll(token));
+                ids.push_back(chen::TypeUtil::Atoi(token));
             } catch (...) {
             }
         }

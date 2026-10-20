@@ -25,8 +25,9 @@ int32_t BroadcastListServlet::handle(
     do {
         int64_t offset = request->getParamAs<int64_t>("offset", 0);
         int64_t size = request->getParamAs<int64_t>("size", 20);
-        if (size > 100)
+        if (size > 100) {
             size = 100;
+        }
 
         auto db = GetDB();
         if (!db) {

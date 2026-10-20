@@ -44,6 +44,10 @@ static bool AddPrSeries(
     std::map<std::string, Json::Value>& series)
 {
     auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
+    if (!qb) {
+        ERROR(logger) << "pr-distribution newQuery failed field=" << field;
+        return false;
+    }
     qb->select("DATE_FORMAT(prs.create_time, '%Y-%m-%d') as d, COUNT(*) as cnt");
     AddPrBaseConds(qb, orgs, start, end);
     if (merged_only) {

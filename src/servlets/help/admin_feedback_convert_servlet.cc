@@ -52,7 +52,7 @@ int32_t AdminFeedbackConvertServlet::handle(
 
         int64_t id = 0;
         try {
-            id = std::stoll(id_str);
+            id = chen::TypeUtil::Atoi(id_str);
         } catch (...) {
             result->setErrno(errcode::PARAM_INVALID, "invalid id");
             break;
@@ -105,7 +105,7 @@ int32_t AdminFeedbackConvertServlet::handle(
             int64_t org_id = 0;
             if (!org_id_str.empty()) {
                 try {
-                    org_id = std::stoll(org_id_str);
+                    org_id = chen::TypeUtil::Atoi(org_id_str);
                 } catch (...) {
                     result->setErrno(errcode::PARAM_INVALID, "invalid orgId");
                     break;
@@ -137,7 +137,7 @@ int32_t AdminFeedbackConvertServlet::handle(
             int64_t org_id = 0;
             if (!org_id_str.empty()) {
                 try {
-                    org_id = std::stoll(org_id_str);
+                    org_id = chen::TypeUtil::Atoi(org_id_str);
                 } catch (...) {
                     result->setErrno(errcode::PARAM_INVALID, "invalid orgId");
                     break;

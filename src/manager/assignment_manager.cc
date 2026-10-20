@@ -151,14 +151,16 @@ AssignmentManager::AssignmentStats AssignmentManager::getStats()
             for (auto& [s, cnt] : rows) {
                 stats.total += cnt;
                 switch (s) {
-                case Status::ACTIVE:
+                case ACTIVE:
                     stats.active = cnt;
                     break;
-                case Status::INACTIVE:
+                case INACTIVE:
                     stats.closed = cnt;
                     break;
-                case Status::DRAFT:
+                case DRAFT:
                     stats.draft = cnt;
+                    break;
+                default:
                     break;
                 }
             }
