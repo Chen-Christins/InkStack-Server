@@ -44,7 +44,7 @@ int32_t AdminFeedbackDeleteServlet::handle(
 
         int64_t id = 0;
         try {
-            id = std::stoll(id_str);
+            id = chen::TypeUtil::Atoi(id_str);
         } catch (...) {
             result->setErrno(errcode::PARAM_INVALID, "invalid id");
             break;

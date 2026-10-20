@@ -362,6 +362,10 @@ bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid)
 
 void MessageManager::addChatConnection(int64_t user_id, chen::http::WSSession::ptr session)
 {
+    if (!session) {
+        ERROR(logger) << "addChatConnection: session is null, user_id=" << user_id;
+        return;
+    }
     std::unique_lock lock(m_chatMutex);
     auto& conns = m_chatConnections[user_id];
     for (auto& s : conns) {
@@ -409,6 +413,9 @@ int32_t MessageManager::sendToUser(int64_t user_id, const std::string& message)
         return -1;
     }
     for (auto& s : it->second) {
+        if (!s || !s->isConnected()) {
+            continue;
+        }
         s->sendMessage(message);
     }
     return 0;
@@ -419,7 +426,9 @@ void MessageManager::closeAllChatConnections()
     std::unique_lock lock(m_chatMutex);
     for (auto& [user_id, conns] : m_chatConnections) {
         for (auto& s : conns) {
-            s->close();
+            if (s) {
+                s->close();
+            }
             INFO(logger) << "Chat WS closed: user_id=" << user_id;
         }
     }
@@ -429,10 +438,16 @@ void MessageManager::closeAllChatConnections()
 
 int64_t MessageManager::getUidBySession(chen::http::WSSession::ptr session)
 {
+    if (!session) {
+        return 0;
+    }
     std::shared_lock lock(m_chatMutex);
     auto sock = session->getSocket();
     for (auto& [user_id, conns] : m_chatConnections) {
         for (auto& s : conns) {
+            if (!s) {
+                continue;
+            }
             if (s == session || s->getSocket() == sock) {
                 return user_id;
             }

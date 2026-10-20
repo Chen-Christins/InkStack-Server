@@ -1,5 +1,7 @@
 #include "chunk_upload_servlet.h"
 
+#include "../../util.h"
+
 #include <chen/config/config.h>
 #include <chen/log/log.h>
 #include <chen/util/encryptor_util.h>
@@ -104,7 +106,7 @@ int32_t ChunkUploadServlet::handleInit(
             chen::EncryptorUtil::MD5(std::to_string(now) + "|" + file_name + "|" + std::to_string(uid) + chen::RandomUtil::RandString(6));
 
         auto session = ChunkUploadMgr::GetInstance()->createSession(
-            upload_id, file_name, total_size, chunk_size, total_chunks, biz_type, std::stoll(biz_id), dir_name);
+            upload_id, file_name, total_size, chunk_size, total_chunks, biz_type, chen::TypeUtil::Atoi(biz_id), dir_name);
 
         result->set("upload_id", upload_id);
     } while (0);
@@ -150,8 +152,18 @@ int32_t ChunkUploadServlet::handleComplete(
         }
 
         int64_t uid = getUserId(request);
-        std::string subject_name = AssignmentMgr::GetInstance()->get(upload_session->biz_id)->getSubjectName();
-        std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
+        auto assignment = AssignmentMgr::GetInstance()->get(upload_session->biz_id);
+        if (!assignment) {
+            result->setErrno(errcode::ASSIGNMENT_NOT_FOUND);
+            break;
+        }
+        auto uploader = UserMgr::GetInstance()->get(uid);
+        if (!uploader) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        std::string subject_name = assignment->getSubjectName();
+        std::string user_name = uploader->getName();
         std::string dir_name = upload_session->biz_type + "/" + subject_name + "/" + upload_session->dir_name + "/" + user_name;
         std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
 

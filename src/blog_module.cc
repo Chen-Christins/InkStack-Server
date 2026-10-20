@@ -13,10 +13,12 @@
 #include <chen/log/log.h>
 #include <chen/util/util.h>
 
+#include <exception>
 #include <memory>
 #include <ranges>
 
 #include "./chunk_upload.h"
+#include "./crash_handler.h"
 #include "./event/events.h"
 #include "./i18n/i18n.h"
 #include "./include/managers.h"
@@ -48,6 +50,13 @@ bool BlogModule::onLoad()
         return false;
     }
 
+    std::string crash_log = g_work_path->getValue() + "/logs/crash.log";
+    if (InstallCrashHandler(crash_log)) {
+        INFO(logger) << "crash handler installed, path=" << crash_log;
+    } else {
+        WARN(logger) << "install crash handler failed, path=" << crash_log;
+    }
+
     if (!I18n::Init(g_work_path->getValue() + "/locale")) {
         WARN(logger) << "i18n unavailable, error messages will fall back to errors.json";
     }
@@ -71,6 +80,8 @@ bool BlogModule::onUnload()
 
     chen::FoxThreadMgr::GetInstance()->stop();
 
+    UninstallCrashHandler();
+
     return true;
 }
 
@@ -91,29 +102,35 @@ void BlogModule::onTick()
 {
     static int s_pr_sync_tick = 0;
 
-    if (chen::TimeUtil::IsZeroOfDay()) {
-        s_pr_sync_tick = 0;
+    try {
+        if (chen::TimeUtil::IsZeroOfDay()) {
+            s_pr_sync_tick = 0;
 
-        OrganizationRepoMgr::GetInstance()->onTick();
+            OrganizationRepoMgr::GetInstance()->onTick();
 
-        OrganizationRepoPrMgr::GetInstance()->onTick();
+            OrganizationRepoPrMgr::GetInstance()->onTick();
+        }
+
+        ArticleMgr::GetInstance()->onTick();
+
+        NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
+
+        ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
+
+        if (s_pr_sync_tick % 5 == 0) {
+            chen::http::SessionDataMgr::GetInstance()->check(3600);
+        }
+
+        if (s_pr_sync_tick % 60 == 0) {
+            INFO(logger) << "module status: \n" << Module::statusString();
+        }
+
+        s_pr_sync_tick++;
+    } catch (const std::exception& e) {
+        ERROR(logger) << "onTick exception: " << e.what();
+    } catch (...) {
+        ERROR(logger) << "onTick unknown exception";
     }
-
-    ArticleMgr::GetInstance()->onTick();
-
-    NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
-
-    ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
-
-    if (s_pr_sync_tick % 5 == 0) {
-        chen::http::SessionDataMgr::GetInstance()->check(3600);
-    }
-
-    if (s_pr_sync_tick % 60 == 0) {
-        INFO(logger) << "module status: \n" << Module::statusString();
-    }
-
-    s_pr_sync_tick++;
 }
 
 uint64_t BlogModule::getTickIntervalMs()

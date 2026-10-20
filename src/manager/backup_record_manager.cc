@@ -7,6 +7,7 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
+
 data::BackupRecordInfo::ptr BackupRecordManager::parseRow(chen::ISQLData::ptr rt)
 {
     return data::BackupRecordInfoDao::ParseRow(rt);

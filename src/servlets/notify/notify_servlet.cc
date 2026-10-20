@@ -1,5 +1,7 @@
 #include "notify_servlet.h"
 
+#include "../../util.h"
+
 #include "../../error_codes.h"
 #include "../../manager/notification_manager.h"
 #include "../../manager/user_login_device_manager.h"
@@ -14,6 +16,9 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static void sendError(chen::http::WSSession::ptr session, int32_t errno_, const std::string& errstr)
 {
+    if (!session) {
+        return;
+    }
     Json::Value err;
     err["errno"] = errno_;
     err["errstr"] = errstr;
@@ -27,6 +32,9 @@ NotifyServlet::NotifyServlet()
 
 int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session)
 {
+    if (!header || !session) {
+        return -1;
+    }
     std::string uid_str = header->getParam("uid");
     std::string token = header->getParam("token");
     std::string token_time_str = header->getParam("token_time");
@@ -39,8 +47,8 @@ int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http
         return -1;
     }
 
-    int64_t uid = std::stoll(uid_str);
-    int64_t token_time = std::stoll(token_time_str);
+    int64_t uid = chen::TypeUtil::Atoi(uid_str);
+    int64_t token_time = chen::TypeUtil::Atoi(token_time_str);
 
     if (token_time <= time(0)) {
         INFO(logger) << "[WS] onConnect FAIL: token expired, token_time=" << token_time << " now=" << time(0);
@@ -77,7 +85,7 @@ int32_t NotifyServlet::onClose(chen::http::HttpRequest::ptr header, chen::http::
 {
     std::string uid_str = header->getParam("uid");
     if (!uid_str.empty()) {
-        int64_t uid = std::stoll(uid_str);
+        int64_t uid = chen::TypeUtil::Atoi(uid_str);
         NotificationMgr::GetInstance()->removeConnection(uid);
     }
 
@@ -86,11 +94,16 @@ int32_t NotifyServlet::onClose(chen::http::HttpRequest::ptr header, chen::http::
 
 int32_t NotifyServlet::handle(chen::http::HttpRequest::ptr header, chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session)
 {
+    if (!header || !msg || !session) {
+        return -1;
+    }
     // 心跳处理
     Json::Value root;
     if (chen::JsonUtil::FromString(root, msg->getData()) && root.isObject()) {
         if (root["type"].asString() == "ping") {
-            session->sendMessage("{\"type\":\"pong\"}");
+            if (session && session->isConnected()) {
+                session->sendMessage("{\"type\":\"pong\"}");
+            }
             return 0;
         }
     }

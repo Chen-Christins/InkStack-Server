@@ -1,6 +1,7 @@
 #include "struct.h"
 
 #include <cstdarg>
+#include <exception>
 
 #include <chen/log/log.h>
 
@@ -97,22 +98,36 @@ BlogServlet::BlogServlet(const std::string& name)
 
 int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session)
 {
-    uint64_t ts = chen::TimeUtil::GetCurrentUs();
     Result::ptr result = std::make_shared<Result>();
-    result->lang = I18n::ResolveLanguage(request);
-    // response->setHeader("Access-Control-Allow-Origin", "*");
-    // response->setHeader("Access-Control-Allow-Credentials", "true");
+    try {
+        uint64_t ts = chen::TimeUtil::GetCurrentUs();
+        result->lang = I18n::ResolveLanguage(request);
+        // response->setHeader("Access-Control-Allow-Origin", "*");
+        // response->setHeader("Access-Control-Allow-Credentials", "true");
 
-    TRACE(logger) << "path=" << request->getPath() << " - method=" << chen::http::HttpMethodToString(request->getMethod());
+        TRACE(logger) << "path=" << request->getPath() << " - method=" << chen::http::HttpMethodToString(request->getMethod());
 
-    if (handlePre(request, response, session, result)) {
-        handle(request, response, session, result);
-    } else {
-        response->setBody(result->toJsonString());
+        if (handlePre(request, response, session, result)) {
+            handle(request, response, session, result);
+        } else {
+            response->setBody(result->toJsonString());
+        }
+        uint64_t used = chen::TimeUtil::GetCurrentUs() - ts;
+        handlePost(request, response, session, result);
+        response->setHeader("used", std::to_string((used * 1.0 / 1000)) + "ms");
+    } catch (const std::exception& e) {
+        ERROR(logger) << "servlet exception path=" << (request ? request->getPath() : "-") << " what=" << e.what();
+        result->setErrno(errcode::INTERNAL_ERROR);
+        if (response) {
+            response->setBody(result->toJsonString());
+        }
+    } catch (...) {
+        ERROR(logger) << "servlet unknown exception path=" << (request ? request->getPath() : "-");
+        result->setErrno(errcode::INTERNAL_ERROR);
+        if (response) {
+            response->setBody(result->toJsonString());
+        }
     }
-    uint64_t used = chen::TimeUtil::GetCurrentUs() - ts;
-    handlePost(request, response, session, result);
-    response->setHeader("used", std::to_string((used * 1.0 / 1000)) + "ms");
     return 0;
 }
 
@@ -176,6 +191,9 @@ chen::http::SessionData::ptr BlogServlet::getSessionData(chen::http::HttpRequest
 bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session)
 {
     auto data = getSessionData(request, response);
+    if (!data) {
+        return false;
+    }
     int64_t uid = data->getData<int64_t>(CookieKey::USER_ID);
     if (uid) {
         // 即使 session 已登录，也要校验 token 是否仍然有效（同平台互顶 / 设备唯一）
@@ -199,8 +217,8 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request, chen::http::Ht
     }
     bool is_login = false;
     do {
-        int64_t uid = DecryptUserId(request->getCookie(CookieKey::USER_ID));
-        if (!uid) {
+        int64_t id = DecryptUserId(request->getCookie(CookieKey::USER_ID));
+        if (!id) {
             break;
         }
         auto token = request->getCookie(CookieKey::TOKEN);
@@ -211,7 +229,7 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request, chen::http::Ht
         if (token_time <= time(0)) {
             break;
         }
-        data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
+        data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(id);
         if (!uinfo) {
             break;
         }
@@ -219,17 +237,17 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request, chen::http::Ht
             break;
         }
         // 验证 token：以设备表 token 为准（Redis 优先，DB 兜底）
-        if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, token, time(0))) {
-            INFO(logger) << GetRemoteIP(request, session) << "\t" << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t" << uid << "\t" << 310
+        if (!UserLoginDeviceMgr::GetInstance()->validateToken(id, token, time(0))) {
+            INFO(logger) << GetRemoteIP(request, session) << "\t" << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t" << id << "\t" << 310
                          << "\t"
                          << "invalid_token" << "\tauto_login" << request->getPath() << "\t"
                          << (!request->getQuery().empty() ? request->getQuery() : "-");
             break;
         }
-        data->setData(CookieKey::USER_ID, uid);
-        SaveSessionToRedis(data->getId(), uid, 1);
+        data->setData(CookieKey::USER_ID, id);
+        SaveSessionToRedis(data->getId(), id, 1);
         is_login = true;
-        INFO(logger) << GetRemoteIP(request, session) << "\t" << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t" << uid << "\t" << 200 << "\t"
+        INFO(logger) << GetRemoteIP(request, session) << "\t" << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t" << id << "\t" << 200 << "\t"
                      << "ok" << "\tauto_login " << request->getPath() << "\t" << (!request->getQuery().empty() ? request->getQuery() : "-");
 
         uinfo->setLoginTime(time(0));

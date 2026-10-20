@@ -70,6 +70,10 @@ int32_t ArticleVerifyServlet::handle(
         info->setUpdateTime(time(0));
 
         auto db = getDB();
+        if (!db) {
+            result->setErrno(errcode::DB_OPERATION_FAILED);
+            break;
+        }
         if (data::ArticleInfoDao::Update(info, db)) {
             result->setErrno(errcode::ARTICLE_UPDATE_FAILED);
             info->setState(ArticleManager::Status::CHECKING);

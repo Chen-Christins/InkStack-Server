@@ -67,7 +67,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
             return -1;
         }
         try {
-            article_id = std::stoll(article_id_str);
+            article_id = chen::TypeUtil::Atoi(article_id_str);
         } catch (...) {
             session->sendEvent(R"({"type":"error","message":"invalid article_id"})");
             return -1;

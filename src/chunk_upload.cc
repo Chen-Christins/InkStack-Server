@@ -3,6 +3,8 @@
 #include <chen/log/log.h>
 #include <chen/util/util.h>
 
+#include <algorithm>
+
 static chen::Logger::ptr g_logger = LOG_ROOT();
 
 ChunkUploadSession::ptr ChunkUploadManager::createSession(
@@ -61,11 +63,15 @@ void ChunkUploadManager::cleanupExpiredSessions()
         std::shared_lock lock(m_mtx);
         for (auto& kv : m_sessions) {
             auto& session = kv.second;
+            if (!session) {
+                continue;
+            }
             if (now - session->created_at > k_session_ttl) {
                 expired_ids.push_back(kv.first);
                 // 收集临时文件路径
                 std::lock_guard<std::mutex> slock(session->m_mtx);
-                for (size_t i = 0; i < session->total_chunks; ++i) {
+                size_t count = std::min(session->total_chunks, session->chunk_data.size());
+                for (size_t i = 0; i < count; ++i) {
                     if (!session->chunk_data[i].empty()) {
                         temp_files_to_remove.push_back(session->chunk_data[i]);
                     }

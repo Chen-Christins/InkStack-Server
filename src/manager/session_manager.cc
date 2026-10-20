@@ -3,6 +3,7 @@
 #include <chen/config/config.h>
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
+#include <chen/util/type_util.h>
 
 #include <memory>
 #include <string>
@@ -48,12 +49,15 @@ chen::http::SessionData::ptr LoadSessionFromRedis(const std::string& session_id)
     int32_t is_auth = 0;
 
     for (size_t i = 0; i + 1 < rpy->elements; i += 2) {
+        if (!rpy->element[i] || !rpy->element[i]->str || !rpy->element[i + 1] || !rpy->element[i + 1]->str) {
+            continue;
+        }
         std::string field(rpy->element[i]->str, rpy->element[i]->len);
         std::string value(rpy->element[i + 1]->str, rpy->element[i + 1]->len);
         if (field == "user_id") {
-            uid = std::stoll(value);
+            uid = chen::TypeUtil::Atoi(value);
         } else if (field == "is_auth") {
-            is_auth = std::stoi(value);
+            is_auth = (int32_t)chen::TypeUtil::Atoi(value);
         }
     }
 
@@ -62,6 +66,9 @@ chen::http::SessionData::ptr LoadSessionFromRedis(const std::string& session_id)
     }
 
     auto data = std::make_shared<chen::http::SessionData>(false);
+    if (!data) {
+        return nullptr;
+    }
     data->setId(session_id);
     data->setData("S_UID", uid);
     data->setData("IS_AUTH", is_auth);

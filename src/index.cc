@@ -3,6 +3,7 @@
 
 #include <chen/config/config.h>
 #include <chen/log/log.h>
+#include <chen/util/type_util.h>
 #include <chen/util/util.h>
 #include <cppjieba/MixSegment.hpp>
 
@@ -438,7 +439,7 @@ bool Index::load(const std::string& path)
     uint32_t docmap_size = ba->readUint32();
     for (uint32_t i = 0; i < docmap_size; ++i) {
         std::string key_str = ba->readStringF16();
-        int64_t aid = std::stoll(key_str);
+        int64_t aid = chen::TypeUtil::Atoi(key_str);
         uint32_t pos = ba->readUint32();
         m_docMap[aid] = pos;
     }

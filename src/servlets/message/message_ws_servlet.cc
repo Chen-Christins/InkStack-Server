@@ -1,5 +1,7 @@
 #include "message_ws_servlet.h"
 
+#include "../../util.h"
+
 #include <chen/log/log.h>
 #include <chen/util/json_util.h>
 #include <json/json.h>
@@ -16,6 +18,9 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static void sendError(chen::http::WSSession::ptr session, int32_t errno_, const std::string& errstr)
 {
+    if (!session) {
+        return;
+    }
     Json::Value err;
     err["errno"] = errno_;
     err["errstr"] = errstr;
@@ -29,6 +34,9 @@ MessageWSServlet::MessageWSServlet()
 
 int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session)
 {
+    if (!header || !session) {
+        return -1;
+    }
     std::string uid_str = header->getParam("uid");
     std::string token = header->getParam("token");
     std::string token_time_str = header->getParam("token_time");
@@ -41,8 +49,8 @@ int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::h
         return -1;
     }
 
-    int64_t uid = std::stoll(uid_str);
-    int64_t token_time = std::stoll(token_time_str);
+    int64_t uid = chen::TypeUtil::Atoi(uid_str);
+    int64_t token_time = chen::TypeUtil::Atoi(token_time_str);
 
     if (token_time <= time(0)) {
         INFO(logger) << "[ChatWS] onConnect FAIL: token expired, token_time=" << token_time << " now=" << time(0);
@@ -83,7 +91,7 @@ int32_t MessageWSServlet::onClose(chen::http::HttpRequest::ptr header, chen::htt
 {
     std::string uid_str = header->getParam("uid");
     if (!uid_str.empty()) {
-        int64_t uid = std::stoll(uid_str);
+        int64_t uid = chen::TypeUtil::Atoi(uid_str);
         MessageMgr::GetInstance()->removeChatConnection(uid, session);
         INFO(logger) << "[ChatWS] onClose: uid=" << uid;
     }
@@ -92,13 +100,16 @@ int32_t MessageWSServlet::onClose(chen::http::HttpRequest::ptr header, chen::htt
 
 int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session)
 {
+    if (!header || !msg || !session) {
+        return -1;
+    }
     do {
         // 身份解析：优先握手请求里的 uid，其次按连接反查
         int64_t uid = MessageMgr::GetInstance()->getUidBySession(session);
         if (!uid) {
             std::string uid_str = header->getParam("uid");
             if (!uid_str.empty()) {
-                uid = std::stoll(uid_str);
+                uid = atoi(uid_str.c_str());
             }
         }
         if (!uid) {
@@ -121,7 +132,9 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
 
         // 心跳处理
         if (type == "ping") {
-            session->sendMessage("{\"type\":\"pong\"}");
+            if (session && session->isConnected()) {
+                session->sendMessage("{\"type\":\"pong\"}");
+            }
             break;
         }
 
@@ -136,7 +149,9 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
                 err["client_id"] = client_id;
                 err["errno"] = ec;
                 err["errstr"] = errstr;
-                session->sendMessage(chen::JsonUtil::ToString(err));
+                if (session && session->isConnected()) {
+                    session->sendMessage(chen::JsonUtil::ToString(err));
+                }
             };
 
             if (conversation_id <= 0 || text.empty()) {

@@ -32,7 +32,7 @@ int32_t OrganizationApplyReviewServlet::handle(
 
         int64_t apply_id = 0;
         try {
-            apply_id = std::stoll(apply_id_str);
+            apply_id = chen::TypeUtil::Atoi(apply_id_str);
         } catch (...) {
             result->setErrno(errcode::PARAM_INVALID, "invalid apply_id");
             break;

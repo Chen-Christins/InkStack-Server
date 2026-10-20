@@ -416,6 +416,8 @@ CommentManager::CommentStats CommentManager::getStats()
                 case SPAM:
                     stats.spam = cnt;
                     break;
+                default:
+                    break;
                 }
             }
         }
