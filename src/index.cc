@@ -8,7 +8,6 @@
 #include <cppjieba/MixSegment.hpp>
 
 #include <algorithm>
-#include <fstream>
 
 #include <chen/util/fs_util.h>
 
@@ -25,18 +24,17 @@ static chen::Logger::ptr logger = LOG_ROOT();
 /// 读取当前进程 RSS（KB），用于观察词典加载的内存变化
 static long RssKb()
 {
-    std::ifstream ifs("/proc/self/status");
-    std::string line;
-    while (std::getline(ifs, line)) {
-        if (line.rfind("VmRSS:", 0) == 0) {
-            try {
-                return std::stol(line.substr(6));
-            } catch (...) {
-                return -1;
-            }
-        }
+    std::string status = chen::FSUtil::ReadFileToString("/proc/self/status");
+    size_t pos = status.find("VmRSS:");
+    if (pos == std::string::npos) {
+        return -1;
     }
-    return -1;
+    size_t end = status.find('\n', pos);
+    std::string line = status.substr(pos, end == std::string::npos ? std::string::npos : end - pos);
+    if (line.size() <= 6) {
+        return -1;
+    }
+    return chen::TypeUtil::Atoi(line.substr(6));
 }
 
 static chen::ConfigVar<std::string>::ptr g_jieba_dict_path =

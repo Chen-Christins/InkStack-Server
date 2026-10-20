@@ -1,6 +1,7 @@
 #include "crash_handler.h"
 
 #include <chen/log/log.h>
+#include <chen/util/fs_util.h>
 
 #include <cerrno>
 #include <cstdio>
@@ -61,6 +62,12 @@ bool InstallCrashHandler(const std::string& log_path)
 {
     if (g_installed) {
         return true;
+    }
+
+    // 普通上下文用 FSUtil 确保目录存在；信号处理里仍然只能用 fd 系统调用
+    std::string dir = chen::FSUtil::Dirname(log_path);
+    if (!dir.empty()) {
+        chen::FSUtil::Mkdir(dir);
     }
 
     g_crash_fd = open(log_path.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0644);
