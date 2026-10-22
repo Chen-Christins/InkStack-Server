@@ -284,6 +284,42 @@ bool BlogLoginedServlet::handlePre(
     return true;
 }
 
+BlogAdminServlet::BlogAdminServlet(const std::string& name)
+    : BlogLoginedServlet(name)
+{
+}
+
+bool BlogAdminServlet::handlePre(
+    chen::http::HttpRequest::ptr request,
+    chen::http::HttpResponse::ptr response,
+    chen::http::HttpSession::ptr session,
+    Result::ptr result)
+{
+    if (!BlogLoginedServlet::handlePre(request, response, session, result)) {
+        return false;
+    }
+
+    int64_t uid = getUserId(request);
+    if (!uid) {
+        result->setErrno(errcode::NOT_LOGIN);
+        return false;
+    }
+    auto user = UserMgr::GetInstance()->get(uid);
+    if (!user) {
+        result->setErrno(errcode::USER_NOT_FOUND);
+        return false;
+    }
+    if (user->getState() != UserManager::Status::ACTIVE || user->getIsDeleted()) {
+        result->setErrno(errcode::ACCOUNT_INVALID);
+        return false;
+    }
+    if (user->getRole() != UserManager::Role::ADMIN) {
+        result->setErrno(errcode::ACCESS_DENIED);
+        return false;
+    }
+    return true;
+}
+
 int64_t BlogServlet::getUserId(chen::http::HttpRequest::ptr request)
 {
     std::string sid = request->getCookie(CookieKey::SESSION_KEY);

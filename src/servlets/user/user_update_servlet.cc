@@ -59,7 +59,7 @@ int32_t UserUpdateServlet::handle(
                 result->setErrno(errcode::PARAM_MISSING, "old password required");
                 break;
             }
-            if (info->getPasswd() != chen::EncryptorUtil::MD5(old_passwd)) {
+            if (!VerifyPassword(old_passwd, info->getPasswd())) {
                 result->setErrno(errcode::USER_OLD_PASSWORD_WRONG);
                 break;
             }
@@ -69,7 +69,12 @@ int32_t UserUpdateServlet::handle(
             info->setName(name);
         }
         if (!passwd.empty()) {
-            info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+            std::string passwd_hash = HashPassword(passwd);
+            if (passwd_hash.empty()) {
+                result->setErrno(errcode::INTERNAL_ERROR);
+                break;
+            }
+            info->setPasswd(passwd_hash);
         }
         if (!bio.empty()) {
             info->setBio(bio);

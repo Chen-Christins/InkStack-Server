@@ -5,7 +5,7 @@
 namespace blog {
 namespace servlet {
 
-class UserAdminListsServlet : public BlogLoginedServlet {
+class UserAdminListsServlet : public BlogAdminServlet {
 public:
     typedef std::shared_ptr<UserAdminListsServlet> ptr;
     UserAdminListsServlet();

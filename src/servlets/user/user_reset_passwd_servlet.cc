@@ -55,9 +55,19 @@ int32_t UserResetPasswdServlet::handle(
             break;
         }
 
+        std::string passwd_hash = HashPassword(passwd);
+        if (passwd_hash.empty()) {
+            result->setErrno(errcode::INTERNAL_ERROR);
+            break;
+        }
+
         chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info = UserMgr::GetInstance()->getByEmail(email);
-        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+        if (!info) {
+            result->setErrno(errcode::USER_EMAIL_NOT_REGISTER);
+            break;
+        }
+        info->setPasswd(passwd_hash);
 
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");

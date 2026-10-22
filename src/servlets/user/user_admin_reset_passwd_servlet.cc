@@ -12,7 +12,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminResetPasswdServlet::UserAdminResetPasswdServlet()
-    : BlogLoginedServlet("UserAdminResetPasswdServlet")
+    : BlogAdminServlet("UserAdminResetPasswdServlet")
 {
 }
 
@@ -26,23 +26,6 @@ int32_t UserAdminResetPasswdServlet::handle(
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         DEFINE_AND_CHECK_STRING(result, passwd_f, "passwd_f");
         DEFINE_AND_CHECK_STRING(result, passwd_s, "passwd_s");
-
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setErrno(errcode::NOT_LOGIN);
-            break;
-        }
-        auto current_user = UserMgr::GetInstance()->get(uid);
-        if (!current_user) {
-            result->setErrno(errcode::USER_NOT_FOUND);
-            break;
-        }
-        int32_t role = current_user->getRole();
-
-        if (role != UserManager::Role::ADMIN) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
-        }
 
         if (passwd_f.empty() || passwd_s.empty()) {
             result->setErrno(errcode::PARAM_MISSING, "password required");
@@ -60,13 +43,19 @@ int32_t UserAdminResetPasswdServlet::handle(
             break;
         }
 
+        std::string passwd_hash = HashPassword(passwd_s);
+        if (passwd_hash.empty()) {
+            result->setErrno(errcode::INTERNAL_ERROR);
+            break;
+        }
+
         chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info = UserMgr::GetInstance()->get(id);
         if (!info) {
             result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
-        info->setPasswd(chen::EncryptorUtil::MD5(passwd_s));
+        info->setPasswd(passwd_hash);
 
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");

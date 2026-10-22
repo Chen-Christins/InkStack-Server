@@ -6,10 +6,12 @@ ai:
   model: glm-4.7-flash
   api_key: # system default AI API key, used when user has not configured their own AI settings
 
-# 默认超级管理员：服务启动时若不存在管理员则自动创建，用于首次登录并配置 SMTP 等系统设置
+# 默认超级管理员：服务启动时若该邮箱对应的管理员不存在则自动创建，用于首次登录并配置 SMTP 等系统设置。
+# 出于安全考虑不提供默认密码：首次部署必须在 <ENV>.env 中显式设置 ADMIN_PASSWD，
+# 已存在的管理员密码不会被启动流程覆盖。
 admin:
   account: admin
-  passwd: admin123456
+  passwd: ${ADMIN_PASSWD}
   email: admin@example.com
 
 # 分词字典配置

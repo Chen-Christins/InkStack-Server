@@ -107,6 +107,7 @@ jobs:
           MYSQL_DBNAME: ${{ secrets.MYSQL_DBNAME }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_DBNAME: ${{ secrets.REDIS_DBNAME }}
+          ADMIN_PASSWD: ${{ secrets.ADMIN_PASSWD }}
           GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
           GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
           GITHUB_CALLBACK_URL: ${{ secrets.OAUTH_GITHUB_CALLBACK_URL }}
@@ -122,6 +123,7 @@ jobs:
             echo "MYSQL_DBNAME=${MYSQL_DBNAME:-techhaven}"
             echo "REDIS_HOST=${REDIS_HOST:-127.0.0.1:6379}"
             echo "REDIS_DBNAME=${REDIS_DBNAME:-blog}"
+            echo "ADMIN_PASSWD=${ADMIN_PASSWD:-}"
             echo "GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}"
             echo "GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}"
             echo "GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}"
