@@ -11,7 +11,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminUpdateServlet::UserAdminUpdateServlet()
-    : BlogLoginedServlet("UserAdminUpdateServlet")
+    : BlogAdminServlet("UserAdminUpdateServlet")
 {
 }
 
@@ -23,23 +23,6 @@ int32_t UserAdminUpdateServlet::handle(
 {
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
-
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setErrno(errcode::NOT_LOGIN);
-            break;
-        }
-        auto current_user = UserMgr::GetInstance()->get(uid);
-        if (!current_user) {
-            result->setErrno(errcode::USER_NOT_FOUND);
-            break;
-        }
-        int32_t user_role = current_user->getRole();
-
-        if (user_role != UserManager::Role::ADMIN) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
-        }
 
         auto info = UserMgr::GetInstance()->get(user_id);
         if (!info) {
@@ -89,7 +72,12 @@ int32_t UserAdminUpdateServlet::handle(
                 result->setErrno(errcode::USER_INVALID_PASSWORD);
                 break;
             }
-            info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+            std::string passwd_hash = HashPassword(passwd);
+            if (passwd_hash.empty()) {
+                result->setErrno(errcode::INTERNAL_ERROR);
+                break;
+            }
+            info->setPasswd(passwd_hash);
         }
         if (has_role) {
             if (role < 1 || role > 4) {

@@ -73,12 +73,18 @@ int32_t UserCreateServlet::handle(
             }
         }
 
+        std::string passwd_hash = HashPassword(passwd);
+        if (passwd_hash.empty()) {
+            result->setErrno(errcode::INTERNAL_ERROR);
+            break;
+        }
+
         // 开启事务
         chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info(new data::UserInfo);
         info->setAccount(account);
         info->setEmail(email);
-        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+        info->setPasswd(passwd_hash);
         info->setState(UserManager::Status::ACTIVE);
         info->setName(account);
 

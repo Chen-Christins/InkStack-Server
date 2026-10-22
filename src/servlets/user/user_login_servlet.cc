@@ -57,7 +57,7 @@ int32_t UserLoginServlet::handle(
             result->setErrno(errcode::AUTH_CODE_INVALID);
             break;
         }
-        if (info->getPasswd() != chen::EncryptorUtil::MD5(passwd)) {
+        if (!VerifyPassword(passwd, info->getPasswd())) {
             result->setErrno(errcode::USER_PASSWORD_WRONG);
             break;
         }
@@ -65,6 +65,22 @@ int32_t UserLoginServlet::handle(
         if (info->getState() != 1 || info->getIsDeleted()) {
             result->setErrno(errcode::ACCOUNT_INVALID);
             break;
+        }
+
+        // 历史 MD5 哈希在登录成功后透明升级为 bcrypt；失败不影响本次登录，下次登录重试
+        if (IsLegacyPasswordHash(info->getPasswd())) {
+            std::string passwd_hash = HashPassword(passwd);
+            auto upgrade_db = getDB();
+            if (!passwd_hash.empty() && upgrade_db) {
+                std::string old_hash = info->getPasswd();
+                info->setPasswd(passwd_hash);
+                if (data::UserInfoDao::Update(info, upgrade_db) == 0) {
+                    UserMgr::GetInstance()->update(info);
+                } else {
+                    info->setPasswd(old_hash);
+                    ERROR(logger) << "upgrade password hash failed user=" << info->getId();
+                }
+            }
         }
 
         // 2FA: 密码验证通过后，如果启用了TOTP，返回临时凭证等待第二步验证

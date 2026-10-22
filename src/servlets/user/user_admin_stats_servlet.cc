@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 UserAdminStatsServlet::UserAdminStatsServlet()
-    : BlogLoginedServlet("UserAdminStatsServlet")
+    : BlogAdminServlet("UserAdminStatsServlet")
 {
 }
 
@@ -17,23 +17,6 @@ int32_t UserAdminStatsServlet::handle(
     Result::ptr result)
 {
     do {
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setErrno(errcode::NOT_LOGIN);
-            break;
-        }
-        auto current_user = UserMgr::GetInstance()->get(uid);
-        if (!current_user) {
-            result->setErrno(errcode::USER_NOT_FOUND);
-            break;
-        }
-        int32_t role = current_user->getRole();
-
-        if (role != UserManager::Role::ADMIN) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
-        }
-
         std::vector<int64_t> ids;
         UserMgr::GetInstance()->getAllIds(ids, false);
 

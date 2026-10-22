@@ -9,6 +9,7 @@
 
 #include <chen/db/mysql.h>
 #include <chen/http/sse_session.h>
+#include <chen/util/encryptor_util.h>
 #include <chen/util/type_util.h>
 #include <chen/util/util.h>
 
@@ -18,6 +19,28 @@
 namespace blog {
 
 chen::IDB::ptr GetDB();
+
+/**
+ * @brief 生成密码哈希（bcrypt，含随机盐）
+ * @param password 明文密码
+ * @return bcrypt 哈希；失败返回空串
+ */
+std::string HashPassword(const std::string& password);
+
+/**
+ * @brief 校验密码，兼容历史无盐 MD5 哈希
+ * @param password 明文密码
+ * @param stored 数据库中保存的哈希
+ * @return 是否匹配
+ */
+bool VerifyPassword(const std::string& password, const std::string& stored);
+
+/**
+ * @brief 判断是否为历史 MD5 哈希（登录成功后用于透明升级为 bcrypt）
+ * @param stored 数据库中保存的哈希
+ * @return 是否为 32 位十六进制 MD5
+ */
+bool IsLegacyPasswordHash(const std::string& stored);
 
 struct DiskUsage {
     int64_t totalSize;

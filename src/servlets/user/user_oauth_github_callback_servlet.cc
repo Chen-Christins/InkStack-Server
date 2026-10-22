@@ -389,7 +389,7 @@ int32_t UserOauthGithubCallbackServlet::handle(
                     user->setGithub("https://github.com/" + profile.login);
                 }
                 // GitHub 用户无本地密码，写入不可用的随机值
-                user->setPasswd(chen::EncryptorUtil::MD5(UserManager::generateToken()));
+                user->setPasswd(HashPassword(UserManager::generateToken()));
                 user->setRole(UserManager::Role::USER);
                 user->setState(UserManager::Status::ACTIVE);
                 user->setCreateTime(time(0));

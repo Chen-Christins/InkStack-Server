@@ -11,7 +11,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminCreateServlet::UserAdminCreateServlet()
-    : BlogLoginedServlet("UserAdminCreateServlet")
+    : BlogAdminServlet("UserAdminCreateServlet")
 {
 }
 
@@ -27,23 +27,6 @@ int32_t UserAdminCreateServlet::handle(
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
         DEFINE_AND_CHECK_TYPE(result, int32_t, role, "role");
         DEFINE_AND_CHECK_TYPE(result, int32_t, state, "state");
-
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setErrno(errcode::NOT_LOGIN);
-            break;
-        }
-        auto current_user = UserMgr::GetInstance()->get(uid);
-        if (!current_user) {
-            result->setErrno(errcode::USER_NOT_FOUND);
-            break;
-        }
-        int32_t user_role = current_user->getRole();
-
-        if (user_role != UserManager::Role::ADMIN) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
-        }
 
         if (account.empty() || passwd.empty()) {
             result->setErrno(errcode::PARAM_MISSING, "account and password required");
@@ -83,11 +66,17 @@ int32_t UserAdminCreateServlet::handle(
             result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
+        std::string passwd_hash = HashPassword(passwd);
+        if (passwd_hash.empty()) {
+            result->setErrno(errcode::INTERNAL_ERROR);
+            break;
+        }
+
         chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info(new data::UserInfo);
         info->setAccount(account);
         info->setEmail(email);
-        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+        info->setPasswd(passwd_hash);
         info->setRole(role);
         info->setState(state);
         info->setName(account);

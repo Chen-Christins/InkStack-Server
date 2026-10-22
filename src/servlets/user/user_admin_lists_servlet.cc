@@ -16,7 +16,7 @@ namespace servlet {
 static chen::Logger::ptr g_logger = LOG_ROOT();
 
 UserAdminListsServlet::UserAdminListsServlet()
-    : BlogLoginedServlet("UserAdminListsServlet")
+    : BlogAdminServlet("UserAdminListsServlet")
 {
 }
 
@@ -32,23 +32,6 @@ int32_t UserAdminListsServlet::handle(
         int32_t rrole = request->getParamAs<int32_t>("role", -1);
         int32_t state = request->getParamAs<int32_t>("state", -1);
         int32_t days = request->getParamAs<int32_t>("days", 0);
-
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setErrno(errcode::NOT_LOGIN);
-            break;
-        }
-        auto current_user = UserMgr::GetInstance()->get(uid);
-        if (!current_user) {
-            result->setErrno(errcode::USER_NOT_FOUND);
-            break;
-        }
-        int32_t role = current_user->getRole();
-
-        if (role != UserManager::Role::ADMIN) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
-        }
 
         uint64_t offset = (page_num - 1) * page_size;
         std::vector<data::UserInfo::ptr> users;

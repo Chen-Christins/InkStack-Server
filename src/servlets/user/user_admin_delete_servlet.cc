@@ -12,7 +12,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminDeleteServlet::UserAdminDeleteServlet()
-    : BlogLoginedServlet("UserAdminDeleteServlet")
+    : BlogAdminServlet("UserAdminDeleteServlet")
 {
 }
 
@@ -24,23 +24,6 @@ int32_t UserAdminDeleteServlet::handle(
 {
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
-
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setErrno(errcode::NOT_LOGIN);
-            break;
-        }
-        auto current_user = UserMgr::GetInstance()->get(uid);
-        if (!current_user) {
-            result->setErrno(errcode::USER_NOT_FOUND);
-            break;
-        }
-        int32_t role = current_user->getRole();
-
-        if (role != UserManager::Role::ADMIN) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
-        }
 
         auto info = UserMgr::GetInstance()->get(user_id);
         if (!info) {

@@ -5,7 +5,7 @@
 namespace blog {
 namespace servlet {
 
-class UserAdminResetPasswdServlet : public BlogLoginedServlet {
+class UserAdminResetPasswdServlet : public BlogAdminServlet {
 public:
     typedef std::shared_ptr<UserAdminResetPasswdServlet> ptr;
     UserAdminResetPasswdServlet();

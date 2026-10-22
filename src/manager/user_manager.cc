@@ -71,7 +71,7 @@ static void setUserCache(const data::UserInfo::ptr& info)
 
 static chen::ConfigVar<std::string>::ptr g_admin_account = chen::Config::Lookup("admin.account", std::string("admin"), "default super admin account");
 static chen::ConfigVar<std::string>::ptr g_admin_passwd =
-    chen::Config::Lookup("admin.passwd", std::string("admin123456"), "default super admin password");
+    chen::Config::Lookup("admin.passwd", std::string(""), "bootstrap super admin password (required only on first seed)");
 static chen::ConfigVar<std::string>::ptr g_admin_email =
     chen::Config::Lookup("admin.email", std::string("admin@example.com"), "default super admin email");
 
@@ -206,18 +206,31 @@ void UserManager::ensureSuperAdmin()
     std::string account = g_admin_account->getValue();
     std::string passwd = g_admin_passwd->getValue();
     std::string email = g_admin_email->getValue();
-    if (account.empty() || passwd.empty() || email.empty()) {
-        ERROR(logger) << "admin account or password empty, skip seeding super admin";
+    if (email.empty()) {
+        ERROR(logger) << "admin.email empty, skip seeding super admin";
         return;
     }
 
     auto info = data::UserInfoDao::QueryByEmail(email, db);
+    bool is_new = false;
     if (!info) {
+        // 仅在首次创建时要求配置初始密码，已有管理员不会被重置密码
+        if (account.empty() || passwd.empty()) {
+            ERROR(logger) << "super admin not found and admin.account/admin.passwd empty, "
+                          << "please configure them to bootstrap the first admin";
+            return;
+        }
+        std::string passwd_hash = HashPassword(passwd);
+        if (passwd_hash.empty()) {
+            ERROR(logger) << "hash super admin password failed, skip seeding";
+            return;
+        }
         info.reset(new data::UserInfo);
-        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+        info->setPasswd(passwd_hash);
         info->setName(account);
         info->setAccount(account);
         info->setEmail(email);
+        is_new = true;
     }
 
     info->setRole(Role::ADMIN);
@@ -230,7 +243,11 @@ void UserManager::ensureSuperAdmin()
     }
     setUserCache(info);
 
-    INFO(logger) << "seeded super admin account=" << account << " email=" << email;
+    if (is_new) {
+        INFO(logger) << "seeded super admin account=" << account << " email=" << email;
+    } else {
+        INFO(logger) << "super admin ensured account=" << info->getAccount() << " email=" << email;
+    }
 }
 
 blog::data::UserInfo::ptr UserManager::getByName(const std::string& v)
