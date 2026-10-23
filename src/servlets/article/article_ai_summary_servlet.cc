@@ -32,9 +32,6 @@ ArticleAISummaryServlet::ArticleAISummaryServlet()
 
 int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session)
 {
-    // ================================================================
-    // 1. 认证
-    // ================================================================
     int64_t uid = 0;
     {
         std::string sid = request->getCookie(CookieKey::SESSION_KEY);
@@ -54,9 +51,6 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         }
     }
 
-    // ================================================================
-    // 2. 获取文章
-    // ================================================================
     int64_t article_id = 0;
     std::string article_title;
     std::string article_content;
@@ -87,9 +81,6 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         }
     }
 
-    // ================================================================
-    // 3. 解析 AI 配置（用户配置优先，系统默认兜底）
-    // ================================================================
     std::string ai_type;
     std::string ai_url;
     std::string ai_key;
@@ -141,9 +132,6 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         TRACE(logger) << "AI final config: type=" << ai_type << ", url=" << ai_url << ", model=" << ai_model << ", max_tokens=" << ai_max_tokens;
     }
 
-    // ================================================================
-    // 4. 创建 AI provider
-    // ================================================================
     auto provider = ai::createProvider(ai_type);
     if (!provider) {
         ERROR(logger) << "failed to create AI provider for type: " << ai_type;
@@ -151,26 +139,17 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         return -1;
     }
 
-    // ================================================================
-    // 5. 构建请求体
-    // ================================================================
     std::string prompt = "请用简洁的中文总结以下文章的核心内容，控制在200字以内：\n\n"
                          "标题："
         + article_title + "\n\n" + article_content;
 
     std::string api_body_str = provider->buildRequest(ai_model, ai_max_tokens, SYSTEM_PROMPT, prompt, true);
 
-    // ================================================================
-    // 6. 构建请求头 — Content-Type + 厂商认证头
-    // ================================================================
     auto uri = chen::Uri::Create(ai_url + provider->endpointSuffix());
     std::map<std::string, std::string> headers;
     headers["Content-Type"] = "application/json";
     provider->authHeaders(ai_key, headers);
 
-    // ================================================================
-    // 7. 流式调用 AI 服务（带有限重试）
-    // ================================================================
     SendSSEJson(session, "start", "message", "开始生成总结...");
 
     const int MAX_RETRIES = 3;
@@ -207,9 +186,6 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         return -1;
     }
 
-    // ================================================================
-    // 8. 校验 HTTP 响应
-    // ================================================================
     auto ai_response = http_result->response;
     if (!ai_response) {
         SendSSEJson(session, "error", "message", "no response from AI service");
@@ -223,9 +199,6 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         return -1;
     }
 
-    // ================================================================
-    // 9. 发送完成事件
-    // ================================================================
     SendSSEJson(session, "done", "message", "总结生成完成");
 
     return 0;
