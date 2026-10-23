@@ -77,7 +77,7 @@ int PasskeyManager::listByUser(std::vector<data::UserPasskeyInfo::ptr>& results,
 
 int PasskeyManager::add(data::UserPasskeyInfo::ptr info)
 {
-    if (!info) {
+    if (!info || !info->getUserId() || info->getCredentialId().empty()) {
         return -1;
     }
 
@@ -85,6 +85,22 @@ int PasskeyManager::add(data::UserPasskeyInfo::ptr info)
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return -1;
+    }
+
+    // credential_id 有唯一索引：如果同一用户曾软删除同一凭据，复用旧行而不是插入失败。
+    auto existing = data::UserPasskeyInfoDao::QueryByCredentialId(info->getCredentialId(), db);
+    if (existing) {
+        if (existing->getUserId() != info->getUserId()) {
+            ERROR(logger) << "credential belongs to another user credential=" << info->getCredentialId();
+            return -1;
+        }
+        info->setId(existing->getId());
+        info->setIsDeleted(0);
+        if (data::UserPasskeyInfoDao::Update(info, db)) {
+            ERROR(logger) << "revive passkey failed user=" << info->getUserId() << " id=" << info->getId();
+            return -1;
+        }
+        return 0;
     }
 
     if (data::UserPasskeyInfoDao::Insert(info, db)) {

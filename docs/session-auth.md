@@ -56,14 +56,16 @@ auth:
 
 ## 签发与撤销
 
-| 场景                       | 调用                             |
-|----------------------------|----------------------------------|
-| 密码登录                   | `AuthService::IssueSession`      |
-| 2FA 验证 / 恢复码登录      | `AuthService::IssueSession`      |
-| GitHub OAuth 回调          | `AuthService::IssueSession`      |
-| 登出                       | `AuthService::RevokeSession`     |
-| 改密                       | `AuthService::RevokeAllSessions` |
-| 后台重置密码 / 封禁 / 删除 | `AuthService::RevokeAllSessions` |
+| 场景                       | 调用                                              |
+|----------------------------|---------------------------------------------------|
+| 密码登录                   | `AuthService::IssueSession`                       |
+| Passkey 登录               | `AuthService::IssueSession`                       |
+| 2FA 验证 / 恢复码登录      | `AuthService::IssueSession`                       |
+| 邮箱验证码恢复             | `AuthService::RevokeAllSessions` + `IssueSession` |
+| GitHub OAuth 回调          | `AuthService::IssueSession`                       |
+| 登出                       | `AuthService::RevokeSession`                      |
+| 改密                       | `AuthService::RevokeAllSessions`                  |
+| 后台重置密码 / 封禁 / 删除 | `AuthService::RevokeAllSessions`                  |
 
 `IssueSession` 会生成新的 `SESSIONID`，删除旧会话，从而避免会话固定。新登录不再签发 `S_UID` / `S_TOKEN` / `S_TOKEN_TIME` /
 `DEVICE_ID`。
@@ -82,6 +84,9 @@ auth:
 
 ## 后续
 
-- 阶段 2：Passkey 注册。
-- 阶段 3：Passkey 登录、邮箱验证码恢复、会话列表。
+- 阶段 2：Passkey 注册（已完成）。
+- 阶段 3：Passkey 登录、邮箱验证码恢复、Passkey 管理（已完成）；会话列表/下线沿用阶段 1 的
+  `user/device/list`、`user/device/kick`。
+  - `docs/passkey-login.md`
+  - `docs/email-recovery.md`
 - 阶段 4：关闭密码登录、移除旧 token/设备体系。

@@ -134,3 +134,5 @@ attestation 校验。
 ## 相关配置
 
 见 `CONFIG.md` 的 WebAuthn 章节，重点是 `rp_id`、`origin` 和 `user_handle_secret`。
+
+Passkey 登录、列表与删除见 `docs/passkey-login.md`。

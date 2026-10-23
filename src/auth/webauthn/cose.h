@@ -33,5 +33,14 @@ struct CoseKey {
  */
 bool ParseCoseKey(const std::string& cbor, CoseKey& out);
 
+/**
+ * @brief 验证 WebAuthn 签名
+ * @param key COSE 公钥
+ * @param data 待验证数据（authenticatorData || SHA256(clientDataJSON)）
+ * @param signature 原始签名字节
+ * @return 签名是否有效
+ */
+bool VerifySignature(const CoseKey& key, const std::string& data, const std::string& signature);
+
 } // namespace webauthn
 } // namespace blog

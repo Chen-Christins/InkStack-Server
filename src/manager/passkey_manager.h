@@ -32,7 +32,7 @@ public:
     int listByUser(std::vector<data::UserPasskeyInfo::ptr>& results, int64_t uid);
 
     /**
-     * @brief 新增 Passkey
+     * @brief 新增 Passkey；同一用户曾软删除同一 credential 时复用旧行
      * @return 0 成功，负数失败
      */
     int add(data::UserPasskeyInfo::ptr info);

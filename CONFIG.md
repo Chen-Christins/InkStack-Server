@@ -174,12 +174,14 @@ webauthn:
 | `webauthn.rp_name`            | 浏览器弹窗中展示的站点名                                                                             |
 | `webauthn.origin`             | 前端页面的 origin（协议 + 域名 + 端口），必须与浏览器 `clientDataJSON.origin` 完全一致               |
 | `webauthn.timeout_ms`         | 浏览器认证超时时间                                                                                   |
-| `webauthn.user_verification`  | `preferred` 或 `required`；`required` 要求生物识别/PIN                                               |
+| `webauthn.user_verification`  | `preferred` 或 `required`；同时作用于 Passkey 注册和登录，`required` 要求生物识别/PIN                |
 | `webauthn.attestation`        | 注册时请求的 attestation 类型，当前默认 `none`                                                       |
 | `webauthn.challenge_ttl`      | challenge 在 Redis 中的有效期（秒）                                                                  |
 | `webauthn.user_handle_secret` | 生成稳定 `user.id` 的 HMAC 密钥，生产环境必须配置随机值且不要随意轮换                                |
 
 > 前后端同源时 `origin` 就是站点地址；前后端分离时，`origin` 填 **前端页面**地址，`rp_id` 填两者共同的注册域。
+
+> Passkey 登录默认不叠加 TOTP；如果要求每次登录都做本地用户验证，请把 `webauthn.user_verification` 设为 `required`。
 
 > 升级后已有 `prod.env` 需要补充 `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGIN` /
 > `WEBAUTHN_USER_HANDLE_SECRET`，否则 `switch-env.sh` 会因缺少占位符而失败。

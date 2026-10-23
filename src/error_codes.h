@@ -72,6 +72,7 @@ constexpr int32_t WEBAUTHN_RP_ID_MISMATCH = 2035;     // WebAuthn rpId 不匹配
 constexpr int32_t WEBAUTHN_INVALID_CREDENTIAL = 2036; // WebAuthn 凭据无效
 constexpr int32_t WEBAUTHN_UNSUPPORTED_ALG = 2037;    // WebAuthn 不支持的算法
 constexpr int32_t WEBAUTHN_VERIFY_FAILED = 2038;      // WebAuthn 校验失败
+constexpr int32_t EMAIL_CODE_ATTEMPTS_EXCEEDED = 2039; // 验证码尝试次数过多
 
 // ==================== 模块03: 文章模块 (03001-03999) ====================
 constexpr int32_t ARTICLE_NOT_FOUND = 3001;      // 文章不存在

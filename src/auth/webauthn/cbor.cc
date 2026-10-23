@@ -1,7 +1,7 @@
 #include "cbor.h"
 
 #include <algorithm>
-#include <cstring>
+#include <cstdint>
 #include <limits>
 
 namespace blog {
@@ -155,7 +155,6 @@ bool DecodeItem(const std::string& data, size_t& pos, CborValue& out, int depth)
         if (!ReadLength(data, pos, additional, tag)) {
             return false;
         }
-        (void)tag;
         // 标签本身不参与 WebAuthn 校验，直接解码被标签包裹的值
         return DecodeItem(data, pos, out, depth + 1);
     }

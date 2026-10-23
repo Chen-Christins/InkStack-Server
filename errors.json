@@ -100,6 +100,12 @@
       "zh": "WebAuthn 校验失败",
       "en": "WebAuthn verification failed"
     },
+    {
+      "errno": 2039,
+      "key": "EMAIL_CODE_ATTEMPTS_EXCEEDED",
+      "zh": "验证码尝试次数过多，请稍后再试",
+      "en": "Too many verification code attempts, please try again later"
+    },
 
     { "errno": 3001,  "key": "ARTICLE_NOT_FOUND",           "zh": "文章不存在",               "en": "Article not found" },
     { "errno": 3002,  "key": "ARTICLE_INVALID_TYPE",        "zh": "文章类型错误",              "en": "Invalid article type" },

@@ -2,6 +2,8 @@
 
 #include <ctime>
 
+#include <openssl/evp.h>
+
 #include <chen/config/config.h>
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
@@ -34,12 +36,14 @@ static chen::ConfigVar<int64_t>::ptr g_challenge_ttl =
 
 namespace {
 
-constexpr const char* kChallengePrefix = "webauthn:reg:";
+constexpr const char* kRegistrationChallengePrefix = "webauthn:reg:";
+constexpr const char* kAuthenticationChallengePrefix = "webauthn:auth:";
 constexpr uint8_t kFlagUp = 0x01;
 constexpr uint8_t kFlagUv = 0x04;
 constexpr uint8_t kFlagBe = 0x08;
 constexpr uint8_t kFlagBs = 0x10;
 constexpr uint8_t kFlagAt = 0x40;
+constexpr size_t kMaxCredentialIdB64 = 512;
 
 struct ClientData {
     std::string type;
@@ -81,34 +85,35 @@ std::string HexEncode(const std::string& data)
     return out;
 }
 
-std::string ChallengeKey(int64_t uid, const std::string& challenge)
+std::string ChallengeKey(const std::string& prefix, int64_t uid, const std::string& challenge)
 {
-    return std::string(kChallengePrefix) + std::to_string(uid) + ":" + challenge;
+    std::string scope = uid ? std::to_string(uid) : "anon";
+    return prefix + scope + ":" + challenge;
 }
 
-bool StoreChallenge(int64_t uid, const std::string& challenge, const std::string& passkey_name)
+bool StoreChallenge(const std::string& prefix, int64_t uid, const std::string& challenge, const std::string& value)
 {
     int64_t ttl = g_challenge_ttl->getValue();
     if (ttl <= 0) {
         ttl = 300;
     }
     auto rpy = chen::RedisUtil::Cmd(
-        g_redis_pool_name->getValue(), "setex %s %lld %s", ChallengeKey(uid, challenge).c_str(), (long long)ttl, passkey_name.c_str());
+        g_redis_pool_name->getValue(), "setex %s %lld %s", ChallengeKey(prefix, uid, challenge).c_str(), (long long)ttl, value.c_str());
     return rpy != nullptr;
 }
 
-bool ConsumeChallenge(int64_t uid, const std::string& challenge, std::string& passkey_name)
+bool ConsumeChallenge(const std::string& prefix, int64_t uid, const std::string& challenge, std::string& value)
 {
-    passkey_name.clear();
+    value.clear();
     if (challenge.empty()) {
         return false;
     }
 
-    std::string key = ChallengeKey(uid, challenge);
+    std::string key = ChallengeKey(prefix, uid, challenge);
     auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get %s", key.c_str());
     bool found = rpy && rpy->type == REDIS_REPLY_STRING && rpy->str;
     if (found) {
-        passkey_name.assign(rpy->str, rpy->len);
+        value.assign(rpy->str, rpy->len);
     }
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.c_str());
     return found;
@@ -134,7 +139,7 @@ bool ParseClientData(const std::string& json, ClientData& out)
     return true;
 }
 
-bool ParseAuthenticatorData(const std::string& data, AuthData& out)
+bool ParseAuthDataHeader(const std::string& data, AuthData& out)
 {
     if (data.size() < 37) {
         return false;
@@ -144,8 +149,12 @@ bool ParseAuthenticatorData(const std::string& data, AuthData& out)
     out.flags = static_cast<uint8_t>(data[32]);
     out.sign_count = (static_cast<uint32_t>(static_cast<uint8_t>(data[33])) << 24) | (static_cast<uint32_t>(static_cast<uint8_t>(data[34])) << 16)
         | (static_cast<uint32_t>(static_cast<uint8_t>(data[35])) << 8) | static_cast<uint32_t>(static_cast<uint8_t>(data[36]));
+    return true;
+}
 
-    if (!(out.flags & kFlagAt)) {
+bool ParseRegistrationData(const std::string& data, AuthData& out)
+{
+    if (!ParseAuthDataHeader(data, out) || !(out.flags & kFlagAt)) {
         return false;
     }
 
@@ -173,6 +182,16 @@ bool ParseAuthenticatorData(const std::string& data, AuthData& out)
     }
     out.cose_key = remaining.substr(0, consumed);
     return true;
+}
+
+std::string Sha256Raw(const std::string& data)
+{
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
+    if (EVP_Digest(data.data(), data.size(), digest, &digest_len, EVP_sha256(), nullptr) != 1) {
+        return "";
+    }
+    return std::string(reinterpret_cast<char*>(digest), digest_len);
 }
 
 } // namespace
@@ -242,7 +261,7 @@ int32_t WebAuthnService::CreateRegistrationOptions(
     }
 
     std::string name = passkey_name.empty() ? "Passkey" : passkey_name;
-    if (!StoreChallenge(uid, challenge, name)) {
+    if (!StoreChallenge(kRegistrationChallengePrefix, uid, challenge, name)) {
         return errcode::REDIS_OPERATION_FAILED;
     }
 
@@ -344,7 +363,7 @@ int32_t WebAuthnService::VerifyRegistration(int64_t uid, const Json::Value& cred
         return errcode::WEBAUTHN_ORIGIN_MISMATCH;
     }
 
-    if (!ConsumeChallenge(uid, client_data.challenge, passkey_name)) {
+    if (!ConsumeChallenge(kRegistrationChallengePrefix, uid, client_data.challenge, passkey_name)) {
         return errcode::WEBAUTHN_CHALLENGE_INVALID;
     }
 
@@ -369,7 +388,7 @@ int32_t WebAuthnService::VerifyRegistration(int64_t uid, const Json::Value& cred
     }
 
     AuthData auth_data;
-    if (!ParseAuthenticatorData(auth_data_value->bytes, auth_data)) {
+    if (!ParseRegistrationData(auth_data_value->bytes, auth_data)) {
         return errcode::WEBAUTHN_INVALID_CREDENTIAL;
     }
     if (!(auth_data.flags & kFlagUp)) {
@@ -415,7 +434,7 @@ int32_t WebAuthnService::VerifyRegistration(int64_t uid, const Json::Value& cred
     }
 
     result.credential_id = Base64UrlEncode(auth_data.credential_id);
-    if (result.credential_id.size() > 512) {
+    if (result.credential_id.size() > kMaxCredentialIdB64) {
         return errcode::WEBAUTHN_INVALID_CREDENTIAL;
     }
     result.public_key = Base64UrlEncode(auth_data.cose_key);
@@ -445,6 +464,228 @@ int32_t WebAuthnService::VerifyRegistration(int64_t uid, const Json::Value& cred
     }
 
     INFO(logger) << "webauthn registration verified uid=" << uid << " alg=" << result.alg << " credential=" << result.credential_id;
+    return 0;
+}
+
+int32_t WebAuthnService::CreateAuthenticationOptions(int64_t uid, const std::vector<std::string>& allow_credential_ids, Json::Value& options)
+{
+    if (!IsConfigured()) {
+        return errcode::WEBAUTHN_NOT_CONFIGURED;
+    }
+
+    std::string challenge;
+    try {
+        challenge = Base64UrlEncode(chen::EncryptorUtil::GenerateRandomKey(32));
+    } catch (...) {
+        return errcode::INTERNAL_ERROR;
+    }
+    if (challenge.empty()) {
+        return errcode::INTERNAL_ERROR;
+    }
+
+    if (!StoreChallenge(kAuthenticationChallengePrefix, uid, challenge, "1")) {
+        return errcode::REDIS_OPERATION_FAILED;
+    }
+
+    options = Json::Value(Json::objectValue);
+    options["challenge"] = challenge;
+    options["rpId"] = RpId();
+    options["timeout"] = (Json::Int64)g_timeout_ms->getValue();
+    options["userVerification"] = g_user_verification->getValue();
+
+    if (!allow_credential_ids.empty()) {
+        Json::Value allow(Json::arrayValue);
+        for (const auto& id : allow_credential_ids) {
+            Json::Value item(Json::objectValue);
+            item["type"] = "public-key";
+            item["id"] = id;
+            allow.append(item);
+        }
+        options["allowCredentials"] = allow;
+    }
+
+    return 0;
+}
+
+bool WebAuthnService::ExtractCredentialId(const Json::Value& credential, std::string& credential_id)
+{
+    credential_id.clear();
+    if (!credential.isObject()) {
+        return false;
+    }
+    if (!credential.isMember("type") || !credential["type"].isString() || credential["type"].asString() != "public-key") {
+        return false;
+    }
+    if (!credential.isMember("rawId") || !credential["rawId"].isString()) {
+        return false;
+    }
+
+    std::string raw_id = credential["rawId"].asString();
+    std::string raw_id_bytes;
+    if (raw_id.empty() || !Base64UrlDecode(raw_id, raw_id_bytes) || raw_id_bytes.empty()) {
+        return false;
+    }
+
+    credential_id = Base64UrlEncode(raw_id_bytes);
+    if (credential_id.empty() || credential_id.size() > kMaxCredentialIdB64) {
+        credential_id.clear();
+        return false;
+    }
+    return true;
+}
+
+int32_t WebAuthnService::VerifyAuthentication(
+    int64_t uid,
+    const std::string& stored_public_key,
+    int64_t stored_sign_count,
+    const Json::Value& credential,
+    AuthenticationResult& result)
+{
+    if (!IsConfigured()) {
+        return errcode::WEBAUTHN_NOT_CONFIGURED;
+    }
+    if (!uid || !credential.isObject()) {
+        return errcode::PARAM_INVALID;
+    }
+    if (!credential.isMember("type") || !credential["type"].isString() || credential["type"].asString() != "public-key") {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+
+    const Json::Value& response = credential["response"];
+    if (!response.isObject()) {
+        return errcode::PARAM_INVALID;
+    }
+    if (!response.isMember("clientDataJSON") || !response["clientDataJSON"].isString() || !response.isMember("authenticatorData")
+        || !response["authenticatorData"].isString() || !response.isMember("signature") || !response["signature"].isString()) {
+        return errcode::PARAM_MISSING;
+    }
+
+    std::string client_data_b64 = response["clientDataJSON"].asString();
+    std::string authent_data_b64 = response["authenticatorData"].asString();
+    std::string signature_b64 = response["signature"].asString();
+    if (client_data_b64.empty() || authent_data_b64.empty() || signature_b64.empty()) {
+        return errcode::PARAM_MISSING;
+    }
+
+    std::string client_data_json;
+    if (!Base64UrlDecode(client_data_b64, client_data_json)) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+
+    ClientData client_data;
+    if (!ParseClientData(client_data_json, client_data)) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+    if (client_data.type != "webauthn.get") {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+    if (client_data.cross_origin) {
+        return errcode::WEBAUTHN_ORIGIN_MISMATCH;
+    }
+    if (Trim(client_data.origin) != Origin()) {
+        WARN(logger) << "webauthn assertion origin mismatch expected=" << Origin() << " got=" << client_data.origin;
+        return errcode::WEBAUTHN_ORIGIN_MISMATCH;
+    }
+
+    // challenge 可能绑定到指定用户，也可能是 discoverable credential 的匿名 challenge。
+    std::string challenge_value;
+    bool challenge_ok = ConsumeChallenge(kAuthenticationChallengePrefix, uid, client_data.challenge, challenge_value);
+    if (!challenge_ok) {
+        challenge_ok = ConsumeChallenge(kAuthenticationChallengePrefix, 0, client_data.challenge, challenge_value);
+    }
+    if (!challenge_ok) {
+        return errcode::WEBAUTHN_CHALLENGE_INVALID;
+    }
+
+    std::string auth_data_raw;
+    if (!Base64UrlDecode(authent_data_b64, auth_data_raw)) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+
+    AuthData auth_data;
+    if (!ParseAuthDataHeader(auth_data_raw, auth_data)) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+    if (!(auth_data.flags & kFlagUp)) {
+        return errcode::WEBAUTHN_VERIFY_FAILED;
+    }
+    if (g_user_verification->getValue() == "required" && !(auth_data.flags & kFlagUv)) {
+        return errcode::WEBAUTHN_VERIFY_FAILED;
+    }
+    if (HexEncode(auth_data.rp_id_hash) != chen::EncryptorUtil::SHA256(RpId())) {
+        return errcode::WEBAUTHN_RP_ID_MISMATCH;
+    }
+
+    std::string credential_id;
+    if (!ExtractCredentialId(credential, credential_id)) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+
+    // id 与 rawId 必须指向同一个 credential。
+    if (credential.isMember("id")) {
+        if (!credential["id"].isString()) {
+            return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+        }
+        std::string id_bytes;
+        std::string raw_id_bytes;
+        if (!Base64UrlDecode(credential["id"].asString(), id_bytes) || !Base64UrlDecode(credential["rawId"].asString(), raw_id_bytes)
+            || id_bytes != raw_id_bytes) {
+            return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+        }
+    }
+
+    // discoverable credential 会返回 userHandle，必须与当前用户的稳定 handle 一致。
+    if (response.isMember("userHandle") && !response["userHandle"].isNull()) {
+        if (!response["userHandle"].isString()) {
+            return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+        }
+        std::string user_handle = response["userHandle"].asString();
+        if (!user_handle.empty()) {
+            std::string expected_handle = UserHandle(uid);
+            std::string provided_bytes;
+            std::string expected_bytes;
+            if (expected_handle.empty() || !Base64UrlDecode(user_handle, provided_bytes) || !Base64UrlDecode(expected_handle, expected_bytes)
+                || provided_bytes != expected_bytes) {
+                return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+            }
+        }
+    }
+
+    std::string signature;
+    if (!Base64UrlDecode(signature_b64, signature) || signature.empty()) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+
+    std::string cose_bytes;
+    if (!Base64UrlDecode(stored_public_key, cose_bytes)) {
+        return errcode::WEBAUTHN_INVALID_CREDENTIAL;
+    }
+    CoseKey cose_key;
+    if (!ParseCoseKey(cose_bytes, cose_key)) {
+        return errcode::WEBAUTHN_UNSUPPORTED_ALG;
+    }
+
+    std::string client_data_hash = Sha256Raw(client_data_json);
+    if (client_data_hash.empty()) {
+        return errcode::INTERNAL_ERROR;
+    }
+    std::string signed_data = auth_data_raw + client_data_hash;
+    if (!VerifySignature(cose_key, signed_data, signature)) {
+        WARN(logger) << "webauthn signature verify failed uid=" << uid << " credential=" << credential_id;
+        return errcode::WEBAUTHN_VERIFY_FAILED;
+    }
+
+    if (stored_sign_count > 0 && auth_data.sign_count > 0 && static_cast<int64_t>(auth_data.sign_count) <= stored_sign_count) {
+        WARN(logger) << "webauthn sign counter regression uid=" << uid << " stored=" << stored_sign_count << " got=" << auth_data.sign_count;
+        return errcode::WEBAUTHN_VERIFY_FAILED;
+    }
+
+    result.credential_id = credential_id;
+    result.sign_count = auth_data.sign_count;
+    result.user_verified = (auth_data.flags & kFlagUv) != 0;
+    result.backup_state = (auth_data.flags & kFlagBs) ? 1 : 0;
+
+    INFO(logger) << "webauthn assertion verified uid=" << uid << " credential=" << result.credential_id;
     return 0;
 }
 

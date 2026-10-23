@@ -163,5 +163,38 @@ bool ParseCoseKey(const std::string& cbor, CoseKey& out)
     }
 }
 
+bool VerifySignature(const CoseKey& key, const std::string& data, const std::string& signature)
+{
+    if (!key.pkey || signature.empty()) {
+        return false;
+    }
+
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+        return false;
+    }
+
+    EVP_PKEY_CTX* pctx = nullptr;
+    int init_ret = 0;
+    if (key.kty == kCoseKtyOkp) {
+        // Ed25519 是纯签名算法，不能传摘要。
+        init_ret = EVP_DigestVerifyInit(ctx, nullptr, nullptr, nullptr, key.pkey.get());
+    } else {
+        init_ret = EVP_DigestVerifyInit(ctx, &pctx, EVP_sha256(), nullptr, key.pkey.get());
+        if (init_ret == 1 && key.kty == kCoseKtyRsa && pctx) {
+            init_ret = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING);
+        }
+    }
+
+    int verify_ret = 0;
+    if (init_ret == 1) {
+        verify_ret = EVP_DigestVerify(
+            ctx, reinterpret_cast<const unsigned char*>(signature.data()), signature.size(), reinterpret_cast<const unsigned char*>(data.data()),
+            data.size());
+    }
+    EVP_MD_CTX_free(ctx);
+    return verify_ret == 1;
+}
+
 } // namespace webauthn
 } // namespace blog

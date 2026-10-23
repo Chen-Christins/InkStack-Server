@@ -358,9 +358,16 @@ void BlogModule::registerServlets()
         // 第三方登录相关
         dp->addServlet("/api/v1/user/oauth/github", XX(UserOauthGithubServlet));
         dp->addServlet("/api/v1/user/oauth/github/callback", XX(UserOauthGithubCallbackServlet));
+        // Passkey 登录 / 管理相关
+        dp->addServlet("/api/v1/auth/passkey/login/begin", XX(PasskeyLoginBeginServlet));
+        dp->addServlet("/api/v1/auth/passkey/login/finish", XX(PasskeyLoginFinishServlet));
+        dp->addServlet("/api/v1/auth/passkey/list", XX(PasskeyListServlet));
+        dp->addServlet("/api/v1/auth/passkey/delete", XX(PasskeyDeleteServlet));
         // Passkey 注册相关
         dp->addServlet("/api/v1/auth/passkey/register/begin", XX(PasskeyRegisterBeginServlet));
         dp->addServlet("/api/v1/auth/passkey/register/finish", XX(PasskeyRegisterFinishServlet));
+        // 邮箱验证码恢复登录
+        dp->addServlet("/api/v1/auth/email/recovery", XX(EmailRecoveryServlet));
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
