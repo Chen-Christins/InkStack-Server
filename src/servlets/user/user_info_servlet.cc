@@ -1,14 +1,10 @@
 #include "user_info_servlet.h"
 
-#include <chen/log/log.h>
-
 #include "../../manager/user_follow_rel_manager.h"
 #include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
-
-static chen::Logger::ptr logger = LOG_ROOT();
 
 UserInfoServlet::UserInfoServlet()
     : BlogServlet("UserInfoServlet")
@@ -22,12 +18,7 @@ int32_t UserInfoServlet::handle(
     Result::ptr result)
 {
     do {
-        auto sdata = getSessionData(request, response);
-        if (!sdata) {
-            result->setErrno(errcode::INTERNAL_ERROR);
-            break;
-        }
-        int64_t viewer_uid = sdata->getData<int64_t>(CookieKey::USER_ID);
+        int64_t viewer_uid = getUserId(request);
         if (!viewer_uid) {
             result->setErrno(errcode::NOT_LOGIN);
             break;

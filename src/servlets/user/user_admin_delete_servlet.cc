@@ -2,6 +2,7 @@
 
 #include <chen/log/log.h>
 
+#include "../../auth/auth_service.h"
 #include "../../event/event_define.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
@@ -61,6 +62,7 @@ int32_t UserAdminDeleteServlet::handle(
             break;
         }
         UserMgr::GetInstance()->update(info);
+        AuthService::RevokeAllSessions(user_id);
         result->set("user_id", user_id);
 
         // Notify affected user

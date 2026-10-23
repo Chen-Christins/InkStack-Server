@@ -112,6 +112,7 @@ jobs:
           GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
           GITHUB_CALLBACK_URL: ${{ secrets.OAUTH_GITHUB_CALLBACK_URL }}
           FRONTEND_BASE: ${{ vars.FRONTEND_BASE }}
+          AUTH_COOKIE_SECURE: "true"
         run: |
           {
             echo "WORK_PATH=${WORK_PATH:-/home/path/to/apps}"
@@ -128,6 +129,7 @@ jobs:
             echo "GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}"
             echo "GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}"
             echo "FRONTEND_BASE=${FRONTEND_BASE}"
+            echo "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}"
           } > bin/conf/prod.env
 
       - name: Package

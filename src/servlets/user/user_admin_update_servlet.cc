@@ -2,6 +2,7 @@
 
 #include <chen/log/log.h>
 
+#include "../../auth/auth_service.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 
@@ -108,6 +109,11 @@ int32_t UserAdminUpdateServlet::handle(
         }
 
         UserMgr::GetInstance()->update(info);
+
+        // 改密或禁用账号后，立即撤销该用户全部会话
+        if (!passwd.empty() || (has_state && state != UserManager::Status::ACTIVE)) {
+            AuthService::RevokeAllSessions(user_id);
+        }
 
         result->set("id", info->getId());
         result->set("account", info->getAccount());

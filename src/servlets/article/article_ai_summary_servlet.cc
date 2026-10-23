@@ -2,15 +2,13 @@
 
 #include "../../ai/ai_provider.h"
 #include "../../ai/sse_stream_parser.h"
+#include "../../auth/auth_service.h"
 #include "../../manager/article_manager.h"
-#include "../../manager/session_manager.h"
 #include "../../manager/user_ai_config_manager.h"
-#include "../../struct.h"
 #include "../../util.h"
 
 #include <chen/config/config.h>
 #include <chen/http/http_connection.h>
-#include <chen/http/session_data.h>
 #include <chen/log/log.h>
 
 namespace blog {
@@ -32,23 +30,11 @@ ArticleAISummaryServlet::ArticleAISummaryServlet()
 
 int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session)
 {
-    int64_t uid = 0;
-    {
-        std::string sid = request->getCookie(CookieKey::SESSION_KEY);
-        if (!sid.empty()) {
-            auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
-            if (!data) {
-                // 内存未命中，尝试从 Redis 恢复（进程重启后自动恢复会话）
-                data = LoadSessionFromRedis(sid);
-            }
-            if (data) {
-                uid = data->getData<int64_t>(CookieKey::USER_ID);
-            }
-        }
-        if (!uid) {
-            session->sendEvent(R"({"type":"error","message":"not login"})");
-            return -1;
-        }
+    AuthContext ctx = AuthService::Resolve(request, nullptr, false);
+    int64_t uid = ctx.uid;
+    if (!uid) {
+        session->sendEvent(R"({"type":"error","message":"not login"})");
+        return -1;
     }
 
     int64_t article_id = 0;

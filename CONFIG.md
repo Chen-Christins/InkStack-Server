@@ -129,7 +129,30 @@ cache:
 
 > 该配置项有代码默认值 `true`，不写也能正常工作；Redis 异常时缓存操作会静默降级为 DB 查询。
 
-## 6. 注意事项
+## 6. 会话与认证配置
+
+登录态使用服务端 Session + `SESSIONID` Cookie，配置位于 `TechHaven.yml.tpl` 的 `auth` 节点：
+
+```yaml
+auth:
+  cookie_secure: ${AUTH_COOKIE_SECURE}
+  cookie_same_site: Lax
+  session_absolute_ttl: 604800
+  ws_legacy_token: true
+```
+
+| 配置                        | 说明                                                                 |
+|-----------------------------|----------------------------------------------------------------------|
+| `auth.cookie_secure`        | `SESSIONID` 是否带 `Secure`；生产必须为 `true`                       |
+| `auth.cookie_same_site`     | `Lax` / `Strict` / `None`；`None` 会自动强制 `Secure`                |
+| `auth.session_absolute_ttl` | 会话绝对有效期（秒），`<=0` 不限制；空闲有效期取系统设置里的会话时长 |
+| `auth.ws_legacy_token`      | 迁移期是否允许 WebSocket 使用旧 `uid/token/token_time` query 认证    |
+
+> 升级后已有 `prod.env` 需要补充 `AUTH_COOKIE_SECURE=true`，否则 `switch-env.sh` 会因缺少占位符而失败。
+
+`SESSIONID` Cookie 固定带 `HttpOnly`，前端不需要也不应该读取它。
+
+## 7. 注意事项
 
 1. **占位符命名**：统一用大写 snake_case（如 `MYSQL_HOST`、`UPLOAD_DIR`），并在 `dev.env` 与 `prod.env.example` 中保持一致。
 2. **密钥不入库**：生产密码、密钥只写在 `bin/conf/prod.env`（已被 `.gitignore` 忽略），不要写进 `prod.env.example` 或提交。

@@ -29,6 +29,16 @@ oauth:
     # 授权成功后回跳的前端站点根地址
     frontend_base: ${FRONTEND_BASE}
 
+# 会话与认证
+auth:
+  # 生产环境必须为 true；本地 HTTP 调试可设为 false
+  cookie_secure: ${AUTH_COOKIE_SECURE}
+  cookie_same_site: Lax
+  # 会话绝对有效期（秒），<=0 表示不限制
+  session_absolute_ttl: 604800
+  # 迁移期兼容 WebSocket 的旧 token query 认证
+  ws_legacy_token: true
+
 # Server configuration, including work path, PID file, and email service settings for sending notifications or alerts.
 server:
   work_path: ${WORK_PATH}

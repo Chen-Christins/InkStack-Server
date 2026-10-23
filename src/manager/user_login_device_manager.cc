@@ -179,6 +179,36 @@ int UserLoginDeviceManager::logout(const std::string& token)
     return kick(info);
 }
 
+int UserLoginDeviceManager::revokeAllByUser(int64_t uid)
+{
+    if (!uid) {
+        return -1;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "revokeAllByUser: GetDB failed";
+        return -1;
+    }
+
+    auto qb = data::UserLoginDeviceInfoDao::newQuery();
+    qb->where("user_id", "=", uid);
+    qb->where("is_active", "=", (int64_t)1);
+
+    std::vector<data::UserLoginDeviceInfo::ptr> results;
+    if (data::UserLoginDeviceInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "revokeAllByUser: QueryByBuilder failed"
+                      << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
+        return -1;
+    }
+
+    for (auto& info : results) {
+        if (info) {
+            kick(info);
+        }
+    }
+    return 0;
+}
+
 int UserLoginDeviceManager::updateToken(const std::string& old_token, const std::string& new_token, int64_t new_token_time)
 {
     auto info = getByToken(old_token);

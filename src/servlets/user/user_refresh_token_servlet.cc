@@ -49,6 +49,14 @@ int32_t UserRefreshTokenServlet::handle(
             token = request->getCookie(CookieKey::TOKEN);
         }
         if (token.empty()) {
+            // 新会话体系下没有 token 需要刷新；会话有效直接返回成功
+            int64_t session_uid = getUserId(request);
+            if (session_uid) {
+                result->set("uid", EncryptUserId(session_uid));
+                result->set("session", true);
+                result->setErrno(errcode::SUCCESS);
+                break;
+            }
             result->setErrno(errcode::PARAM_MISSING, "token is required");
             break;
         }
