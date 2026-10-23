@@ -11,8 +11,63 @@
 
 #include <chen/http/http.h>
 #include <chen/http/http_session.h>
+#include <chen/config/config.h>
 
 #include "auth_context.h"
+
+struct AuthConf {
+    bool cookie_secure = false;
+    std::string cookie_same_site;
+    // 会话绝对有效期（秒），<=0 表示不限制
+    int64_t session_absolute_ttl = 604800;
+    // 迁移期兼容 WebSocket 的旧 token query 认证
+    bool ws_legacy_token = false;
+
+    bool operator==(const AuthConf& oth) const
+    {
+        return cookie_secure == oth.cookie_secure && cookie_same_site == oth.cookie_same_site && session_absolute_ttl == oth.session_absolute_ttl
+            && ws_legacy_token == oth.ws_legacy_token;
+    }
+};
+
+namespace chen {
+
+template <>
+class LexicalCast<std::string, AuthConf> {
+public:
+    AuthConf operator()(const std::string& value)
+    {
+        AuthConf conf = {};
+        YAML::Node node = YAML::Load(value);
+        if (!node.IsMap()) {
+            return conf;
+        }
+        conf.cookie_secure = LexicalCast<std::string, bool>()(node["cookie_secure"].Scalar());
+        conf.cookie_same_site = node["cookie_same_site"].as<std::string>();
+        conf.session_absolute_ttl = node["session_absolute_ttl"].as<int64_t>();
+        conf.ws_legacy_token = LexicalCast<std::string, bool>()(node["ws_legacy_token"].Scalar());
+        return conf;
+    }
+};
+
+template <>
+class LexicalCast<AuthConf, std::string> {
+public:
+    std::string operator()(const AuthConf& cfg)
+    {
+        YAML::Node node = {};
+        node["cookie_secure"] = cfg.cookie_secure;
+        node["cookie_same_site"] = cfg.cookie_same_site;
+        node["session_absolute_ttl"] = cfg.session_absolute_ttl;
+        node["ws_legacy_token"] = cfg.ws_legacy_token;
+
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+};
+
+} // namespace chen
 
 namespace blog {
 

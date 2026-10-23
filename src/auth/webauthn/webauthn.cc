@@ -21,18 +21,7 @@ namespace webauthn {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 static chen::ConfigVar<std::string>::ptr g_redis_pool_name = chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
-static chen::ConfigVar<std::string>::ptr g_rp_id = chen::Config::Lookup("webauthn.rp_id", std::string(""), "WebAuthn RP ID");
-static chen::ConfigVar<std::string>::ptr g_rp_name = chen::Config::Lookup("webauthn.rp_name", std::string("InkStack"), "WebAuthn RP name");
-static chen::ConfigVar<std::string>::ptr g_origin = chen::Config::Lookup("webauthn.origin", std::string(""), "WebAuthn expected origin");
-static chen::ConfigVar<int64_t>::ptr g_timeout_ms = chen::Config::Lookup("webauthn.timeout_ms", (int64_t)60000, "WebAuthn timeout in milliseconds");
-static chen::ConfigVar<std::string>::ptr g_user_verification =
-    chen::Config::Lookup("webauthn.user_verification", std::string("preferred"), "WebAuthn userVerification");
-static chen::ConfigVar<std::string>::ptr g_attestation =
-    chen::Config::Lookup("webauthn.attestation", std::string("none"), "WebAuthn attestation conveyance");
-static chen::ConfigVar<std::string>::ptr g_user_handle_secret =
-    chen::Config::Lookup("webauthn.user_handle_secret", std::string(""), "WebAuthn user handle HMAC secret");
-static chen::ConfigVar<int64_t>::ptr g_challenge_ttl =
-    chen::Config::Lookup("webauthn.challenge_ttl", (int64_t)300, "WebAuthn challenge TTL in seconds");
+static chen::ConfigVar<WebAuthnConf>::ptr g_webauthn = chen::Config::Lookup("webauthn", WebAuthnConf(), "WebAuthn configuration");
 
 namespace {
 
@@ -93,7 +82,9 @@ std::string ChallengeKey(const std::string& prefix, int64_t uid, const std::stri
 
 bool StoreChallenge(const std::string& prefix, int64_t uid, const std::string& challenge, const std::string& value)
 {
-    int64_t ttl = g_challenge_ttl->getValue();
+    const WebAuthnConf& conf = g_webauthn->getValue();
+
+    int64_t ttl = conf.challenge_ttl;
     if (ttl <= 0) {
         ttl = 300;
     }
@@ -198,22 +189,26 @@ std::string Sha256Raw(const std::string& data)
 
 bool WebAuthnService::IsConfigured()
 {
-    return !Trim(g_rp_id->getValue()).empty() && !Trim(g_origin->getValue()).empty();
+    const WebAuthnConf& conf = g_webauthn->getValue();
+    return !Trim(conf.rp_id).empty() && !Trim(conf.origin).empty();
 }
 
 std::string WebAuthnService::RpId()
 {
-    return Trim(g_rp_id->getValue());
+    const WebAuthnConf& conf = g_webauthn->getValue();
+    return Trim(conf.rp_id);
 }
 
 std::string WebAuthnService::RpName()
 {
-    return g_rp_name->getValue().empty() ? "InkStack" : g_rp_name->getValue();
+    const WebAuthnConf& conf = g_webauthn->getValue();
+    return conf.rp_name.empty() ? "InkStack" : conf.rp_name;
 }
 
 std::string WebAuthnService::Origin()
 {
-    return Trim(g_origin->getValue());
+    const WebAuthnConf& conf = g_webauthn->getValue();
+    return Trim(conf.origin);
 }
 
 std::string WebAuthnService::UserHandle(int64_t uid)
@@ -222,7 +217,8 @@ std::string WebAuthnService::UserHandle(int64_t uid)
         return "";
     }
 
-    std::string secret = g_user_handle_secret->getValue();
+    const WebAuthnConf& conf = g_webauthn->getValue();
+    std::string secret = conf.user_handle_secret;
     if (secret.empty()) {
         secret = "inkstack-webauthn-default";
     }
@@ -241,6 +237,8 @@ int32_t WebAuthnService::CreateRegistrationOptions(
     const std::vector<std::string>& exclude_credential_ids,
     Json::Value& options)
 {
+    const WebAuthnConf& conf = g_webauthn->getValue();
+
     if (!IsConfigured()) {
         return errcode::WEBAUTHN_NOT_CONFIGURED;
     }
@@ -294,12 +292,12 @@ int32_t WebAuthnService::CreateRegistrationOptions(
     params.append(eddsa);
     options["pubKeyCredParams"] = params;
 
-    options["timeout"] = (Json::Int64)g_timeout_ms->getValue();
-    options["attestation"] = g_attestation->getValue();
+    options["timeout"] = conf.timeout_ms;
+    options["attestation"] = conf.attestation;
 
     Json::Value selection(Json::objectValue);
     selection["residentKey"] = "preferred";
-    selection["userVerification"] = g_user_verification->getValue();
+    selection["userVerification"] = conf.user_verification;
     options["authenticatorSelection"] = selection;
 
     if (!exclude_credential_ids.empty()) {
@@ -394,7 +392,10 @@ int32_t WebAuthnService::VerifyRegistration(int64_t uid, const Json::Value& cred
     if (!(auth_data.flags & kFlagUp)) {
         return errcode::WEBAUTHN_VERIFY_FAILED;
     }
-    if (g_user_verification->getValue() == "required" && !(auth_data.flags & kFlagUv)) {
+
+    const WebAuthnConf& conf = g_webauthn->getValue();
+
+    if (conf.user_verification == "required" && !(auth_data.flags & kFlagUv)) {
         return errcode::WEBAUTHN_VERIFY_FAILED;
     }
     if (HexEncode(auth_data.rp_id_hash) != chen::EncryptorUtil::SHA256(RpId())) {
@@ -487,11 +488,13 @@ int32_t WebAuthnService::CreateAuthenticationOptions(int64_t uid, const std::vec
         return errcode::REDIS_OPERATION_FAILED;
     }
 
+    const WebAuthnConf& conf = g_webauthn->getValue();
+
     options = Json::Value(Json::objectValue);
     options["challenge"] = challenge;
     options["rpId"] = RpId();
-    options["timeout"] = (Json::Int64)g_timeout_ms->getValue();
-    options["userVerification"] = g_user_verification->getValue();
+    options["timeout"] = conf.timeout_ms;
+    options["userVerification"] = conf.user_verification;
 
     if (!allow_credential_ids.empty()) {
         Json::Value allow(Json::arrayValue);
@@ -609,7 +612,9 @@ int32_t WebAuthnService::VerifyAuthentication(
     if (!(auth_data.flags & kFlagUp)) {
         return errcode::WEBAUTHN_VERIFY_FAILED;
     }
-    if (g_user_verification->getValue() == "required" && !(auth_data.flags & kFlagUv)) {
+
+    const WebAuthnConf& conf = g_webauthn->getValue();
+    if (conf.user_verification == "required" && !(auth_data.flags & kFlagUv)) {
         return errcode::WEBAUTHN_VERIFY_FAILED;
     }
     if (HexEncode(auth_data.rp_id_hash) != chen::EncryptorUtil::SHA256(RpId())) {

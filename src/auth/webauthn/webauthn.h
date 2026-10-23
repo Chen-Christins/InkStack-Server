@@ -11,6 +11,76 @@
 #include <vector>
 
 #include <json/json.h>
+#include <chen/config/config.h>
+
+struct WebAuthnConf {
+    std::string rp_id;
+    std::string rp_name = "InkStack";
+    std::string origin;
+    int64_t timeout_ms = 60000;
+    std::string user_verification = "preferred";
+    std::string attestation = "none";
+    std::string user_handle_secret;
+    int64_t challenge_ttl = 300;
+
+    bool operator==(const WebAuthnConf& other) const
+    {
+        return rp_id == other.rp_id
+            && rp_name == other.rp_name
+            && origin == other.origin
+            && timeout_ms == other.timeout_ms
+            && user_verification == other.user_verification
+            && attestation == other.attestation
+            && user_handle_secret == other.user_handle_secret
+            && challenge_ttl == other.challenge_ttl;
+    }
+};
+
+namespace chen {
+
+template <>
+class LexicalCast<std::string, WebAuthnConf> {
+public:
+    WebAuthnConf operator()(const std::string& value)
+    {
+        WebAuthnConf conf;
+        YAML::Node node = YAML::Load(value);
+        if (!node.IsMap()) {
+            return conf;
+        }
+        conf.rp_id = node["rp_id"].as<std::string>();
+        conf.rp_name = node["rp_name"].as<std::string>();
+        conf.origin = node["origin"].as<std::string>();
+        conf.timeout_ms = node["timeout_ms"].as<int64_t>();
+        conf.user_verification = node["user_verification"].as<std::string>();
+        conf.attestation = node["attestation"].as<std::string>();
+        conf.user_handle_secret = node["user_handle_secret"].as<std::string>();
+        conf.challenge_ttl = node["challenge_ttl"].as<int64_t>();
+        return conf;
+    }
+};
+
+template <>
+class LexicalCast<WebAuthnConf, std::string> {
+public:
+    std::string operator()(const WebAuthnConf& cfg)
+    {
+        YAML::Node node;
+        node["rp_id"] = cfg.rp_id;
+        node["rp_name"] = cfg.rp_name;
+        node["origin"] = cfg.origin;
+        node["timeout_ms"] = cfg.timeout_ms;
+        node["user_verification"] = cfg.user_verification;
+        node["attestation"] = cfg.attestation;
+        node["user_handle_secret"] = cfg.user_handle_secret;
+        node["challenge_ttl"] = cfg.challenge_ttl;
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
+};
+
+} // namespace chen
 
 namespace blog {
 namespace webauthn {

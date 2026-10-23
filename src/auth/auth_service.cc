@@ -19,17 +19,12 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<bool>::ptr g_cookie_secure = chen::Config::Lookup("auth.cookie_secure", false, "Set Secure flag on session cookie");
-static chen::ConfigVar<std::string>::ptr g_cookie_same_site =
-    chen::Config::Lookup("auth.cookie_same_site", std::string("Lax"), "Session cookie SameSite: Lax/Strict/None");
-static chen::ConfigVar<int64_t>::ptr g_session_absolute_ttl =
-    chen::Config::Lookup("auth.session_absolute_ttl", (int64_t)(7 * 24 * 3600), "Absolute session lifetime in seconds, <=0 disables it");
-static chen::ConfigVar<bool>::ptr g_ws_legacy_token =
-    chen::Config::Lookup("auth.ws_legacy_token", true, "Allow legacy token query auth for WebSocket during migration");
+static chen::ConfigVar<AuthConf>::ptr g_auth_conf = chen::Config::Lookup("auth", AuthConf(), "Auth Configuration");
 
 static std::string NormalizeSameSite()
 {
-    std::string value = g_cookie_same_site->getValue();
+    const AuthConf& conf = g_auth_conf->getValue();
+    std::string value = conf.cookie_same_site;
     if (value != "Lax" && value != "Strict" && value != "None") {
         return "Lax";
     }
@@ -38,7 +33,8 @@ static std::string NormalizeSameSite()
 
 static bool UseSecureCookie()
 {
-    return g_cookie_secure->getValue() || NormalizeSameSite() == "None";
+    const AuthConf& conf = g_auth_conf->getValue();
+    return conf.cookie_secure || NormalizeSameSite() == "None";
 }
 
 static void ClearLegacyCookies(chen::http::HttpResponse::ptr response)
@@ -110,9 +106,11 @@ AuthContext AuthService::Resolve(chen::http::HttpRequest::ptr request, chen::htt
         return ctx;
     }
 
+    const AuthConf& conf = g_auth_conf->getValue();
+
     int64_t now = time(0);
     if (touch && now - info.last_seen >= 60) {
-        if (!SessionStore::Touch(session_id, info, GetSessionTTL(), g_session_absolute_ttl->getValue())) {
+        if (!SessionStore::Touch(session_id, info, GetSessionTTL(), conf.session_absolute_ttl)) {
             chen::http::SessionDataMgr::GetInstance()->del(session_id);
             DeleteSessionFromRedis(session_id);
             if (response) {
@@ -190,8 +188,10 @@ int32_t AuthService::IssueSession(
         return errcode::ACCOUNT_INVALID;
     }
 
+    const AuthConf& conf = g_auth_conf->getValue();
+
     int64_t idle_ttl = GetSessionTTL();
-    int64_t absolute_ttl = g_session_absolute_ttl->getValue();
+    int64_t absolute_ttl = conf.session_absolute_ttl;
 
     std::string ip;
     if (session) {
@@ -283,7 +283,9 @@ bool AuthService::ResolveWs(chen::http::HttpRequest::ptr request, int64_t& uid, 
         return true;
     }
 
-    if (!g_ws_legacy_token->getValue()) {
+    const AuthConf& conf = g_auth_conf->getValue();
+
+    if (!conf.ws_legacy_token) {
         return false;
     }
 
