@@ -152,7 +152,39 @@ auth:
 
 `SESSIONID` Cookie 固定带 `HttpOnly`，前端不需要也不应该读取它。
 
-## 7. 注意事项
+## 7. WebAuthn / Passkey 配置
+
+Passkey 注册配置位于 `TechHaven.yml.tpl` 的 `webauthn` 节点：
+
+```yaml
+webauthn:
+  rp_id: ${WEBAUTHN_RP_ID}
+  rp_name: ${WEBAUTHN_RP_NAME}
+  origin: ${WEBAUTHN_ORIGIN}
+  timeout_ms: 60000
+  user_verification: preferred
+  attestation: none
+  challenge_ttl: 300
+  user_handle_secret: ${WEBAUTHN_USER_HANDLE_SECRET}
+```
+
+| 配置                          | 说明                                                                                                 |
+|-------------------------------|------------------------------------------------------------------------------------------------------|
+| `webauthn.rp_id`              | Relying Party ID，必须是注册域（如 `example.com`），**不含协议、端口和路径**；本地开发用 `localhost` |
+| `webauthn.rp_name`            | 浏览器弹窗中展示的站点名                                                                             |
+| `webauthn.origin`             | 前端页面的 origin（协议 + 域名 + 端口），必须与浏览器 `clientDataJSON.origin` 完全一致               |
+| `webauthn.timeout_ms`         | 浏览器认证超时时间                                                                                   |
+| `webauthn.user_verification`  | `preferred` 或 `required`；`required` 要求生物识别/PIN                                               |
+| `webauthn.attestation`        | 注册时请求的 attestation 类型，当前默认 `none`                                                       |
+| `webauthn.challenge_ttl`      | challenge 在 Redis 中的有效期（秒）                                                                  |
+| `webauthn.user_handle_secret` | 生成稳定 `user.id` 的 HMAC 密钥，生产环境必须配置随机值且不要随意轮换                                |
+
+> 前后端同源时 `origin` 就是站点地址；前后端分离时，`origin` 填 **前端页面**地址，`rp_id` 填两者共同的注册域。
+
+> 升级后已有 `prod.env` 需要补充 `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGIN` /
+> `WEBAUTHN_USER_HANDLE_SECRET`，否则 `switch-env.sh` 会因缺少占位符而失败。
+
+## 8. 注意事项
 
 1. **占位符命名**：统一用大写 snake_case（如 `MYSQL_HOST`、`UPLOAD_DIR`），并在 `dev.env` 与 `prod.env.example` 中保持一致。
 2. **密钥不入库**：生产密码、密钥只写在 `bin/conf/prod.env`（已被 `.gitignore` 忽略），不要写进 `prod.env.example` 或提交。

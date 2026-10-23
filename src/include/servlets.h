@@ -30,6 +30,8 @@
 #include "../servlets/article/comment_praise_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/comment_replies_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/article/comment_update_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/auth/passkey_register_begin_servlet.h"                  // IWYU pragma: keep
+#include "../servlets/auth/passkey_register_finish_servlet.h"                 // IWYU pragma: keep
 #include "../servlets/assignment/assignment_admin_lists_servlet.h"          // IWYU pragma: keep
 #include "../servlets/assignment/assignment_admin_stats_servlet.h"          // IWYU pragma: keep
 #include "../servlets/assignment/assignment_create_servlet.h"               // IWYU pragma: keep
